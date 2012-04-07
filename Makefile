@@ -4,7 +4,7 @@ CFLAGS+= -std=c99 -Wall -Werror
 
 all: entr entr_spec
 
-test: entr_spec
+test: entr_spec entr
 	@echo "Running tests"
 	@./entr_spec
 
