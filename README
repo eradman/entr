@@ -1,0 +1,17 @@
+NAME
+     entr - Run arbitrary commands when files change
+
+SYNOPSIS
+     entr [script] [args {} ...]
+
+DESCRIPTION
+     The entr utility reads a list of files provided on STDIN and run the
+     supplied command if any of them change.
+
+EXAMPLES
+     To watch for changes in any Python file and run some tests:
+
+           $ find. -name *.py | entr ./test.sh
+
+LICENSE
+     ISC
