@@ -1,0 +1,40 @@
+.\"
+.\" Copyright (c) 2012 Eric Radman <ericshane@eradman.com>
+.\"
+.\" Permission to use, copy, modify, and distribute this software under ISC
+.\" license.
+.\"
+.Dd $Mdocdate: February 28 2011 $
+.Dt MR 1
+.Os
+.Sh NAME
+.Nm entr
+.Nd Run arbritrary commands when files change
+.Sh SYNOPSIS
+.Nm entr
+.Op Fl c
+.Op script
+.Ek
+.Op Ar args {} ...
+.Os
+.Sh DESCRIPTION
+The
+.Nm
+utility reads a list of files provided on STDIN and run the supplied command if
+any of them. change.
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl c
+Clear the screen before running the specified command
+.El
+.Pp
+If the string "{}" appears anywhere in the command arguments it will be replaced
+by the full pathname of the file that changed.
+.Os
+.Sh EXAMPLES
+To watch for changes in any Python file and run some tests:
+.Pp
+.Dl $ find . -name *.py | entr ./test.sh
+.Pp
+
+
