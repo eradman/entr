@@ -1,4 +1,4 @@
-CC = pcc
+CC = cc
 CFLAGS = -g
 CFLAGS+= -std=c99 -Wall -Werror
 

@@ -166,7 +166,6 @@ watch_loop(int kq, int once, char *argv[]) {
 			watch_file(kq, file);
 		}
 		if (ev.fflags & NOTE_WRITE ||
-		  ev.fflags & NOTE_TRUNCATE ||
 		  ev.fflags & NOTE_RENAME ||
 		  ev.fflags & NOTE_EXTEND) {
 			run_script(argv[1], argv+1);
