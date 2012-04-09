@@ -8,9 +8,8 @@ and run the supplied command if any of them change.
 Installation
 ------------
 
-    make
     make test
-    install entr $HOME/local/bin/
+    make install
 
 Usage
 -----
@@ -29,5 +28,6 @@ Platforms
 
 OpenBSD 5.0
 FreeBSD 9.0
+NetBSD 5.1
 
 [kqueue_2]: http://www.openbsd.org/cgi-bin/man.cgi?query=kqueue&apropos=0&sektion=0&manpath=OpenBSD+Current&format=html

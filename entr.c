@@ -18,6 +18,7 @@
 #include <sys/event.h>
 #include <sys/param.h>
 #include <sys/syslimits.h>
+#include <sys/resource.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -29,9 +30,8 @@
 
 /* data */
 
-#define MAX_FILES 1000
 #define _VNODE_FILTER NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND|NOTE_ATTRIB \
-	|NOTE_LINK|NOTE_RENAME|NOTE_REVOKE|NOTE_EXTEND
+	|NOTE_LINK|NOTE_RENAME|NOTE_REVOKE
 #define POLL_INTERVAL 100000
 #define MAX_POLL_ATTEMPTS 20
 
@@ -65,13 +65,20 @@ main(int argc, char *argv[])
 	/* set up pointers to real functions */
 	run_script = run_script_fork;
 
+	struct rlimit rl;
 	int kq;
 	int n_files;
-	watch_file_t *files[MAX_FILES];
+
+	/* raise soft limit */
+	getrlimit(RLIMIT_NOFILE, &rl);
+	rl.rlim_cur = rl.rlim_max;
+    setrlimit(RLIMIT_NOFILE, &rl);
+
+	watch_file_t *files[rl.rlim_max];
 
 	if ((kq = kqueue()) == -1)
 		err(1, "cannot create kqueue");
-	n_files = process_input(stdin, files, MAX_FILES);
+	n_files = process_input(stdin, files, rl.rlim_max);
 	for (int n=0; n<n_files; n++) {
 		watch_file(kq, files[n]);
 	}

@@ -1,8 +1,9 @@
+DESTDIR=${HOME}/local
 CC = cc
 CFLAGS = -g
-CFLAGS+= -std=c99 -Wall -Werror
+CFLAGS+= -std=c99 -Wall
 
-all: entr entr_spec
+all: entr
 
 test: entr_spec entr
 	@echo "Running tests"
@@ -21,3 +22,16 @@ entr_spec: entr_spec.c entr.c
 
 clean:
 	rm -rf entr_one entr entr_spec *.o
+
+install:
+	@echo "Installing"
+	@mkdir -p ${DESTDIR}/bin
+	cp entr ${DESTDIR}/bin/
+	@mkdir -p ${DESTDIR}/man1
+	cp entr.1 ${DESTDIR}/man1/
+
+uninstall:
+	@echo "Uninstalling"
+	rm ${DESTDIR}/bin/entr
+	rm ${DESTDIR}/man1/dwm.1
+

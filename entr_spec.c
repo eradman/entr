@@ -51,7 +51,7 @@ static int readfn(void *handler, char *buf, int size)
 }
 
 static int writefn() { return 0; }
-static fpos_t seekfn() { return 0; }
+static fpos_t seekfn() { fpos_t pos; return pos; }
 static int closefn() { return 0; }
 
 FILE *fmemopen(void *buf, size_t size, const char *mode)
