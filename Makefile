@@ -24,14 +24,13 @@ clean:
 	rm -rf entr entr_spec *.o
 
 install:
-	@echo "Installing"
 	@mkdir -p ${DESTDIR}/bin
-	cp entr ${DESTDIR}/bin/
-	@mkdir -p ${DESTDIR}/man1
-	cp entr.1 ${DESTDIR}/man1/
+	@mkdir -p ${DESTDIR}/man/man1
+	install entr ${DESTDIR}/bin/
+	install entr.1 ${DESTDIR}/man/man1/
 
 uninstall:
 	@echo "Uninstalling"
 	rm ${DESTDIR}/bin/entr
-	rm ${DESTDIR}/man1/dwm.1
+	rm ${DESTDIR}/man/man1/entr.1
 
