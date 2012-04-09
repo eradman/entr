@@ -9,7 +9,7 @@ Installation
 ------------
 
     make test
-    make install
+    PREFIX=$HOME/local make install
 
 Usage
 -----
@@ -26,9 +26,9 @@ To watch for changes in any Python file and run some tests:
 Platforms
 ---------
 
-OpenBSD 5.0
-FreeBSD 9.0
-NetBSD 5.1
-DragonFly 3.0
+* OpenBSD 5.0
+* FreeBSD 9.0
+* NetBSD 5.1
+* DragonFly 3.0
 
 [kqueue_2]: http://www.openbsd.org/cgi-bin/man.cgi?query=kqueue&apropos=0&sektion=0&manpath=OpenBSD+Current&format=html

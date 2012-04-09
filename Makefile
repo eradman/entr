@@ -1,5 +1,5 @@
-DESTDIR=${HOME}/local
-CC = cc
+PREFIX ?= /usr/local
+CC ?= cc
 CFLAGS = -g
 CFLAGS+= -std=c99 -Wall
 
@@ -24,13 +24,13 @@ clean:
 	rm -rf entr entr_spec *.o
 
 install:
-	@mkdir -p ${DESTDIR}/bin
-	@mkdir -p ${DESTDIR}/man/man1
-	install entr ${DESTDIR}/bin/
-	install entr.1 ${DESTDIR}/man/man1/
+	@mkdir -p ${PREFIX}/bin
+	@mkdir -p ${PREFIX}/man/man1
+	install entr ${PREFIX}/bin/
+	install entr.1 ${PREFIX}/man/man1/
 
 uninstall:
 	@echo "Uninstalling"
-	rm ${DESTDIR}/bin/entr
-	rm ${DESTDIR}/man/man1/entr.1
+	rm ${PREFIX}/bin/entr
+	rm ${PREFIX}/man/man1/entr.1
 

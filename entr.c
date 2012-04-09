@@ -61,6 +61,7 @@ main(int argc, char *argv[])
 {
 	if ((*test_runner_main))
 		return(test_runner_main(argc, argv));
+	if (argc < 2) usage();
 
 	/* set up pointers to real functions */
 	run_script = run_script_fork;
@@ -90,7 +91,7 @@ void
 usage()
 {
 	extern char *__progname;
-	fprintf(stderr, "usage: %s [-c] [-q] [-I replstr] script [args]\n",
+	fprintf(stderr, "usage: ls file1 file2 ... | %s script [args]\n",
 	    __progname);
 	exit(1);
 }
