@@ -21,7 +21,7 @@ entr_spec: entr_spec.c entr.c
 	@chmod +x $@
 
 clean:
-	rm -rf entr_one entr entr_spec *.o
+	rm -rf entr entr_spec *.o
 
 install:
 	@echo "Installing"

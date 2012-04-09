@@ -171,9 +171,9 @@ watch_loop(int kq, int once, char *argv[]) {
 			if (close(file->fd) == -1)
 				err(errno, "unable to close file");
 			watch_file(kq, file);
+			run_script(argv[1], argv+1);
 		}
-		if (ev.fflags & NOTE_WRITE ||
-		  ev.fflags & NOTE_RENAME ||
+		else if (ev.fflags & NOTE_WRITE ||
 		  ev.fflags & NOTE_EXTEND) {
 			run_script(argv[1], argv+1);
 		}
