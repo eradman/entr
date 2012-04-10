@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <err.h>
 #include <errno.h>
+#include <sys/wait.h>
 
 /* data */
 
@@ -115,15 +116,18 @@ process_input(FILE *file, watch_file_t *files[], int max_files) {
 void
 run_script_fork(char *filename, char *argv[]) {
 	int pid;
+	int status;
 
 	pid = fork();
+	if (pid == -1)
+		err(errno, "can't fork");
+
 	if (pid == 0) {
 		execv(filename, argv);
-		/*  not get here */
 		err(1, "exec %s failed", filename);
 	}
-	else if (pid == -1)
-		err(errno, "can't fork");
+
+	waitpid(pid, &status, 0);
 }
 
 void
@@ -150,6 +154,7 @@ watch_loop(int kq, int once, char *argv[]) {
 	struct kevent evList[32];
 	int nev;
 	watch_file_t *file;
+	struct timespec t = { 0, 100 };
 
 	do {
 		nev = kevent(kq, NULL, 0, evList, 32, NULL);
@@ -166,12 +171,12 @@ watch_loop(int kq, int once, char *argv[]) {
 				if (close(file->fd) == -1)
 					err(errno, "unable to close file");
 				watch_file(kq, file);
-				run_script(argv[1], argv+1);
-				break;
 			}
-			else if (evList[i].fflags & NOTE_WRITE || evList[i].fflags & NOTE_EXTEND) {
+			if (evList[i].fflags & NOTE_DELETE ||
+				evList[i].fflags & NOTE_WRITE || evList[i].fflags & NOTE_EXTEND) {
 				run_script(argv[1], argv+1);
-				break;
+				/* clear all events */
+				(void) kevent(kq, NULL, 0, evList, 32, &t);
 			}
 		}
 	} while(!once);

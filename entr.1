@@ -30,11 +30,22 @@ Clear the screen before running the specified command
 .Pp
 If the string "{}" appears anywhere in the command arguments it will be replaced
 by the full pathname of the file that changed.
+.Pp
+.Nm
+always waits for the child processes to finish before responding to file change
+events so that changes to a group of files does not run the script multiple
+times.
 .Os
 .Sh EXAMPLES
 To watch for changes in any Python file and run some tests:
 .Pp
-.Dl $ find . -name *.py | entr ./test.sh
+.Dl $ ls *.py | entr ./test.sh
 .Pp
-
-
+Run tests if any file in the current directory changes
+.Pp
+.Dl $ echo '.' | entr ./test.sh
+.Pp
+Recompile if header files change
+.Pp
+.Dl $ find /usr/local/include -name '*.h' | entr `which make`
+.Pp
