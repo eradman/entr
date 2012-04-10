@@ -30,11 +30,6 @@
 
 /* data */
 
-#define _VNODE_FILTER NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND|NOTE_ATTRIB \
-	|NOTE_LINK|NOTE_RENAME|NOTE_REVOKE
-#define POLL_INTERVAL 100000
-#define MAX_POLL_ATTEMPTS 20
-
 struct watch_file {
 	char *fn;
 	int fd;
@@ -133,50 +128,51 @@ run_script_fork(char *filename, char *argv[]) {
 
 void
 watch_file(int kq, watch_file_t *file) {
-	struct kevent ev;
+	struct kevent evSet;
 
-	for (int n=0; n < MAX_POLL_ATTEMPTS; n++) {
+	for (int n=0; n < 20; n++) {
 		file->fd = open(file->fn, O_RDONLY);
-		if (file->fd == -1) usleep(POLL_INTERVAL);
+		if (file->fd == -1) usleep(100000);
 		else break;
 	}
 	
 	if (file->fd == -1)
 		err(errno, "cannot open `%s'", file->fn);
 
-	EV_SET(&ev, file->fd, EVFILT_VNODE, EV_ADD | EV_ENABLE | EV_CLEAR,
-		_VNODE_FILTER, 0, file);
-	if (kevent(kq, &ev, 1, NULL, 0, NULL) == -1)
+	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR,
+		NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND, 0, file);
+	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 		err(1, "failed to register VNODE event list");
 }
 
 void
 watch_loop(int kq, int once, char *argv[]) {
-	struct kevent ev;
+	struct kevent evList[32];
 	int nev;
 	watch_file_t *file;
 
-	EV_SET(&ev, 0, EVFILT_VNODE, 0x0, _VNODE_FILTER, 0, NULL);
-
 	do {
-		nev = kevent(kq, NULL, 0, &ev, 10 /* nevents */, NULL);
-	#ifdef DEBUG
-		if (ev.fflags)
-			printf("event 0x%x\n", ev.fflags);
-	#endif
-		file = (watch_file_t *)ev.udata;
+		nev = kevent(kq, NULL, 0, evList, 32, NULL);
 		if (nev == -1)
 			err(1, "kevent error");
-		if (ev.fflags & NOTE_DELETE) {
-			/* close will clear the kqueue event as well */
-			if (close(file->fd) == -1)
-				err(errno, "unable to close file");
-			watch_file(kq, file);
-			run_script(argv[1], argv+1);
-		}
-		else if (ev.fflags & NOTE_WRITE ||
-		  ev.fflags & NOTE_EXTEND) {
-			run_script(argv[1], argv+1);
+		for (int i=0; i<nev; i++) {
+			#ifdef DEBUG
+			if (ev.fflags)
+				printf("event 0x%x\n", evList[i].fflags);
+			#endif
+			file = (watch_file_t *)evList[i].udata;
+			if (evList[i].fflags & NOTE_DELETE) {
+				/* close will clear the kqueue event as well */
+				if (close(file->fd) == -1)
+					err(errno, "unable to close file");
+				watch_file(kq, file);
+				run_script(argv[1], argv+1);
+				break;
+			}
+			else if (evList[i].fflags & NOTE_WRITE || evList[i].fflags & NOTE_EXTEND) {
+				run_script(argv[1], argv+1);
+				break;
+			}
 		}
 	} while(!once);
 }

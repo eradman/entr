@@ -50,8 +50,12 @@ static int readfn(void *handler, char *buf, int size)
 	return size;
 }
 
-static int writefn() { return 0; }
+#ifdef __NetBSD__
 static fpos_t seekfn() { fpos_t pos; return pos; }
+#else
+static fpos_t seekfn() { return 0; }
+#endif
+static int writefn() { return 0; }
 static int closefn() { return 0; }
 
 FILE *fmemopen(void *buf, size_t size, const char *mode)
