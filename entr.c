@@ -133,7 +133,7 @@ run_script_fork(char *filename, char *argv[]) {
 		err(errno, "can't fork");
 
 	if (pid == 0) {
-		execv(filename, argv);
+		execvp(filename, argv);
 		err(1, "exec %s failed", filename);
 	}
 

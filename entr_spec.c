@@ -130,8 +130,8 @@ int process_input_01() {
 	return 0;
 }
 
-/* delete file monitored by kqueue */
 int watch_fd_01() {
+	/* delete file monitored by kqueue */
 	int kq;
 	watch_file_t file;
 	char *msg = "0123456789\n";
@@ -147,12 +147,11 @@ int watch_fd_01() {
 	pthread_create(&pth, NULL, unlink_tmp_thread, &file);
 	watch_loop(kq, 1, argv);
 	pthread_join(pth, NULL);
-	//_assert(strcmp(__exec_filename, "prog") == 0);
-	//_assert(strcmp(__exec_argv[0], "prog") == 0);
-	//_assert(strcmp(__exec_argv[1], "arg1") == 0);
-	//_assert(strcmp(__exec_argv[2], "arg2") == 0);
+	_assert(strcmp(__exec_filename, "prog") == 0);
+	_assert(strcmp(__exec_argv[0], "prog") == 0);
+	_assert(strcmp(__exec_argv[1], "arg1") == 0);
+	_assert(strcmp(__exec_argv[2], "arg2") == 0);
 	close_tmp(&file);
-
 	return 0;
 }
 
@@ -161,6 +160,7 @@ int watch_fd_01() {
 int all_tests() {
 	_verify(process_input_01);
 	_verify(watch_fd_01);
+
 	return 0;
 }
 
@@ -168,7 +168,6 @@ int test_main(int argc, char *argv[]) {
 	int result = all_tests();
 	if (result == 0)
 		printf("%d tests and %d assertions PASSED\n", tests_run, assertions);
-
 	return result != 0;
 }
 
