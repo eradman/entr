@@ -19,6 +19,7 @@
 #include <sys/param.h>
 #include <sys/syslimits.h>
 #include <sys/resource.h>
+#include <sys/wait.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -27,7 +28,7 @@
 #include <fcntl.h>
 #include <err.h>
 #include <errno.h>
-#include <sys/wait.h>
+#include <signal.h>
 
 /* data */
 
@@ -49,6 +50,8 @@ int process_input(FILE *, watch_file_t *[], int);
 void run_script_fork(char *, char *[]);
 void watch_file(int, watch_file_t *);
 void watch_loop(int, int, char *[]);
+void handle_sigint(int sig);
+
 
 /* main */
 
@@ -65,6 +68,13 @@ main(int argc, char *argv[])
 	struct rlimit rl;
 	int kq;
 	int n_files;
+	struct sigaction act;
+
+	/* Set up signal handlers */
+	act.sa_flags = 0;
+	act.sa_handler = handle_sigint;
+	if (sigemptyset(&act.sa_mask) & (sigaction(SIGINT, &act, NULL) != 0))
+		err(1, "Failed to set SIGINT handler");
 
 	/* raise soft limit */
 	getrlimit(RLIMIT_NOFILE, &rl);
@@ -147,6 +157,12 @@ watch_file(int kq, watch_file_t *file) {
 		NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND, 0, file);
 	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 		err(1, "failed to register VNODE event list");
+}
+
+void
+handle_sigint(int sig) {
+	/* normally a user will exit this utility by hitting ^C */
+	exit(0);
 }
 
 void

@@ -1,40 +1,46 @@
 .\"
 .\" Copyright (c) 2012 Eric Radman <ericshane@eradman.com>
 .\"
-.\" Permission to use, copy, modify, and distribute this software under ISC
-.\" license.
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
 .\"
-.Dd $Mdocdate: February 28 2011 $
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate: April 10 2012 $
 .Dt MR 1
 .Os
 .Sh NAME
 .Nm entr
-.Nd Run arbitrary commands when files change
+.Nd run arbitrary commands when files change
 .Sh SYNOPSIS
 .Nm entr
-.Op Fl c
-.Op script
-.Ek
-.Op Ar args {} ...
+.Ar utility
+.Op Ar arguments ...
 .Os
 .Sh DESCRIPTION
 The
 .Nm
 utility reads a list of files provided on STDIN and run the supplied command if
-any of them change.
-The options are as follows:
-.Bl -tag -width Ds
-.It Fl c
-Clear the screen before running the specified command
-.El
-.Pp
-If the string "{}" appears anywhere in the command arguments it will be replaced
-by the full pathname of the file that changed.
+any of them change. The options are as follows:
 .Pp
 .Nm
-always waits for the child processes to finish before responding to file change
-events so that changes to a group of files does not run the script multiple
-times.
+always waits for the child processes to finish before running the
+.Nm utility
+again.
+.Os
+.Sh EXIT STATUS
+.Nm
+does not normally return, but it will exit with a value of 0 when returning from
+one-shot mode or if the signal
+.Dv SIGINT
+was received.
 .Os
 .Sh EXAMPLES
 To watch for changes in any Python file and run some tests:
