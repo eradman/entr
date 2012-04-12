@@ -1,6 +1,5 @@
 PREFIX ?= /usr/local
 CC ?= cc
-CFLAGS = -g
 CFLAGS+= -std=c99 -Wall
 
 all: entr
