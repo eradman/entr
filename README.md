@@ -9,14 +9,14 @@ Installation
 ------------
 
     make test
-    PREFIX=$HOME/local make install
+    PREFIX=$HOME/local/ make install
 
 Usage
 -----
 
 Run make when a source file changes:
 
-    ls *.[hc] | entr `which make`
+    ls *.[hc] | entr make test
 
 
 To watch for changes in any Python file and run some tests:
@@ -32,3 +32,4 @@ Platforms
 * DragonFly 3.0
 
 [kqueue_2]: http://www.openbsd.org/cgi-bin/man.cgi?query=kqueue&apropos=0&sektion=0&manpath=OpenBSD+Current&format=html
+
