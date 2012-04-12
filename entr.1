@@ -25,19 +25,19 @@
 .Op Ar arguments ...
 .Os
 .Sh DESCRIPTION
-The
 .Nm
-utility reads a list of files provided on STDIN and run the supplied command if
-any of them change. The options are as follows:
-.Pp
-.Nm
-always waits for the child processes to finish before running the
+reads a list of files provided on STDIN and executes the supplied
 .Nm utility
-again.
+if any of them change.
+.Nm
+waits for the child process to finish before responding to subsequent file
+system events.
 .Os
 .Sh EXIT STATUS
+The
 .Nm
-does not normally return, but it will exit with a value of 0 if the signal
+utility does not normally return, but it will exit with a value of 0 if the
+signal
 .Dv SIGINT
 was received.
 .Os
