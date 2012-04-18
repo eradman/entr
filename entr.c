@@ -17,9 +17,9 @@
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/param.h>
-#include <sys/syslimits.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
+#include <limits.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -42,6 +42,19 @@ typedef struct watch_file watch_file_t;
 
 int (*test_runner_main)(int, char**);
 void (*run_script)(char *, char *[]);
+
+
+/* Linux hacks */
+
+#if defined(__linux)
+#define strlcpy _strlcpy
+static size_t
+strlcpy(char *to, const char *from, int l) {
+    memccpy(to, from, '\0', l);
+    to[l-1] = '\0';
+    return l - 1;
+}
+#endif
 
 /* forwards */
 
@@ -69,6 +82,7 @@ main(int argc, char *argv[])
 	int kq;
 	int n_files;
 	struct sigaction act;
+    int i;
 
 	/* Set up signal handlers */
 	act.sa_flags = 0;
@@ -86,8 +100,8 @@ main(int argc, char *argv[])
 	if ((kq = kqueue()) == -1)
 		err(1, "cannot create kqueue");
 	n_files = process_input(stdin, files, rl.rlim_max);
-	for (int n=0; n<n_files; n++) {
-		watch_file(kq, files[n]);
+	for (i=0; i<n_files; i++) {
+		watch_file(kq, files[i]);
 	}
 	watch_loop(kq, 0, argv);
 	return 0;
@@ -143,8 +157,9 @@ run_script_fork(char *filename, char *argv[]) {
 void
 watch_file(int kq, watch_file_t *file) {
 	struct kevent evSet;
+    int i;
 
-	for (int n=0; n < 20; n++) {
+	for (i=0; i < 20; i++) {
 		file->fd = open(file->fn, O_RDONLY);
 		if (file->fd == -1) usleep(100000);
 		else break;
@@ -156,7 +171,8 @@ watch_file(int kq, watch_file_t *file) {
 	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR,
 		NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND, 0, file);
 	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
-		err(1, "failed to register VNODE event list");
+        if (strcmp(strerror(errno), "Success") != 0)
+		    err(1, "failed to register VNODE event list");
 }
 
 void
@@ -171,12 +187,13 @@ watch_loop(int kq, int once, char *argv[]) {
 	int nev;
 	watch_file_t *file;
 	struct timespec t = { 0, 100 };
+    int i;
 
 	do {
 		nev = kevent(kq, NULL, 0, evList, 32, NULL);
 		if (nev == -1)
 			err(1, "kevent error");
-		for (int i=0; i<nev; i++) {
+		for (i=0; i<nev; i++) {
 			#ifdef DEBUG
 			if (ev.fflags)
 				printf("event 0x%x\n", evList[i].fflags);

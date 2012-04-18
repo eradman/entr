@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <stdio.h>
 
 #include "entr.c"
 
@@ -43,13 +44,7 @@ struct fmem {
 };
 typedef struct fmem fmem_t;
 
-static int readfn(void *handler, char *buf, int size)
-{
-	fmem_t *mem = handler;
-	bcopy(mem->buffer, buf, size);
-	return size;
-}
-
+#ifndef __linux__
 #ifdef __NetBSD__
 static fpos_t seekfn() { fpos_t pos; return pos; }
 #else
@@ -58,6 +53,14 @@ static fpos_t seekfn() { return 0; }
 static int writefn() { return 0; }
 static int closefn() { return 0; }
 
+static int readfn(void *handler, char *buf, int size)
+{
+	fmem_t *mem = handler;
+	bcopy(mem->buffer, buf, size);
+	return size;
+}
+
+
 FILE *fmemopen(void *buf, size_t size, const char *mode)
 {
 	fmem_t *mem = (fmem_t *) malloc(sizeof(fmem_t));
@@ -65,6 +68,7 @@ FILE *fmemopen(void *buf, size_t size, const char *mode)
 	return funopen(mem, readfn, writefn, seekfn, closefn);
 }
 #endif
+#endif /* __linux__ */
 
 /* utility */
 

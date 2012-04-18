@@ -1,15 +1,33 @@
 Event Notify Test Runner
 ========================
 
-**entr** - a utility for running arbitrary commands when files change. Uses
+`entr` - a utility for running arbitrary commands when files change. Uses
 [kqueue(2)][kqueue_2] to avoid polling. Reads a list of files provided on STDIN
 and runs the supplied command if any of them are modified.
 
-Installation
-------------
+Installation (BSD)
+------------------
 
     make test
-    PREFIX=$HOME/local/ make install
+    PREFIX=$HOME/local make install
+
+Installation (Linux)
+--------------------
+
+* Get & install [libkqueue][libkqueue]
+
+    tar -zxvf libkqueue-1.0.5.tar.gz
+    cd libkqueue-1.0.5
+    ./configure
+    make
+    make rpm
+    sudo rpm -ivh pkg/libkqueue-1.0-1.x86_64.rpm�
+    sudo ln -s /usr/include/kqueue/sys/event.h /usr/include/sys/event.h
+
+* Build `entr`
+
+    CFLAGS="-D_GNU_SOURCE" LDFLAGS="-lkqueue -lpthread" make test 
+    PREFIX=$HOME/local make install
 
 Examples
 --------
@@ -31,6 +49,7 @@ Supported Platforms
 * NetBSD 5.1
 * DragonFly 3.0
 * Mac OS 10.6
+* RHEL 5.7
 
 Implementation Notes
 --------------------
@@ -48,11 +67,13 @@ new file is renamed a retry loop is employed.
 Releases History
 ----------------
 
-1.1 Support for Mac OS added. _2012-04-12_  
+1.2 Support for Linux via [libkqueue][libkqueue]
+
+1.1 Support for Mac OS added. _2012-04-17_  
 
 1.0 Tested on all the major BSDs, included in OpenBSD 5.2 ports under
 `sysutils/entr`. _2012-04-12_  
 
 
 [kqueue_2]: http://www.openbsd.org/cgi-bin/man.cgi?query=kqueue&apropos=0&sektion=0&manpath=OpenBSD+Current&format=html
-
+[libkqueue]: http://mark.heily.com/project/libkqueue
