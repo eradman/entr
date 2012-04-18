@@ -48,9 +48,10 @@ new file is renamed a retry loop is employed.
 Releases History
 ----------------
 
-1.1 Support for Mac OS added. _2012-04-12_
+1.1 Support for Mac OS added. _2012-04-12_  
+
 1.0 Tested on all the major BSDs, included in OpenBSD 5.2 ports under
-`sysutils/entr`. _2012-04-12_
+`sysutils/entr`. _2012-04-12_  
 
 
 [kqueue_2]: http://www.openbsd.org/cgi-bin/man.cgi?query=kqueue&apropos=0&sektion=0&manpath=OpenBSD+Current&format=html
