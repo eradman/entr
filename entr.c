@@ -108,7 +108,7 @@ process_input(FILE *file, watch_file_t *files[], int max_files) {
 	int line = 0;
 	int len;
 
-	while (fgets(buf, PATH_MAX, file) != NULL && line < max_files) {
+	while (fgets(buf, PATH_MAX, file)) {
 		if (buf[0] == '\0') {
 			continue;
 		}
@@ -118,7 +118,7 @@ process_input(FILE *file, watch_file_t *files[], int max_files) {
 		files[line] = malloc(sizeof(watch_file_t));
 		files[line]->fn = malloc(PATH_MAX);
 		strlcpy(files[line]->fn, buf, PATH_MAX);
-		line++;
+		if (++line >= max_files) break;
 	}
 	return line;
 }
