@@ -41,7 +41,7 @@ Build entr
     CFLAGS="-D_GNU_SOURCE" LDFLAGS="-lkqueue -lpthread" make test 
     PREFIX=$HOME/local make install
 
-Exples
+Examples
 --------
 
 Run `make test` when a source file changes:
@@ -71,11 +71,17 @@ when they're submitted, but we don't want to run the utility one for each file
 that is modified. To combat this `entr` ignores events until the subprocess
 ends.
 
-
 Some applications attempt to make atomic writes by writing a new file and then
 deleting the original. `entr` deals with this by closing the old file descriptor
 and reopening it using the same pathname. Since there may be a delay while the
 new file is renamed a retry loop is employed.
+
+Related Projects
+----------------
+
+[guard][guard] - command line tool to easily handle events on file system
+modifications  
+[watchr][watchr] - Modern continuous testing (flexible alternative to Autotest)  
 
 Releases History
 ----------------
@@ -90,3 +96,5 @@ Releases History
 
 [kqueue_2]: http://www.openbsd.org/cgi-bin/man.cgi?query=kqueue&apropos=0&sektion=0&manpath=OpenBSD+Current&format=html
 [libkqueue]: http://mark.heily.com/book/export/html/52
+[guard]: https://github.com/guard/guard
+[watchr]: https://github.com/mynyml/watchr
