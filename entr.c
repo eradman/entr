@@ -100,15 +100,13 @@ main(int argc, char *argv[])
 
 	watch_file_t *files[rl.rlim_max];
 
-	/* set up fifo */
-	set_fifo(argv);
-
 	if ((kq = kqueue()) == -1)
 		err(1, "cannot create kqueue");
 	n_files = process_input(stdin, files, rl.rlim_max);
 	for (i=0; i<n_files; i++) {
 		watch_file(kq, files[i]);
 	}
+	set_fifo(argv); /* in FIFO mode will block until reader connects */
 	watch_loop(kq, 0, argv);
 
 	return 0;
@@ -221,11 +219,12 @@ watch_loop(int kq, int once, char *argv[]) {
 		if (nev == -1)
 			err(1, "kevent error");
 		for (i=0; i<nev; i++) {
-			#ifdef DEBUG
-			if (ev.fflags)
-				printf("event 0x%x\n", evList[i].fflags);
-			#endif
 			file = (watch_file_t *)evList[i].udata;
+			#ifdef DEBUG
+			printf("event 0x%x\n", evList[i].fflags);
+			if (evList[i].fflags)
+				printf("%s,%d\n", file->fn, file->fd); 
+			#endif
 			if (evList[i].fflags & NOTE_DELETE) {
 				/* close will clear the kqueue event as well */
 				if (close(file->fd) == -1)
