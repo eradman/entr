@@ -118,7 +118,9 @@ void
 usage()
 {
 	extern char *__progname;
-	fprintf(stderr, "usage: ls file1 file2 ... | %s script [args]\n",
+	fprintf(stderr, "usage: %s script [args] < filenames\n",
+	    __progname);
+	fprintf(stderr, "       %s +fifo < filenames\n",
 	    __progname);
 	exit(1);
 }
@@ -199,8 +201,9 @@ watch_file(int kq, watch_file_t *file) {
 
 void
 handle_sigint(int sig) {
-	/* normally a user will exit this utility by hitting ^C */
+	/* normally a user will exit this utility by hitting Ctrl-C */
 	if (fifo.fd)
+		close(fifo.fd);
 		unlink(fifo.fn);
 	exit(0);
 }
@@ -239,6 +242,7 @@ watch_loop(int kq, int once, char *argv[]) {
 				else {
 					write(fifo.fd, file->fn, strlen(file->fn));
 					write(fifo.fd, "\n", 2);
+					fsync(fifo.fd);
 				}
 			}
 		}

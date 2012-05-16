@@ -43,17 +43,23 @@ Build entr
 Examples
 --------
 
-Run `make test` when a source file changes:
+Recompile if header files change
 
-    ls *.[hc] | entr make test
+    $ find. -name '*.h' | entr make
 
-To watch for changes in any Python file and run some tests:
+Run tests if any file in the current directory changes, only printing
+STDERR
 
-    find . -name *.py | entr ./test.sh
+    $ echo '.' | entr sh -c './test.sh > /dev/null'
 
-Convert file, sending output of to a file  
+Convert any altered Markdown in the current directory to HTML using a
+FIFO
 
-    echo README.md | entr sh -c 'md2html README.md > README.html'
+    $ ls *.md | entr +notify &
+    $ while read F
+    > do
+    >   markdown2html $F
+    > done < notify
 
 Supported Platforms
 -------------------
