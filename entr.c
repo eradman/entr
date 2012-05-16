@@ -19,8 +19,9 @@
 #include <sys/param.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
-#include <limits.h>
+#include <sys/stat.h>
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -42,6 +43,7 @@ typedef struct watch_file watch_file_t;
 
 int (*test_runner_main)(int, char**);
 void (*run_script)(char *, char *[]);
+watch_file_t fifo;
 
 
 /* Linux hacks */
@@ -60,6 +62,7 @@ strlcpy(char *to, const char *from, int l) {
 
 void usage();
 int process_input(FILE *, watch_file_t *[], int);
+int set_fifo(char *[]);
 void run_script_fork(char *, char *[]);
 void watch_file(int, watch_file_t *);
 void watch_loop(int, int, char *[]);
@@ -97,6 +100,9 @@ main(int argc, char *argv[])
 
 	watch_file_t *files[rl.rlim_max];
 
+	/* set up fifo */
+	set_fifo(argv);
+
 	if ((kq = kqueue()) == -1)
 		err(1, "cannot create kqueue");
 	n_files = process_input(stdin, files, rl.rlim_max);
@@ -104,6 +110,7 @@ main(int argc, char *argv[])
 		watch_file(kq, files[i]);
 	}
 	watch_loop(kq, 0, argv);
+
 	return 0;
 }
 
@@ -137,6 +144,21 @@ process_input(FILE *file, watch_file_t *files[], int max_files) {
 	return line;
 }
 
+int
+set_fifo(char *argv[]) {
+	if (argv[1][0] == (int)'+') {
+		fifo.fn = argv[1]+1;
+		if (mkfifo(fifo.fn, S_IRUSR| S_IWUSR) == -1)
+			err(1, "mkfifo '%s' failed", fifo.fn);
+		if ((fifo.fd = open(fifo.fn, O_WRONLY, 0)) == -1)
+			err(1, "open fifo '%s' failed", fifo.fn);
+		return 1;
+	}
+
+	memset(&fifo, 0, sizeof(fifo));
+	return 0;
+}
+
 void
 run_script_fork(char *filename, char *argv[]) {
 	int pid;
@@ -148,7 +170,7 @@ run_script_fork(char *filename, char *argv[]) {
 
 	if (pid == 0) {
 		execvp(filename, argv);
-		err(1, "exec %s failed", filename);
+		err(1, "exec %s", filename);
 	}
 
 	waitpid(pid, &status, 0);
@@ -178,6 +200,8 @@ watch_file(int kq, watch_file_t *file) {
 void
 handle_sigint(int sig) {
 	/* normally a user will exit this utility by hitting ^C */
+	if (fifo.fd)
+		unlink(fifo.fn);
 	exit(0);
 }
 
@@ -207,9 +231,15 @@ watch_loop(int kq, int once, char *argv[]) {
 			}
 			if (evList[i].fflags & NOTE_DELETE ||
 				evList[i].fflags & NOTE_WRITE || evList[i].fflags & NOTE_EXTEND) {
-				run_script(argv[1], argv+1);
-				/* clear all events */
-				(void) kevent(kq, NULL, 0, evList, 32, &t);
+				if (!fifo.fd) {
+					run_script(argv[1], argv+1);
+					/* clear all events */
+					(void) kevent(kq, NULL, 0, evList, 32, &t);
+				}
+				else {
+					write(fifo.fd, file->fn, strlen(file->fn));
+					write(fifo.fd, "\n", 2);
+				}
 			}
 		}
 	} while(!once);

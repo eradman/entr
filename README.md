@@ -20,7 +20,7 @@ Install libkqueue
 
 Build entr
 
-    CFLAGS="-D_GNU_SOURCE" LDFLAGS="-lkqueue -lpthread" make test 
+    CFLAGS="-D_GNU_SOURCE" LDFLAGS="-lkqueue" make test 
     PREFIX=$HOME/local make install
 
 Installation - Red Hat Linux
@@ -31,14 +31,13 @@ Get & install [libkqueue][libkqueue]
     tar -zxvf libkqueue-1.0.5.tar.gz
     cd libkqueue-1.0.5
     ./configure
-    make
-    make rpm
+    make && make rpm
     sudo rpm -ivh pkg/libkqueue-1.0-1.x86_64.rpm
     sudo ln -s /usr/include/kqueue/sys/event.h /usr/include/sys/event.h
 
 Build entr
 
-    CFLAGS="-D_GNU_SOURCE" LDFLAGS="-lkqueue -lpthread" make test 
+    CFLAGS="-D_GNU_SOURCE" LDFLAGS="-lkqueue" make test 
     PREFIX=$HOME/local make install
 
 Examples
@@ -48,10 +47,13 @@ Run `make test` when a source file changes:
 
     ls *.[hc] | entr make test
 
-
 To watch for changes in any Python file and run some tests:
 
     find . -name *.py | entr ./test.sh
+
+Convert file, sending output of to a file  
+
+    echo README.md | entr sh -c 'md2html README.md > README.html'
 
 Supported Platforms
 -------------------

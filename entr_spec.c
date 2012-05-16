@@ -159,11 +159,44 @@ int watch_fd_01() {
 	return 0;
 }
 
+int set_fifo_01() {
+	char fn[PATH_MAX];
+	char buf[1024];
+	int pid;
+	int fd;
+	int status;
+
+	strlcpy(fn, "+/tmp/entr_spec.XXXXXX", PATH_MAX);
+	mkstemp(fn);
+	static char *argv[] = { "me", "+fifo", NULL };
+	argv[1] = fn;
+
+	if ((pid = fork()) > 0) {
+		_assert(set_fifo(argv));
+		_assert(fifo.fd > 0);
+		write(fifo.fd, "ping", 4);
+		waitpid(pid, &status, 0);
+		_assert(status == 0);
+	}
+	else {
+		while ((fd = open(fn+1, O_RDONLY)) == -1);
+			usleep(100000);
+		_assert(read(fd, buf, 4) > 0);
+		buf[4] = 0;
+		_assert(strcmp(buf, "ping") == 0);
+		exit(0);
+	}
+	_assert(close(fifo.fd) == 0);
+	_assert(unlink(fn+1) == 0);
+	return 0;
+}
+
 /* main */
 
 int all_tests() {
 	_verify(process_input_01);
 	_verify(watch_fd_01);
+	_verify(set_fifo_01);
 
 	return 0;
 }

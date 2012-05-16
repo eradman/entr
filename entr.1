@@ -24,14 +24,21 @@
 .Ar utility
 .Op Ar arguments ...
 .Os
+.Nm entr
+.Ar +fifo
+.Os
 .Sh DESCRIPTION
 .Nm
-reads a list of files provided on STDIN and executes the supplied
+has two modes of operation; the first use reads a list of files provided on STDIN
+and executes the supplied
 .Nm utility
 if any of them change.
 .Nm
 waits for the child process to finish before responding to subsequent file
 system events.
+.Pp
+The second mode also reads a list of files provided on STDIN and writes out
+their filenames to a named pipe if they are modified.
 .Os
 .Sh EXIT STATUS
 The
@@ -43,11 +50,22 @@ was received.
 .Os
 .Sh EXAMPLES
 .Pp
-Run tests if any file in the current directory changes
-.Pp
-.Dl $ echo '.' | entr ./test.sh
-.Pp
 Recompile if header files change
 .Pp
-.Dl $ find . -name '*.h' | entr make regress
+.Dl $ find . -name '*.h' | entr make
 .Pp
+Run tests if any file in the current directory changes, only printing STDERR
+.Pp
+.Dl $ echo '.' | entr sh -c './test.sh > /dev/null'
+.Pp
+Convert any altered Markdown in the current directory to HTML using a FIFO
+.Pp
+.Dl $ ls *.md | entr +notify &
+.Dl $ cat notify | while read F;
+.Dl > do
+.Dl >   markdown2html $F
+.Dl > done
+.Os
+.Sh AUTHORS
+.Nm
+was written by Eric Radman <ericshane@eradman.com>.
