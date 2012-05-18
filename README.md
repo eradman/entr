@@ -9,7 +9,7 @@ Installation - BSD/Mac OS
 -------------------------
 
     make test
-    PREFIX=$HOME/local make install
+    make install
 
 Installation - Debian Linux
 ---------------------------
@@ -21,7 +21,7 @@ Install libkqueue
 Build entr
 
     CFLAGS="-D_GNU_SOURCE" LDFLAGS="-lkqueue" make test 
-    PREFIX=$HOME/local make install
+    make install
 
 Installation - Red Hat Linux
 ----------------------------
@@ -38,7 +38,7 @@ Get & install [libkqueue][libkqueue]
 Build entr
 
     CFLAGS="-D_GNU_SOURCE" LDFLAGS="-lkqueue" make test 
-    PREFIX=$HOME/local make install
+    make install
 
 Examples
 --------
@@ -69,7 +69,6 @@ Supported Platforms
 * NetBSD 5.1
 * DragonFly 3.0
 * Mac OS 10.6
-* RHEL 5.7
 
 Implementation Notes
 --------------------

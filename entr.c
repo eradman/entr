@@ -39,6 +39,10 @@ struct watch_file {
 };
 typedef struct watch_file watch_file_t;
 
+/* shortcuts */
+
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+
 /* globals */
 
 int (*test_runner_main)(int, char**);
@@ -52,9 +56,9 @@ watch_file_t fifo;
 #define strlcpy _strlcpy
 static size_t
 strlcpy(char *to, const char *from, int l) {
-    memccpy(to, from, '\0', l);
-    to[l-1] = '\0';
-    return l - 1;
+	memccpy(to, from, '\0', l);
+	to[l-1] = '\0';
+	return l - 1;
 }
 #endif
 
@@ -85,7 +89,7 @@ main(int argc, char *argv[])
 	int kq;
 	int n_files;
 	struct sigaction act;
-    int i;
+	int i;
 
 	/* Set up signal handlers */
 	act.sa_flags = 0;
@@ -95,14 +99,15 @@ main(int argc, char *argv[])
 
 	/* raise soft limit */
 	getrlimit(RLIMIT_NOFILE, &rl);
-	rl.rlim_cur = rl.rlim_max;
-    setrlimit(RLIMIT_NOFILE, &rl);
+	rl.rlim_cur = min(OPEN_MAX, rl.rlim_max);
+	if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
+		err(1, "setrlimit cannot set rlim_cur to %d", (int)rl.rlim_cur);
 
 	watch_file_t *files[rl.rlim_max];
 
 	if ((kq = kqueue()) == -1)
 		err(1, "cannot create kqueue");
-	n_files = process_input(stdin, files, rl.rlim_max);
+	n_files = process_input(stdin, files, rl.rlim_cur);
 	for (i=0; i<n_files; i++) {
 		watch_file(kq, files[i]);
 	}
@@ -117,25 +122,24 @@ usage()
 {
 	extern char *__progname;
 	fprintf(stderr, "usage: %s script [args] < filenames\n",
-	    __progname);
-	fprintf(stderr, "       %s +fifo < filenames\n",
-	    __progname);
+		__progname);
+	fprintf(stderr, "	   %s +fifo < filenames\n",
+		__progname);
 	exit(1);
 }
 
 int
 process_input(FILE *file, watch_file_t *files[], int max_files) {
 	char buf[PATH_MAX]; /* input is not arbitrary, we expect filenames */
+	char *p;
 	int line = 0;
-	int len;
 
 	while (fgets(buf, PATH_MAX, file)) {
-		if (buf[0] == '\0') {
+		if (buf[0] == '\0')
 			continue;
-		}
-		len = strlen(buf);
-		if (buf[len-1] == '\n')
-			buf[len-1] = '\0';
+		if ((p = strchr(buf, '\n')) == NULL)
+			err(1, "input line too long");
+		*p = '\0';
 		files[line] = malloc(sizeof(watch_file_t));
 		files[line]->fn = malloc(PATH_MAX);
 		strlcpy(files[line]->fn, buf, PATH_MAX);
@@ -179,7 +183,7 @@ run_script_fork(char *filename, char *argv[]) {
 void
 watch_file(int kq, watch_file_t *file) {
 	struct kevent evSet;
-    int i;
+	int i;
 
 	for (i=0; i < 20; i++) {
 		file->fd = open(file->fn, O_RDONLY);
@@ -193,8 +197,8 @@ watch_file(int kq, watch_file_t *file) {
 	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR,
 		NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND, 0, file);
 	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
-        if (strcmp(strerror(errno), "Success") != 0)
-		    err(1, "failed to register VNODE event list");
+		if (strcmp(strerror(errno), "Success") != 0)
+			err(1, "failed to register VNODE event list");
 }
 
 void
@@ -212,7 +216,7 @@ watch_loop(int kq, int once, char *argv[]) {
 	int nev;
 	watch_file_t *file;
 	struct timespec t = { 0, 100 };
-    int i;
+	int i;
 
 	do {
 		nev = kevent(kq, NULL, 0, evList, 32, NULL);
@@ -222,8 +226,7 @@ watch_loop(int kq, int once, char *argv[]) {
 			file = (watch_file_t *)evList[i].udata;
 			#ifdef DEBUG
 			printf("event 0x%x\n", evList[i].fflags);
-			if (evList[i].fflags)
-				printf("%s,%d\n", file->fn, file->fd); 
+			printf("%s,%d\n", file->fn, file->fd); 
 			#endif
 			if (evList[i].fflags & NOTE_DELETE) {
 				/* close will clear the kqueue event as well */
