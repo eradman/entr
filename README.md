@@ -93,6 +93,8 @@ modifications
 Releases History
 ----------------
 
+1.3 New FIFO mode and better support of Mac OS _2012-05-17_
+
 1.2 Support for Linux via [libkqueue][libkqueue] _2012-04-26_
 
 1.1 Support for Mac OS added. _2012-04-17_  

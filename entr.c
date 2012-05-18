@@ -99,7 +99,7 @@ main(int argc, char *argv[])
 
 	/* raise soft limit */
 	getrlimit(RLIMIT_NOFILE, &rl);
-	rl.rlim_cur = min(OPEN_MAX, rl.rlim_max);
+	rl.rlim_cur = min(sysconf(_SC_OPEN_MAX), rl.rlim_max);
 	if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
 		err(1, "setrlimit cannot set rlim_cur to %d", (int)rl.rlim_cur);
 
