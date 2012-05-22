@@ -93,6 +93,8 @@ modifications
 Releases History
 ----------------
 
+1.4 New regression tests and better Linux support _2012-05-22_
+
 1.3 New FIFO mode and better support of Mac OS _2012-05-17_
 
 1.2 Support for Linux via [libkqueue][libkqueue] _2012-04-26_
