@@ -198,7 +198,7 @@ watch_file(int kq, watch_file_t *file) {
 		NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND, 0, file);
 	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 		if (strcmp(strerror(errno), "Success") != 0)
-			err(1, "failed to register VNODE event list");
+			err(1, "failed to register VNODE event");
 }
 
 void
@@ -212,6 +212,7 @@ handle_sigint(int sig) {
 
 void
 watch_loop(int kq, int once, char *argv[]) {
+	struct kevent evSet;
 	struct kevent evList[32];
 	int nev;
 	watch_file_t *file;
@@ -224,16 +225,6 @@ watch_loop(int kq, int once, char *argv[]) {
 			err(1, "kevent error");
 		for (i=0; i<nev; i++) {
 			file = (watch_file_t *)evList[i].udata;
-			#ifdef DEBUG
-			printf("event 0x%x\n", evList[i].fflags);
-			printf("%s,%d\n", file->fn, file->fd); 
-			#endif
-			if (evList[i].fflags & NOTE_DELETE) {
-				/* close will clear the kqueue event as well */
-				if (close(file->fd) == -1)
-					err(errno, "unable to close file");
-				watch_file(kq, file);
-			}
 			if (evList[i].fflags & NOTE_DELETE ||
 				evList[i].fflags & NOTE_WRITE || evList[i].fflags & NOTE_EXTEND) {
 				if (!fifo.fd) {
@@ -246,6 +237,18 @@ watch_loop(int kq, int once, char *argv[]) {
 					write(fifo.fd, "\n", 2);
 					fsync(fifo.fd);
 				}
+			}
+		}
+		for (i=0; i<nev; i++) {
+			file = (watch_file_t *)evList[i].udata;
+			if (evList[i].fflags & NOTE_DELETE) {
+				EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_DELETE,    
+					NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND, 0, file);
+				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+					err(1, "failed to remove VNODE event");
+				if (close(file->fd) == -1)
+					err(errno, "unable to close file");
+				watch_file(kq, file);
 			}
 		}
 	} while(!once);

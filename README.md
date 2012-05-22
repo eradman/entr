@@ -16,11 +16,11 @@ Installation - Debian Linux
 
 Install libkqueue
 
-    aptget libkqueue
+    apt-get install libkqueue-dev
 
 Build entr
 
-    CFLAGS="-D_GNU_SOURCE" LDFLAGS="-lkqueue" make test 
+    CFLAGS="-I/usr/include/kqueue" LDFLAGS="-lkqueue" make test 
     make install
 
 Installation - Red Hat Linux
@@ -28,16 +28,13 @@ Installation - Red Hat Linux
 
 Get & install [libkqueue][libkqueue]
 
-    tar -zxvf libkqueue-1.0.5.tar.gz
-    cd libkqueue-1.0.5
     ./configure
     make && make rpm
     sudo rpm -ivh pkg/libkqueue-1.0-1.x86_64.rpm
-    sudo ln -s /usr/include/kqueue/sys/event.h /usr/include/sys/event.h
 
 Build entr
 
-    CFLAGS="-D_GNU_SOURCE" LDFLAGS="-lkqueue" make test 
+    CFLAGS="-D_GNU_SOURCE -I/usr/include/kqueue" LDFLAGS="-lkqueue" make test 
     make install
 
 Examples
@@ -69,6 +66,9 @@ Supported Platforms
 * NetBSD 5.1
 * DragonFly 3.0
 * Mac OS 10.6
+* CentOS 5.7
+* Debian 6.0
+* Ubuntu 12.0
 
 Implementation Notes
 --------------------
