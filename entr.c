@@ -197,8 +197,7 @@ watch_file(int kq, watch_file_t *file) {
 	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR,
 		NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND, 0, file);
 	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
-		if (strcmp(strerror(errno), "Success") != 0)
-			err(1, "failed to register VNODE event");
+		err(1, "failed to register VNODE event");
 }
 
 void
@@ -234,7 +233,7 @@ watch_loop(int kq, int once, char *argv[]) {
 				}
 				else {
 					write(fifo.fd, file->fn, strlen(file->fn));
-					write(fifo.fd, "\n", 2);
+					write(fifo.fd, "\n", 1);
 					fsync(fifo.fd);
 				}
 			}

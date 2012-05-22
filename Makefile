@@ -6,8 +6,12 @@ LDFLAGS += -lpthread
 all: entr
 
 test: entr_spec entr
-	@echo "Running tests"
+	@/bin/echo "Running unit tests"
 	@./entr_spec
+
+regress:
+	@/bin/echo -n "Running functional tests"
+	@./regress.sh
 
 debug: entr_spec
 	gdb -q entr_spec
@@ -30,7 +34,7 @@ install:
 	install entr.1 ${PREFIX}/man/man1/
 
 uninstall:
-	@echo "Uninstalling"
+	@/bin/echo "Uninstalling"
 	rm ${PREFIX}/bin/entr
 	rm ${PREFIX}/man/man1/entr.1
 
