@@ -1,9 +1,9 @@
 Event Notify Test Runner
 ========================
 
-***entr*** - a utility for running arbitrary commands when files change. Uses
-[kqueue(2)][kqueue_2] to avoid polling. Reads a list of files provided on STDIN
-and runs the supplied command if any of them are modified.
+A utility for running arbitrary commands when files change. Uses
+[kqueue(2)][kqueue_2] to avoid polling. ***entr*** responds to file system
+events by executing command line arguments or by writing to a FIFO.
 
 Installation - BSD/Mac OS
 -------------------------
