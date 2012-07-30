@@ -30,6 +30,7 @@
 #include <err.h>
 #include <errno.h>
 #include <signal.h>
+#include <paths.h>
 
 /* data */
 
@@ -48,7 +49,6 @@ typedef struct watch_file watch_file_t;
 int (*test_runner_main)(int, char**);
 void (*run_script)(char *, char *[]);
 watch_file_t fifo;
-
 
 /* Linux hacks */
 
@@ -72,8 +72,7 @@ void watch_file(int, watch_file_t *);
 void watch_loop(int, int, char *[]);
 void handle_sigint(int sig);
 
-
-/* main */
+/* the program */
 
 int
 main(int argc, char *argv[])
@@ -89,6 +88,7 @@ main(int argc, char *argv[])
 	int kq;
 	int n_files;
 	struct sigaction act;
+	int ttyfd;
 	int i;
 
 	/* Set up signal handlers */
@@ -111,10 +111,22 @@ main(int argc, char *argv[])
 	for (i=0; i<n_files; i++) {
 		watch_file(kq, files[i]);
 	}
-	set_fifo(argv); /* in FIFO mode will block until reader connects */
-	watch_loop(kq, 0, argv);
 
-	return 0;
+	/* in FIFO mode will block until reader connects */
+	if (set_fifo(argv));
+	else {
+		/* Attempt to open a tty so that editors such as ViM don't complain */
+		if ((ttyfd = open(_PATH_TTY, O_RDONLY)) == -1)
+			warn("can't open /dev/tty");
+		if (ttyfd > STDIN_FILENO) {
+			if (dup2(ttyfd, STDIN_FILENO) != 0)
+				warn("can't dup2 to stdin");
+			close(ttyfd);
+		}
+	}
+
+	watch_loop(kq, 0, argv);
+	return 1;
 }
 
 void
@@ -123,7 +135,7 @@ usage()
 	extern char *__progname;
 	fprintf(stderr, "usage: %s script [args] < filenames\n",
 		__progname);
-	fprintf(stderr, "	   %s +fifo < filenames\n",
+	fprintf(stderr, "       %s +fifo < filenames\n",
 		__progname);
 	exit(1);
 }
@@ -241,7 +253,7 @@ watch_loop(int kq, int once, char *argv[]) {
 		for (i=0; i<nev; i++) {
 			file = (watch_file_t *)evList[i].udata;
 			if (evList[i].fflags & NOTE_DELETE) {
-				EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_DELETE,    
+				EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_DELETE,
 					NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND, 0, file);
 				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 					err(1, "failed to remove VNODE event");

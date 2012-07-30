@@ -2,11 +2,14 @@ Event Notify Test Runner
 ========================
 
 A utility for running arbitrary commands when files change. Uses
-[kqueue(2)][kqueue_2] to avoid polling. ***entr*** responds to file system
-events by executing command line arguments or by writing to a FIFO.
+[kqueue(2)][kqueue_2] to avoid polling. `entr` responds to file system events by
+executing command line arguments or by writing to a FIFO.
 
-Installation - BSD/Mac OS
--------------------------
+`entr` was written to provide an efective means of incorporating micro-tests
+into the daily workflow on UNIX platforms.
+
+Installation - BSD & Mac OS
+---------------------------
 
     make test
     make install
@@ -58,18 +61,6 @@ FIFO
     >   markdown2html $F
     > done < notify
 
-Supported Platforms
--------------------
-
-* OpenBSD 5.0
-* FreeBSD 9.0
-* NetBSD 5.1
-* DragonFly 3.0
-* Mac OS 10.6
-* CentOS 5.7
-* Debian 6.0
-* Ubuntu 12.0
-
 Implementation Notes
 --------------------
 
@@ -83,6 +74,11 @@ deleting the original. `entr` deals with this by closing the old file descriptor
 and reopening it using the same pathname. Since there may be a delay while the
 new file is renamed a retry loop is employed.
 
+Editors such as VIM support many nifty file processing facilities, but command
+line instructions still require a terminal. I frequently use VIM in scripting,
+so `entr` always attempts to open a TTY before entering it's event loop. `xargs`
+on BSD provides this functionality using the `-o` flag.
+
 Related Projects
 ----------------
 
@@ -92,6 +88,8 @@ modifications
 
 Releases History
 ----------------
+
+1.5 Support interactive applications by opening a TTY _2012-07-29_
 
 1.4 New regression tests and better Linux support _2012-05-22_
 

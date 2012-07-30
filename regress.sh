@@ -37,7 +37,7 @@ try "no arguments"
 
 try "exec single shell command when three files change simultaneously"
 	setup
-	ls $tmp/file* | ./entr sh -c 'echo ping; sleep 0.3' >> $tmp/exec.out &
+	ls $tmp/file* | ./entr sh -c 'echo ping; sleep 0.3' > $tmp/exec.out &
 	bgpid=$!
 	pause
 
@@ -48,6 +48,19 @@ try "exec single shell command when three files change simultaneously"
 
 	wait $bgpid
 	assert "$(cat $tmp/exec.out)" "ping"
+
+try "exec an interactive utility when a file changes"
+	setup
+	ls $tmp/file* | ./entr sh -c 'tty | colrm 9; sleep 0.3' > $tmp/exec.out &
+	bgpid=$!
+	pause
+
+	echo 456 >> $tmp/file2
+	pause
+	kill -INT $bgpid
+
+	wait $bgpid
+	assert "$(cat $tmp/exec.out)" "/dev/tty"
 
 try "read each filename from a named pipe as they're modified"
 	setup
