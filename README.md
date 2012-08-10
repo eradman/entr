@@ -89,7 +89,7 @@ modifications
 Releases History
 ----------------
 
-1.6 Resond to RENAME and LINK events _2012-08-10_
+1.6 Respond to RENAME and LINK events _2012-08-10_
 
 1.5 Support interactive applications by opening a TTY _2012-07-29_
 
