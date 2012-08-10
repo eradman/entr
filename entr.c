@@ -207,7 +207,7 @@ watch_file(int kq, watch_file_t *file) {
 		err(errno, "cannot open `%s'", file->fn);
 
 	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR,
-		NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND, 0, file);
+		NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND|NOTE_RENAME|NOTE_LINK, 0, file);
 	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 		err(1, "failed to register VNODE event");
 }
@@ -233,7 +233,7 @@ watch_loop(int kq, int once, char *argv[]) {
 	do {
 		nev = kevent(kq, NULL, 0, evList, 32, NULL);
 		if (nev == -1)
-			err(1, "kevent error");
+			warnx("kevent error");
 		for (i=0; i<nev; i++) {
 			file = (watch_file_t *)evList[i].udata;
 			if (evList[i].fflags & NOTE_DELETE ||
