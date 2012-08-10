@@ -1,7 +1,7 @@
 PREFIX ?= /usr/local
 CC ?= cc
 CFLAGS += -Wall
-LDFLAGS += -lpthread
+LDFLAGS +=
 
 all: entr
 
@@ -17,11 +17,11 @@ debug: entr_spec
 	gdb -q entr_spec
 
 entr: entr.c
-	${CC} ${CFLAGS} entr.c -o $@ ${LDFLAGS} 
+	${CC} ${CFLAGS} entr.c -o $@ ${LDFLAGS}
 	@chmod +x $@
 
 entr_spec: entr_spec.c entr.c
-	${CC} ${CFLAGS} entr_spec.c -o $@ ${LDFLAGS} 
+	${CC} ${CFLAGS} entr_spec.c -o $@ -lpthread ${LDFLAGS}
 	@chmod +x $@
 
 clean:
