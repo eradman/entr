@@ -74,7 +74,6 @@ void handle_sigint(int sig);
 
 /* events to watch for */
 
-/* Surprisingly, Linux NFS mounts send RENAME and LINK events */
 #define NOTE_ALL NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND|NOTE_RENAME|NOTE_LINK
 
 /* the program */
@@ -232,13 +231,10 @@ watch_loop(int kq, int once, char *argv[]) {
 	struct kevent evList[32];
 	int nev;
 	watch_file_t *file;
-	struct timespec t = { 0, 100 };
 	int i;
 
 	do {
 		nev = kevent(kq, NULL, 0, evList, 32, NULL);
-		if (nev == -1)
-			warnx("kevent error");
 		for (i=0; i<nev; i++) {
 			#ifdef DEBUG
 			fprintf(stderr, "event %d/%d: 0x%x\n", i+1, nev, evList[i].fflags);
@@ -248,8 +244,8 @@ watch_loop(int kq, int once, char *argv[]) {
 				evList[i].fflags & NOTE_WRITE || evList[i].fflags & NOTE_EXTEND) {
 				if (!fifo.fd) {
 					run_script(argv[1], argv+1);
-					/* clear all events */
-					(void) kevent(kq, NULL, 0, evList, 32, &t);
+					/* don't process any more events */
+					i = nev; 
 				}
 				else {
 					write(fifo.fd, file->fn, strlen(file->fn));

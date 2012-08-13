@@ -1,7 +1,7 @@
 PREFIX ?= /usr/local
 CC ?= cc
 CFLAGS += -Wall
-LDFLAGS += -lpthread
+LDFLAGS += 
 
 all: entr
 
@@ -20,7 +20,7 @@ entr: entr.c
 	${CC} ${CFLAGS} entr.c -o $@ ${LDFLAGS}
 	@chmod +x $@
 
-entr_spec: entr_spec.c entr.c
+entr_spec: entr.c entr_spec.c
 	${CC} ${CFLAGS} entr_spec.c -o $@ ${LDFLAGS}
 	@chmod +x $@
 

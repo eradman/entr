@@ -17,13 +17,8 @@ Installation - BSD & Mac OS
 Installation - Debian Linux
 ---------------------------
 
-Install libkqueue
-
     apt-get install libkqueue-dev
-
-Build entr
-
-    CFLAGS="-I/usr/include/kqueue" LDFLAGS="-lkqueue" make test 
+    make test -f Makefile.linux
     make install
 
 Installation - Red Hat Linux
@@ -37,7 +32,7 @@ Get & install [libkqueue][libkqueue]
 
 Build entr
 
-    CFLAGS="-D_GNU_SOURCE -I/usr/include/kqueue" LDFLAGS="-lkqueue" make test 
+    make test -f Makefile.linux
     make install
 
 Examples
@@ -89,7 +84,7 @@ modifications
 Releases History
 ----------------
 
-1.6 Works with NFS mounts on Linux _2012-08-10_
+1.6 Works with NFS mounts on Linux, no need for pthreads on BSD _2012-08-10_
 
 1.5 Support interactive applications by opening a TTY _2012-07-29_
 

@@ -18,7 +18,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <pthread.h>
 #include <stdio.h>
 
 #include "entr.c"
@@ -82,14 +81,12 @@ open_tmp(watch_file_t *file) {
 }
 
 void *
-unlink_tmp_thread(void *arg) {
+unlink_tmp_exit(void *arg) {
 	watch_file_t *file = (watch_file_t *)arg;
 	char *msg = "0123456789\n";
 	char fn[PATH_MAX];
 	int fd;
 
-	/* reads and writes sould be coherent, but not between threads? */
-	usleep(100000);
 	/* copy in case an event frees the fd */
 	strlcpy(fn, file->fn, PATH_MAX);
 	unlink(file->fn);
@@ -97,7 +94,7 @@ unlink_tmp_thread(void *arg) {
 	fd = open(fn, O_WRONLY | O_CREAT, DEFFILEMODE);
 	write(fd, msg, strlen(msg));
 	close(fd);
-	return NULL;
+	exit(0);
 }
 
 void
@@ -139,8 +136,8 @@ int watch_fd_01() {
 	int kq;
 	watch_file_t file;
 	char *msg = "0123456789\n";
-	pthread_t pth;
 	static char *argv[] = { "me", "prog", "arg1", "arg2", NULL };
+	int pid;
 
 	open_tmp(&file);
 	write(file.fd, msg, strlen(msg));
@@ -148,9 +145,12 @@ int watch_fd_01() {
 	watch_file(kq, &file);
 	_assert(file.fd != -1);
 	_assert(kq != -1);
-	pthread_create(&pth, NULL, unlink_tmp_thread, &file);
-	watch_loop(kq, 1, argv);
-	pthread_join(pth, NULL);
+
+	if ((pid = fork()) == 0)
+		unlink_tmp_exit(&file);
+	else
+		watch_loop(kq, 1, argv);
+
 	_assert(strcmp(__exec_filename, "prog") == 0);
 	_assert(strcmp(__exec_argv[0], "prog") == 0);
 	_assert(strcmp(__exec_argv[1], "arg1") == 0);
