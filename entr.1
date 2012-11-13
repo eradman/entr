@@ -54,9 +54,9 @@ was received.
 .Os
 .Sh EXAMPLES
 .Pp
-Recompile if header files change
+Recompile when source files change
 .Pp
-.Dl $ find . -name '*.h' | entr make
+.Dl $ find . -name '*.[ch]' | entr make
 .Pp
 Run tests if any file in the current directory changes, only printing STDERR
 .Pp
@@ -65,8 +65,7 @@ Run tests if any file in the current directory changes, only printing STDERR
 Convert any altered Markdown in the current directory to HTML using a FIFO
 .Pp
 .Dl $ ls *.md | entr +notify &
-.Dl $ cat notify | while read F;
-.Dl > do
+.Dl $ while read F; do
 .Dl >   markdown2html $F
-.Dl > done
+.Dl > done < notify
 .Os

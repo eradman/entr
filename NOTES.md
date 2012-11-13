@@ -1,6 +1,14 @@
 Development Notes
 =================
 
+MacOS: open
+-----------
+
+Files can be opened with O_EVTONLY to prevent from being marked as open or in
+use.
+
+http://developer.apple.com/library/ios/#documentation/Performance/Conceptual/FileSystem/Articles/TrackingChanges.html
+
 NetBSD: seekfn
 --------------
 
@@ -18,6 +26,8 @@ NetBSD  kqueue
 entr.c:145: warning: assignment makes integer from pointer without a cast
 
 * NetBSD uses intptr_t instead of (void *) for udata
+
+https://raw.github.com/zeromq/libzmq/master/src/kqueue.cpp
 
 NetBSD NOTE_RENAME
 ------------------

@@ -241,7 +241,8 @@ watch_loop(int kq, int once, char *argv[]) {
 			#endif
 			file = (watch_file_t *)evList[i].udata;
 			if (evList[i].fflags & NOTE_DELETE ||
-				evList[i].fflags & NOTE_WRITE || evList[i].fflags & NOTE_EXTEND) {
+				evList[i].fflags & NOTE_WRITE ||
+				evList[i].fflags & NOTE_EXTEND) {
 				if (!fifo.fd) {
 					run_script(argv[1], argv+1);
 					/* don't process any more events */
