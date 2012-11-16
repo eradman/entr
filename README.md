@@ -56,19 +56,6 @@ FIFO
     >   markdown2html $F
     > done < notify
 
-Related Projects
-----------------
-
-[guard][guard] - command line tool to easily handle events on file system
-modifications using the [listen][listen] gem
-
-[watchr][watchr] - Modern continuous testing (flexible alternative to Autotest)  
-
-[watchdog][watchdog] - Python API library and shell utilities to monitor file
-system events.
-
-[inotify-tools][inotify-tools] - Act upon filesystem events using inotify
-
 Releases History
 ----------------
 
@@ -90,8 +77,3 @@ Releases History
 
 [kqueue_2]: http://www.openbsd.org/cgi-bin/man.cgi?query=kqueue&apropos=0&sektion=0&manpath=OpenBSD+Current&format=html
 [libkqueue]: http://mark.heily.com/book/export/html/52
-[guard]: https://github.com/guard/guard
-[watchr]: https://github.com/mynyml/watchr
-[watchdog]: http://packages.python.org/watchdog/
-[listen]: https://github.com/guard/listen
-[inotify-tools]: https://github.com/rvoicilas/inotify-tools/
