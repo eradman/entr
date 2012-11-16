@@ -56,24 +56,6 @@ FIFO
     >   markdown2html $F
     > done < notify
 
-Implementation Notes
---------------------
-
-It's not uncommon for version control software to update a large set of files
-when they're submitted, but we don't want to run the utility one for each file
-that is modified. To combat this `entr` ignores events until the subprocess
-ends.
-
-Some applications attempt to make atomic writes by writing a new file and then
-deleting the original. `entr` deals with this by closing the old file descriptor
-and reopening it using the same pathname. Since there may be a delay while the
-new file is renamed a retry loop is employed.
-
-Editors such as VIM support many nifty file processing facilities, but command
-line instructions still require a terminal. I frequently use VIM in scripting,
-so `entr` always attempts to open a TTY before entering it's event loop. `xargs`
-on BSD provides this functionality using the `-o` flag.
-
 Related Projects
 ----------------
 
