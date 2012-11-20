@@ -68,6 +68,7 @@ void usage();
 int process_input(FILE *, watch_file_t *[], int);
 int set_fifo(char *[]);
 void run_script_fork(char *, char *[]);
+void waitfor_file(char *);
 void watch_file(int, watch_file_t *);
 void watch_loop(int, int, char *[]);
 void handle_exit(int sig);
@@ -199,6 +200,19 @@ run_script_fork(char *filename, char *argv[]) {
 }
 
 void
+waitfor_file(char *fn) {
+	int i;
+	struct stat sb;
+
+	for (i=0; i < 20; i++) {
+		if (stat(fn, &sb) == -1) usleep(100000);
+		else return;
+	}
+	
+	err(errno, "cannot stat `%s'", fn);
+}
+
+void
 watch_file(int kq, watch_file_t *file) {
 	struct kevent evSet;
 	int i;
@@ -231,12 +245,13 @@ void
 watch_loop(int kq, int once, char *argv[]) {
 	struct kevent evSet;
 	struct kevent evList[32];
-	int nev;
+	int nev, nex;
 	watch_file_t *file;
 	int i;
 
 	do {
 		nev = kevent(kq, NULL, 0, evList, 32, NULL);
+		nex = 0;
 		for (i=0; i<nev; i++) {
 			#ifdef DEBUG
 			fprintf(stderr, "event %d/%d: 0x%x\n", i+1, nev, evList[i].fflags);
@@ -245,10 +260,12 @@ watch_loop(int kq, int once, char *argv[]) {
 			if (evList[i].fflags & NOTE_DELETE ||
 				evList[i].fflags & NOTE_WRITE ||
 				evList[i].fflags & NOTE_EXTEND) {
-				if (!fifo.fd) {
+				if (!fifo.fd && nex==0) {
+					if (evList[i].fflags & NOTE_DELETE)
+						waitfor_file(file->fn);
 					run_script(argv[1], argv+1);
 					/* don't process any more events */
-					i = nev; 
+					nex++;
 				}
 				else {
 					write(fifo.fd, file->fn, strlen(file->fn));

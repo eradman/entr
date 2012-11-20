@@ -5,7 +5,7 @@ A utility for running arbitrary commands when files change. Uses
 [kqueue(2)][kqueue_2] to avoid polling. `entr` responds to file system events by
 executing command line arguments or by writing to a FIFO.
 
-`entr` was written to provide an efective means of incorporating micro-tests
+`entr` was written to provide an effective means of incorporating micro-tests
 into the daily workflow on UNIX platforms.
 
 Installation - BSD & Mac OS
@@ -59,7 +59,7 @@ FIFO
 Releases History
 ----------------
 
-1.7 Handle SIGTERM and remove named pipe on exit
+1.7 Stat deleted file until success before running a command _2012-11-20_
 
 1.6 Works with NFS mounts on Linux, no need for pthreads on BSD _2012-08-10_
 

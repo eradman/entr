@@ -35,6 +35,21 @@ try "no arguments"
 	./entr 2> /dev/null || code=$?
 	assert $code 1
 
+try "exec single shell command when a file is removed and replaced"
+	setup
+	ls $tmp/file* | ./entr file $tmp/file2 > $tmp/exec.out &
+	bgpid=$!
+	pause
+
+	rm $tmp/file2
+	pause
+	touch $tmp/file2
+	pause
+	kill -INT $bgpid
+
+	wait $bgpid
+	assert "$(cat $tmp/exec.out)" "$tmp/file2: empty"
+
 try "exec single shell command when three files change simultaneously"
 	setup
 	ls $tmp/file* | ./entr sh -c 'echo ping; sleep 0.3' > $tmp/exec.out &
@@ -89,6 +104,7 @@ try "read each filename from a named pipe until a file is removed"
 	echo 123 >> $tmp/file1
 	rm $tmp/file2
 	pause
+	kill -INT $bgpid
 
 	wait $bgpid
 	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(echo -e 'file1\nfile2')"
