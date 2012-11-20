@@ -70,7 +70,7 @@ int set_fifo(char *[]);
 void run_script_fork(char *, char *[]);
 void watch_file(int, watch_file_t *);
 void watch_loop(int, int, char *[]);
-void handle_sigint(int sig);
+void handle_exit(int sig);
 
 /* events to watch for */
 
@@ -97,9 +97,11 @@ main(int argc, char *argv[])
 
 	/* Set up signal handlers */
 	act.sa_flags = 0;
-	act.sa_handler = handle_sigint;
+	act.sa_handler = handle_exit;
 	if (sigemptyset(&act.sa_mask) & (sigaction(SIGINT, &act, NULL) != 0))
 		err(1, "Failed to set SIGINT handler");
+	if (sigemptyset(&act.sa_mask) & (sigaction(SIGTERM, &act, NULL) != 0))
+		err(1, "Failed to set TERM handler");
 
 	/* raise soft limit */
 	getrlimit(RLIMIT_NOFILE, &rl);
@@ -217,7 +219,7 @@ watch_file(int kq, watch_file_t *file) {
 }
 
 void
-handle_sigint(int sig) {
+handle_exit(int sig) {
 	/* normally a user will exit this utility by hitting Ctrl-C */
 	if (fifo.fd)
 		close(fifo.fd);

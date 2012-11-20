@@ -59,6 +59,8 @@ FIFO
 Releases History
 ----------------
 
+1.7 Handle SIGTERM and remove named pipe on exit
+
 1.6 Works with NFS mounts on Linux, no need for pthreads on BSD _2012-08-10_
 
 1.5 Support interactive applications by opening a TTY _2012-07-29_
