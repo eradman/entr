@@ -59,7 +59,7 @@ FIFO
 Releases History
 ----------------
 
-1.7 Stat deleted file until success before running a command _2012-11-20_
+1.7 Successfully stat deleted files before running a command _2012-11-20_
 
 1.6 Works with NFS mounts on Linux, no need for pthreads on BSD _2012-08-10_
 
