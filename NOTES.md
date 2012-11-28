@@ -27,7 +27,9 @@ entr.c:145: warning: assignment makes integer from pointer without a cast
 
 * NetBSD uses intptr_t instead of (void *) for udata
 
-https://raw.github.com/zeromq/libzmq/master/src/kqueue.cpp
+They're not interested in fixing this
+
+http://mail-index.netbsd.org/tech-userlevel/2012/08/15/msg006629.html
 
 NetBSD NOTE_RENAME
 ------------------
@@ -49,4 +51,29 @@ If entr is compiled with pthreads the process state is 'poll' instead of
 
 http://lists.freebsd.org/pipermail/freebsd-hackers/2005-February/010216.html
 
+Triggering Events
+-----------------
+
+
+
+OpenBSD EVFILT_USER
+-------------------
+
+OpenBSD does not make unit testing with kqueue possible without touching the
+file system
+
+http://svn0.us-west.freebsd.org/base/head/tools/regression/kqueue/user.c
+http://www.opensource.apple.com/source/xnu/xnu-1456.1.26/tools/tests/xnu_quick_test/kqueue_tests.c
+http://mark.heily.com/book/export/html/52
+
+Other options...
+
+"Is there a way to either: post a dummy message to the queue, or to cancel the
+waiting kevent call so that I can reload my array when I decide to?"
+
+You can create a dummy UDP socket and add a _disabled_ write filter. Whenever
+you want to wake up your kqueue thread, just enable the write filter (then
+disable it again when it wakes up). That's what I do.
+
+http://julipedia.meroh.net/2004/10/example-of-kqueue.html
 

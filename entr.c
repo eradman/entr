@@ -64,14 +64,14 @@ strlcpy(char *to, const char *from, int l) {
 
 /* forwards */
 
-void usage();
-int process_input(FILE *, watch_file_t *[], int);
-int set_fifo(char *[]);
-void run_script_fork(char *, char *[]);
-void waitfor_file(char *);
-void watch_file(int, watch_file_t *);
-void watch_loop(int, int, char *[]);
-void handle_exit(int sig);
+static void usage();
+static int process_input(FILE *, watch_file_t *[], int);
+static int set_fifo(char *[]);
+static void run_script_fork(char *, char *[]);
+static void waitfor_file(char *);
+static void watch_file(int, watch_file_t *);
+static void watch_loop(int, int, char *[]);
+static void handle_exit(int sig);
 
 /* events to watch for */
 
@@ -110,7 +110,7 @@ main(int argc, char *argv[])
 	if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
 		err(1, "setrlimit cannot set rlim_cur to %d", (int)rl.rlim_cur);
 
-	watch_file_t *files[rl.rlim_max];
+	watch_file_t *files[rl.rlim_cur];
 
 	if ((kq = kqueue()) == -1)
 		err(1, "cannot create kqueue");
@@ -153,16 +153,17 @@ process_input(FILE *file, watch_file_t *files[], int max_files) {
 	char *p;
 	int line = 0;
 
-	while (fgets(buf, PATH_MAX, file)) {
-		if (buf[0] == '\0')
-			continue;
-		if ((p = strchr(buf, '\n')) == NULL)
-			err(1, "input line too long");
-		*p = '\0';
-		files[line] = malloc(sizeof(watch_file_t));
-		files[line]->fn = malloc(PATH_MAX);
-		strlcpy(files[line]->fn, buf, PATH_MAX);
-		if (++line >= max_files) break;
+	while (fgets(buf, sizeof(buf), file) != NULL) {
+			buf[PATH_MAX-1] = '\0';
+			if ((p = strchr(buf, '\n')) != NULL)
+					*p = '\0';
+			if (buf[0] == '\0')
+					continue;
+
+			files[line] = malloc(sizeof(watch_file_t));
+			files[line]->fn = malloc(PATH_MAX);
+			strlcpy(files[line]->fn, buf, PATH_MAX);
+			if (++line >= max_files) break;
 	}
 	return line;
 }
