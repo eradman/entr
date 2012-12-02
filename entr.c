@@ -236,9 +236,10 @@ watch_file(int kq, watch_file_t *file) {
 void
 handle_exit(int sig) {
 	/* normally a user will exit this utility by hitting Ctrl-C */
-	if (fifo.fd)
+	if (fifo.fd) {
 		close(fifo.fd);
 		unlink(fifo.fn);
+	}
 	exit(0);
 }
 
