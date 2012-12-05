@@ -107,7 +107,7 @@ try "read each filename from a named pipe until a file is removed"
 	kill -INT $bgpid
 
 	wait $bgpid
-	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(echo -e 'file1\nfile2')"
+	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(echo -e 'file1')"
 	assert $code 1
 
 # cleanup

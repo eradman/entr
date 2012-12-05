@@ -35,7 +35,7 @@
 /* data */
 
 struct watch_file {
-	char *fn;
+	char fn[PATH_MAX];
 	int fd;
 };
 typedef struct watch_file watch_file_t;
@@ -43,6 +43,7 @@ typedef struct watch_file watch_file_t;
 /* shortcuts */
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
+#define MEMBER_SIZE(S, M) sizeof(((S *)0)->M)
 
 /* globals */
 
@@ -68,7 +69,6 @@ static void usage();
 static int process_input(FILE *, watch_file_t *[], int);
 static int set_fifo(char *[]);
 static void run_script_fork(char *, char *[]);
-static void waitfor_file(char *);
 static void watch_file(int, watch_file_t *);
 static void watch_loop(int, int, char *[]);
 static void handle_exit(int sig);
@@ -80,8 +80,7 @@ static void handle_exit(int sig);
 /* the program */
 
 int
-main(int argc, char *argv[])
-{
+main(int argc, char *argv[]) {
 	if ((*test_runner_main))
 		return(test_runner_main(argc, argv));
 	if (argc < 2) usage();
@@ -96,7 +95,7 @@ main(int argc, char *argv[])
 	int ttyfd;
 	int i;
 
-	/* Set up signal handlers */
+	/* normally a user will exit this utility by hitting Ctrl-C */
 	act.sa_flags = 0;
 	act.sa_handler = handle_exit;
 	if (sigemptyset(&act.sa_mask) & (sigaction(SIGINT, &act, NULL) != 0))
@@ -110,10 +109,12 @@ main(int argc, char *argv[])
 	if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
 		err(1, "setrlimit cannot set rlim_cur to %d", (int)rl.rlim_cur);
 
+	/* variable length array based on hard limit */
 	watch_file_t *files[rl.rlim_cur];
 
 	if ((kq = kqueue()) == -1)
 		err(1, "cannot create kqueue");
+
 	n_files = process_input(stdin, files, rl.rlim_cur);
 	for (i=0; i<n_files; i++) {
 		watch_file(kq, files[i]);
@@ -161,8 +162,7 @@ process_input(FILE *file, watch_file_t *files[], int max_files) {
 					continue;
 
 			files[line] = malloc(sizeof(watch_file_t));
-			files[line]->fn = malloc(PATH_MAX);
-			strlcpy(files[line]->fn, buf, PATH_MAX);
+			strlcpy(files[line]->fn, buf, MEMBER_SIZE(watch_file_t, fn));
 			if (++line >= max_files) break;
 	}
 	return line;
@@ -171,7 +171,7 @@ process_input(FILE *file, watch_file_t *files[], int max_files) {
 int
 set_fifo(char *argv[]) {
 	if (argv[1][0] == (int)'+') {
-		fifo.fn = argv[1]+1;
+		strlcpy(fifo.fn, argv[1]+1, MEMBER_SIZE(watch_file_t, fn));
 		if (mkfifo(fifo.fn, S_IRUSR| S_IWUSR) == -1)
 			err(1, "mkfifo '%s' failed", fifo.fn);
 		if ((fifo.fd = open(fifo.fn, O_WRONLY, 0)) == -1)
@@ -201,29 +201,16 @@ run_script_fork(char *filename, char *argv[]) {
 }
 
 void
-waitfor_file(char *fn) {
-	int i;
-	struct stat sb;
-
-	for (i=0; i < 20; i++) {
-		if (stat(fn, &sb) == -1) usleep(100000);
-		else return;
-	}
-	
-	err(errno, "cannot stat `%s'", fn);
-}
-
-void
 watch_file(int kq, watch_file_t *file) {
 	struct kevent evSet;
 	int i;
 
+	/* wait up to 2 seconds for file to become available */
 	for (i=0; i < 20; i++) {
 		file->fd = open(file->fn, O_RDONLY);
 		if (file->fd == -1) usleep(100000);
 		else break;
 	}
-	
 	if (file->fd == -1)
 		err(errno, "cannot open `%s'", file->fn);
 
@@ -235,7 +222,6 @@ watch_file(int kq, watch_file_t *file) {
 
 void
 handle_exit(int sig) {
-	/* normally a user will exit this utility by hitting Ctrl-C */
 	if (fifo.fd) {
 		close(fifo.fd);
 		unlink(fifo.fn);
@@ -247,35 +233,13 @@ void
 watch_loop(int kq, int once, char *argv[]) {
 	struct kevent evSet;
 	struct kevent evList[32];
-	int nev, nex;
+	int nev;
 	watch_file_t *file;
 	int i;
 
 	do {
 		nev = kevent(kq, NULL, 0, evList, 32, NULL);
-		nex = 0;
-		for (i=0; i<nev; i++) {
-			#ifdef DEBUG
-			fprintf(stderr, "event %d/%d: 0x%x\n", i+1, nev, evList[i].fflags);
-			#endif
-			file = (watch_file_t *)evList[i].udata;
-			if (evList[i].fflags & NOTE_DELETE ||
-				evList[i].fflags & NOTE_WRITE ||
-				evList[i].fflags & NOTE_EXTEND) {
-				if (!fifo.fd && nex==0) {
-					if (evList[i].fflags & NOTE_DELETE)
-						waitfor_file(file->fn);
-					run_script(argv[1], argv+1);
-					/* don't process any more events */
-					nex++;
-				}
-				else {
-					write(fifo.fd, file->fn, strlen(file->fn));
-					write(fifo.fd, "\n", 1);
-					fsync(fifo.fd);
-				}
-			}
-		}
+		/* reopen all files that were removed */
 		for (i=0; i<nev; i++) {
 			file = (watch_file_t *)evList[i].udata;
 			if (evList[i].fflags & NOTE_DELETE) {
@@ -286,6 +250,27 @@ watch_loop(int kq, int once, char *argv[]) {
 				if (close(file->fd) == -1)
 					err(errno, "unable to close file");
 				watch_file(kq, file);
+			}
+		}
+		/* respond to all events */
+		for (i=0; i<nev; i++) {
+			#ifdef DEBUG
+			fprintf(stderr, "event %d/%d: 0x%x\n", i+1, nev, evList[i].fflags);
+			#endif
+			file = (watch_file_t *)evList[i].udata;
+			if (evList[i].fflags & NOTE_DELETE ||
+				evList[i].fflags & NOTE_WRITE ||
+				evList[i].fflags & NOTE_EXTEND) {
+				if (!fifo.fd) {
+					run_script(argv[1], argv+1);
+					/* don't process any more events */
+					i=nev;
+				}
+				else {
+					write(fifo.fd, file->fn, strlen(file->fn));
+					write(fifo.fd, "\n", 1);
+					fsync(fifo.fd);
+				}
 			}
 		}
 	} while(!once);

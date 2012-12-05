@@ -74,7 +74,6 @@ FILE *fmemopen(void *buf, size_t size, const char *mode)
 void
 open_tmp(watch_file_t *file) {
 	/* OpenBSD doesn't support EVFILT_USER so we'll use /tmp */
-	file->fn = malloc(PATH_MAX);
 	strlcpy(file->fn, "/tmp/entr_spec.XXXXXX", PATH_MAX);
 	mkstemp(file->fn);
 	file->fd = open(file->fn, O_WRONLY | O_CREAT, DEFFILEMODE);
