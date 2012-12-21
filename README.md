@@ -59,6 +59,8 @@ FIFO
 Releases History
 ----------------
 
+1.8 Loosing a file under watch is always fatal _2012-12-05_
+
 1.7 Successfully stat deleted files before running a command _2012-11-20_
 
 1.6 Works with NFS mounts on Linux, no need for pthreads on BSD _2012-08-10_
@@ -78,4 +80,4 @@ Releases History
 
 
 [kqueue_2]: http://www.openbsd.org/cgi-bin/man.cgi?query=kqueue&apropos=0&sektion=0&manpath=OpenBSD+Current&format=html
-[libkqueue]: http://mark.heily.com/book/export/html/52
+[libkqueue]: https://www.heily.com/~mheily/proj/libkqueue/dist/
