@@ -22,7 +22,7 @@ function try { let tests+=1; this="$1"; }
 trap 'printf "$0: exit code $? on line $LINENO\nFAIL: $this\n"; exit 1' ERR
 function assert {
 	let assertions+=1
-	[[ "$1" = "$2" ]] && { echo -n "."; return; }
+	[[ "$1" = "$2" ]] && { printf "."; return; }
 	printf "\nFAIL: $this\n'$1' != '$2'\n"; exit 1
 }
 
@@ -64,19 +64,6 @@ try "exec single shell command when three files change simultaneously"
 	wait $bgpid
 	assert "$(cat $tmp/exec.out)" "ping"
 
-try "exec an interactive utility when a file changes"
-	setup
-	ls $tmp/file* | ./entr sh -c 'tty | colrm 9; sleep 0.3' > $tmp/exec.out &
-	bgpid=$!
-	pause
-
-	echo 456 >> $tmp/file2
-	pause
-	kill -INT $bgpid
-
-	wait $bgpid
-	assert "$(cat $tmp/exec.out)" "/dev/tty"
-
 try "read each filename from a named pipe as they're modified"
 	setup
 	ls $tmp/file* | ./entr +$tmp/notify &
@@ -91,7 +78,7 @@ try "read each filename from a named pipe as they're modified"
 	kill -INT $bgpid
 
 	wait $bgpid
-	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(echo -e 'file1\nfile3')"
+	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(printf 'file1\nfile3')"
 
 try "read each filename from a named pipe until a file is removed"
 	setup
@@ -107,11 +94,26 @@ try "read each filename from a named pipe until a file is removed"
 	kill -INT $bgpid
 
 	wait $bgpid
-	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(echo -e 'file1')"
+	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(printf 'file1')"
 	assert $code 1
 
+tty 2> /dev/null && {
+try "exec an interactive utility when a file changes"
+	setup
+	ls $tmp/file* | ./entr sh -c 'tty | colrm 9; sleep 0.3' > $tmp/exec.out &
+	bgpid=$!
+	pause
+
+	echo 456 >> $tmp/file2
+	pause
+	kill -INT $bgpid
+
+	wait $bgpid
+	assert "$(cat $tmp/exec.out)" "/dev/tty"
+}
+
 # cleanup
-#rm -r $tmp
+rm -r $tmp
 
 echo; echo "$tests tests and $assertions assertions PASSED"
 exit 0
