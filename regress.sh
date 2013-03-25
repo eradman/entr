@@ -28,7 +28,7 @@ function assert {
 
 function pause { sleep 0.2; }
 function setup { touch $tmp/file{1,2,3}; sleep 0.1; }
-tmp=$(mktemp -d /tmp/entr_regress.XXXX)
+tmp=$(mktemp -d /tmp/entr_regress.XXXXXXXXXX)
 
 
 try "no arguments"
