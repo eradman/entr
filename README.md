@@ -59,6 +59,8 @@ FIFO
 Releases History
 ----------------
 
+1.9 man page is installed under MANPREFIX _2013-04-02_
+
 1.8 Loosing a file under watch is always fatal _2012-12-05_
 
 1.7 Successfully stat deleted files before running a command _2012-11-20_

@@ -1,4 +1,5 @@
 PREFIX ?= /usr/local
+MANPREFIX ?= ${PREFIX}/man
 CC ?= cc
 CFLAGS += -Wall
 LDFLAGS += 
@@ -29,12 +30,11 @@ clean:
 
 install:
 	@mkdir -p ${PREFIX}/bin
-	@mkdir -p ${PREFIX}/man/man1
+	@mkdir -p ${MANPREFIX}/man1
 	install entr ${PREFIX}/bin/
-	install entr.1 ${PREFIX}/man/man1/
+	install entr.1 ${MANPREFIX}/man1/
 
 uninstall:
-	@/bin/echo "Uninstalling"
 	rm ${PREFIX}/bin/entr
-	rm ${PREFIX}/man/man1/entr.1
+	rm ${MANPREFIX}/man1/entr.1
 
