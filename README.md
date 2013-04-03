@@ -59,7 +59,7 @@ FIFO
 Releases History
 ----------------
 
-1.9 man page is installed under MANPREFIX _2013-04-02_
+1.9 Slightly more portable Makefile _2013-04-02_
 
 1.8 Loosing a file under watch is always fatal _2012-12-05_
 
@@ -82,4 +82,4 @@ Releases History
 
 
 [kqueue_2]: http://www.openbsd.org/cgi-bin/man.cgi?query=kqueue&apropos=0&sektion=0&manpath=OpenBSD+Current&format=html
-[libkqueue]: https://www.heily.com/~mheily/proj/libkqueue/dist/
+[libkqueue]: http://www.heily.com/~mheily/proj/libkqueue/dist/
