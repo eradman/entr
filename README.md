@@ -8,11 +8,17 @@ executing command line arguments or by writing to a FIFO.
 `entr` was written to provide an effective means of incorporating micro-tests
 into the daily workflow on UNIX platforms.
 
-Installation - BSD & Mac OS
----------------------------
+Installation - BSD
+------------------
 
     make test
     make install
+
+Installation - Mac OS
+---------------------
+
+    make test
+    make install MANPREFIX=/usr/share/man
 
 Installation - Debian Linux
 ---------------------------

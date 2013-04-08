@@ -64,7 +64,7 @@ Run tests if any file in the current directory changes, only printing STDERR
 .Pp
 .Dl $ echo '.' | entr sh -c './test.sh > /dev/null'
 .Pp
-Convert any altered Markdown in the current directory to HTML using a FIFO
+Convert individual Markdown files to HTML if they're modified
 .Pp
 .Dl $ ls *.md | entr +notify &
 .Dl $ while read F; do
