@@ -29,8 +29,6 @@ clean:
 	rm -rf entr entr_spec *.o
 
 install:
-	@mkdir -p ${PREFIX}/bin
-	@mkdir -p ${MANPREFIX}/man1
 	install entr ${PREFIX}/bin/
 	install entr.1 ${MANPREFIX}/man1/
 
