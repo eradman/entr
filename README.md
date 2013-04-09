@@ -20,6 +20,12 @@ Installation - Mac OS
     make test
     make install MANPREFIX=/usr/share/man
 
+Installation - Mac OS/Homebrew
+------------------------------
+
+    brew tap mitchty/entr
+    brew install entr
+
 Installation - Debian Linux
 ---------------------------
 
