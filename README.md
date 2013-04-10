@@ -68,10 +68,13 @@ FIFO
     >   markdown2html $F
     > done < notify
 
+Next Release
+------------
+
+1.9 More portable build/install
+
 Releases History
 ----------------
-
-1.9 Slightly more portable Makefile _2013-04-02_
 
 1.8 Loosing a file under watch is always fatal _2012-12-05_
 
