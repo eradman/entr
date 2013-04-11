@@ -1,0 +1,4 @@
+MANPREFIX ?= ${PREFIX}/share/man
+
+include Makefile.bsd
+

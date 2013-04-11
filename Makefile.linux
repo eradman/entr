@@ -1,5 +1,6 @@
-include Makefile
-
 CFLAGS += -D_GNU_SOURCE -I/usr/include/kqueue
 LDFLAGS += -lpthread -lkqueue
+MANPREFIX ?= ${PREFIX}/share/man
+
+include Makefile.bsd
 

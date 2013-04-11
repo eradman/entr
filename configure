@@ -1,0 +1,13 @@
+#!/bin/sh
+
+function copy_mk {
+    set -x
+    cp Makefile.$1 makefile
+}
+
+case `uname` in
+    Darwin) copy_mk macos ;;
+    Linux) copy_mk linux ;;
+    *) copy_mk bsd ;;
+esac
+

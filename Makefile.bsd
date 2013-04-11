@@ -29,10 +29,11 @@ clean:
 	rm -rf entr entr_spec *.o
 
 install:
-	install entr ${PREFIX}/bin/
-	install entr.1 ${MANPREFIX}/man1/
+	install entr ${PREFIX}/bin
+	install entr.1 ${MANPREFIX}/man1
 
 uninstall:
 	rm ${PREFIX}/bin/entr
 	rm ${MANPREFIX}/man1/entr.1
 
+.PHONY: clean install uninstall

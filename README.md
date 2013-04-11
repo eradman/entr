@@ -8,17 +8,12 @@ executing command line arguments or by writing to a FIFO.
 `entr` was written to provide an effective means of incorporating micro-tests
 into the daily workflow on UNIX platforms.
 
-Installation - BSD
-------------------
+Installation - BSD & Mac OS
+---------------------------
 
+    ./configure
     make test
     make install
-
-Installation - Mac OS
----------------------
-
-    make test
-    make install MANPREFIX=/usr/share/man
 
 Installation - Mac OS/Homebrew
 ------------------------------
@@ -30,7 +25,8 @@ Installation - Debian Linux
 ---------------------------
 
     apt-get install libkqueue-dev
-    make test -f Makefile.linux
+    ./configure
+    make test
     make install
 
 Installation - Red Hat Linux
@@ -44,7 +40,8 @@ Get & install [libkqueue][libkqueue]
 
 Build entr
 
-    make test -f Makefile.linux
+    ./configure
+    make test
     make install
 
 Examples
