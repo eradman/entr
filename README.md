@@ -49,12 +49,11 @@ Examples
 
 Recompile if header files change
 
-    $ find. -name '*.h' | entr make
+    $ find. -name '*.c' | entr make
 
-Run tests if any file in the current directory changes, only printing
-STDERR
+Launch and auto-reload a node.js server (experimental)
 
-    $ echo '.' | entr sh -c './test.sh > /dev/null'
+    $ ls *.js | entr -r node index.js
 
 Convert any altered Markdown in the current directory to HTML using a
 FIFO
@@ -68,7 +67,7 @@ FIFO
 Next Release
 ------------
 
-1.9 More portable build/install
+1.9 New auto-reload option
 
 Releases History
 ----------------

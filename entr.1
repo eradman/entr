@@ -21,6 +21,7 @@
 .Nd run arbitrary commands when files change
 .Sh SYNOPSIS
 .Nm entr
+.Op Ar -r
 .Ar utility
 .Op Ar arguments ...
 .Os
@@ -31,12 +32,18 @@
 .Nm
 has two modes of operation; the first use reads a list of files provided on STDIN
 and executes the supplied
-.Nm utility
+.Ar utility
 if any of them change.
 .Nm
 waits for the child process to finish before responding to subsequent file
 system events. A TTY is opened before entering the watch loop in order to
 support the invocation of interactive utilities.
+.Pp
+.Ar -r
+modifies the exec mode by launching the
+.Ar utility
+and reloading it if one of the source files change. This features requires the
+application to exit if it receives SIGTERM.
 .Pp
 The second mode also reads a list of filenames provided on STDIN and is enabled
 by specifying '+' and the name of a fifo. In this mode
@@ -58,11 +65,11 @@ was received.
 .Pp
 Recompile when source files change
 .Pp
-.Dl $ find . -name '*.[ch]' | entr make
+.Dl $ find . -name '*.c' | entr make
 .Pp
-Run tests if any file in the current directory changes, only printing STDERR
+Launch and auto-reload a node.js server
 .Pp
-.Dl $ echo '.' | entr sh -c './test.sh > /dev/null'
+.Dl $ echo *.js | entr -r node index.js
 .Pp
 Convert individual Markdown files to HTML if they're modified
 .Pp
