@@ -73,7 +73,7 @@ FILE *fmemopen(void *buf, size_t size, const char *mode)
 
 void
 open_tmp(watch_file_t *file) {
-	strlcpy(file->fn, "/tmp/entr_spec.XXXXXX", PATH_MAX);
+	strlcpy(file->fn, "/tmp/entr_spec.XXXXXXXXXX", PATH_MAX);
 	mkstemp(file->fn);
 	file->fd = open(file->fn, O_WRONLY | O_CREAT, DEFFILEMODE);
 }
@@ -164,7 +164,7 @@ int set_fifo_01() {
 	int fd;
 	int status;
 
-	strlcpy(fn, "+/tmp/entr_spec.XXXXXX", PATH_MAX);
+	strlcpy(fn, "+/tmp/entr_spec.XXXXXXXXXX", PATH_MAX);
 	mkstemp(fn);
 	static char *argv[] = { "me", "+fifo", NULL };
 	argv[1] = fn;

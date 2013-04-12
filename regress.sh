@@ -52,17 +52,18 @@ try "exec single shell command when a file is removed and replaced"
 
 try "restart a server when a file is modified"
 	setup
-	cat /dev/null > $tmp/exec.out
-	ls $tmp/file2 | ./entr -r sleep 60 &
+	echo "started." > $tmp/file1
+	ls $tmp/file2 | ./entr -r tail -f $tmp/file1 > $tmp/exec.out &
 	bgpid=$!
 	pause
+	assert "$(cat $tmp/exec.out)" "started."
 
 	echo 456 >> $tmp/file2
 	pause
 	kill -INT $bgpid
 
 	wait $bgpid
-	assert "$(cat $tmp/exec.out)" ""
+	assert "$(cat $tmp/exec.out)" "$(printf 'started.\nstarted.')"
 
 try "exec single shell command when three files change simultaneously"
 	setup
@@ -111,7 +112,7 @@ try "read each filename from a named pipe until a file is removed"
 	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(printf 'file1')"
 	assert $code 1
 
-tty 2> /dev/null && {
+tty > /dev/null && {
 try "exec an interactive utility when a file changes"
 	setup
 	ls $tmp/file* | ./entr sh -c 'tty | colrm 9; sleep 0.3' > $tmp/exec.out &
