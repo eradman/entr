@@ -50,6 +50,20 @@ try "exec single shell command when a file is removed and replaced"
 	wait $bgpid
 	assert "$(cat $tmp/exec.out)" "$tmp/file2: empty"
 
+try "restart a server when a file is modified"
+	setup
+	cat /dev/null > $tmp/exec.out
+	ls $tmp/file2 | ./entr -r sleep 60 &
+	bgpid=$!
+	pause
+
+	echo 456 >> $tmp/file2
+	pause
+	kill -INT $bgpid
+
+	wait $bgpid
+	assert "$(cat $tmp/exec.out)" ""
+
 try "exec single shell command when three files change simultaneously"
 	setup
 	ls $tmp/file* | ./entr sh -c 'echo ping; sleep 0.3' > $tmp/exec.out &

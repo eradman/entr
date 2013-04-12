@@ -130,7 +130,6 @@ int process_input_01() {
 }
 
 int watch_fd_01() {
-	/* delete file monitored by kqueue */
 	int kq;
 	watch_file_t file;
 	char *msg = "0123456789\n";

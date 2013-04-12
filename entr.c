@@ -153,7 +153,7 @@ void
 usage()
 {
 	extern char *__progname;
-	fprintf(stderr, "usage: %s script [args] < filenames\n",
+	fprintf(stderr, "usage: %s [-r] utility [args, ...] < filenames\n",
 		__progname);
 	fprintf(stderr, "       %s +fifo < filenames\n",
 		__progname);
@@ -200,15 +200,16 @@ run_script_fork(char *filename, char *argv[]) {
 	int pid;
 	int status;
 
-	if (restart_mode && child_pid) {
-		/* printf("SIGTERM sent to PID %d\n", child_pid); */
+	if ((restart_mode == 1) && (child_pid > 0)) {
+		#ifdef DEBUG
+		printf("SIGTERM sent to PID %d\n", child_pid);
+		#endif
 		kill(child_pid, SIGTERM);
 		waitpid(child_pid, &status, 0);
 		child_pid = 0;
 	}
 
 	pid = fork();
-	child_pid = pid;
 	if (pid == -1)
 		err(errno, "can't fork");
 
@@ -216,8 +217,9 @@ run_script_fork(char *filename, char *argv[]) {
 		execvp(filename, argv);
 		err(1, "exec %s", filename);
 	}
+	child_pid = pid;
 
-	if (!restart_mode)
+	if (restart_mode == 0)
 		waitpid(pid, &status, 0);
 }
 
