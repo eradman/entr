@@ -166,7 +166,7 @@ int set_fifo_01() {
 
 	strlcpy(fn, "+/tmp/entr_spec.XXXXXXXXXX", PATH_MAX);
 	mkstemp(fn);
-	static char *argv[] = { "me", "+fifo", NULL };
+	static char *argv[] = { "entr", "+fifo", NULL };
 	argv[1] = fn;
 
 	if ((pid = fork()) > 0) {
@@ -189,12 +189,29 @@ int set_fifo_01() {
 	return 0;
 }
 
+int set_global_options_01() {
+	int argv_offset;
+
+	char *exec_argv[] = { "entr", "ruby", "main.rb", NULL };
+	char *restart_argv[] = { "entr", "-r", "ruby", "main.rb", NULL };
+	
+	argv_offset = set_global_options(exec_argv);
+	_assert(argv_offset == 1);
+	_assert(restart_mode == 0);
+
+	argv_offset = set_global_options(restart_argv);
+	_assert(argv_offset == 2);
+	_assert(restart_mode == 1);
+	return 0;
+}
+
 /* main */
 
 int all_tests() {
 	_verify(process_input_01);
 	_verify(watch_fd_01);
 	_verify(set_fifo_01);
+	_verify(set_global_options_01);
 
 	return 0;
 }

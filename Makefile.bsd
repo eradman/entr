@@ -26,7 +26,8 @@ entr_spec: entr.c entr_spec.c
 	@chmod +x $@
 
 clean:
-	rm -rf entr entr_spec *.o
+	rm -f entr entr_spec *.o
+	rm -f makefile
 
 install:
 	@mkdir -p ${PREFIX}/bin

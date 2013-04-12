@@ -50,7 +50,7 @@ typedef struct watch_file watch_file_t;
 int (*test_runner_main)(int, char**);
 void (*run_script)(char *, char *[]);
 watch_file_t fifo;
-int restart_mode; /* 0=no, 1=yes */
+int restart_mode;
 int child_pid;
 
 /* Linux hacks */
@@ -70,6 +70,7 @@ strlcpy(char *to, const char *from, int l) {
 static void usage();
 static int process_input(FILE *, watch_file_t *[], int);
 static int set_fifo(char *[]);
+static int set_global_options(char *[]);
 static void run_script_fork(char *, char *[]);
 static void watch_file(int, watch_file_t *);
 static void watch_loop(int, int, char *[]);
@@ -136,15 +137,9 @@ main(int argc, char *argv[]) {
 		}
 	}
 
-	/* manual argv parsing */
-	if (strcmp(argv[1], "-r") == 0) {
-		argv_index = 2;
-		restart_mode = 1;
+	argv_index = set_global_options(argv);
+	if (restart_mode)
 		run_script(argv[argv_index], argv+argv_index);
-	}
-	else
-		argv_index = 1;
-
 	watch_loop(kq, 0, argv+argv_index);
 	return 1;
 }
@@ -193,6 +188,17 @@ set_fifo(char *argv[]) {
 
 	memset(&fifo, 0, sizeof(fifo));
 	return 0;
+}
+
+int
+set_global_options(char *argv[]) {
+	/* entr only supports one flag, if more are added we'll parse argv */
+	if (strcmp(argv[1], "-r") == 0) {
+		restart_mode = 1;
+		return 2;
+	}
+	else
+		return 1;
 }
 
 void
