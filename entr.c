@@ -50,6 +50,8 @@ typedef struct watch_file watch_file_t;
 int (*test_runner_main)(int, char**);
 void (*run_script)(char *, char *[]);
 watch_file_t fifo;
+int restart_mode; /* 0=no, 1=yes */
+int child_pid;
 
 /* Linux hacks */
 
@@ -94,6 +96,7 @@ main(int argc, char *argv[]) {
 	struct sigaction act;
 	int ttyfd;
 	int i;
+	short argv_index;
 
 	/* normally a user will exit this utility by hitting Ctrl-C */
 	act.sa_flags = 0;
@@ -120,7 +123,7 @@ main(int argc, char *argv[]) {
 		watch_file(kq, files[i]);
 	}
 
-	/* in FIFO mode will block until reader connects */
+	/* FIFO mode will block until reader connects */
 	if (set_fifo(argv));
 	else {
 		/* Attempt to open a tty so that editors such as ViM don't complain */
@@ -133,7 +136,16 @@ main(int argc, char *argv[]) {
 		}
 	}
 
-	watch_loop(kq, 0, argv);
+	/* manual argv parsing */
+	if (strcmp(argv[1], "-r") == 0) {
+		argv_index = 2;
+		restart_mode = 1;
+		run_script(argv[argv_index], argv+argv_index);
+	}
+	else
+		argv_index = 1;
+
+	watch_loop(kq, 0, argv+argv_index);
 	return 1;
 }
 
@@ -188,7 +200,15 @@ run_script_fork(char *filename, char *argv[]) {
 	int pid;
 	int status;
 
+	if (restart_mode && child_pid) {
+		/* printf("SIGTERM sent to PID %d\n", child_pid); */
+		kill(child_pid, SIGTERM);
+		waitpid(child_pid, &status, 0);
+		child_pid = 0;
+	}
+
 	pid = fork();
+	child_pid = pid;
 	if (pid == -1)
 		err(errno, "can't fork");
 
@@ -197,7 +217,8 @@ run_script_fork(char *filename, char *argv[]) {
 		err(1, "exec %s", filename);
 	}
 
-	waitpid(pid, &status, 0);
+	if (!restart_mode)
+		waitpid(pid, &status, 0);
 }
 
 void
@@ -262,9 +283,8 @@ watch_loop(int kq, int once, char *argv[]) {
 				evList[i].fflags & NOTE_WRITE ||
 				evList[i].fflags & NOTE_EXTEND) {
 				if (!fifo.fd) {
-					run_script(argv[1], argv+1);
-					/* don't process any more events */
-					i=nev;
+					run_script(argv[0], argv);
+					i=nev; /* don't process any more events */
 				}
 				else {
 					write(fifo.fd, file->fn, strlen(file->fn));

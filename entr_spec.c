@@ -73,7 +73,6 @@ FILE *fmemopen(void *buf, size_t size, const char *mode)
 
 void
 open_tmp(watch_file_t *file) {
-	/* OpenBSD doesn't support EVFILT_USER so we'll use /tmp */
 	strlcpy(file->fn, "/tmp/entr_spec.XXXXXX", PATH_MAX);
 	mkstemp(file->fn);
 	file->fd = open(file->fn, O_WRONLY | O_CREAT, DEFFILEMODE);
@@ -135,7 +134,7 @@ int watch_fd_01() {
 	int kq;
 	watch_file_t file;
 	char *msg = "0123456789\n";
-	static char *argv[] = { "me", "prog", "arg1", "arg2", NULL };
+	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 	int pid;
 
 	open_tmp(&file);
@@ -146,6 +145,7 @@ int watch_fd_01() {
 	_assert(kq != -1);
 
 	if ((pid = fork()) == 0)
+		/* fire event by removing file */
 		unlink_tmp_exit(&file);
 	else
 		watch_loop(kq, 1, argv);
