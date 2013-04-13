@@ -1,6 +1,7 @@
 #!/bin/sh
 
-function copy_mk {
+copy_mk()
+{
     set -x
     cp Makefile.$1 makefile
 }
