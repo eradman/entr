@@ -64,13 +64,11 @@ FIFO
     >   markdown2html $F
     > done < notify
 
-Next Release
-------------
-
-1.9 New auto-reload option
 
 Releases History
 ----------------
+
+1.9 New auto-reload option _2013-04-13_
 
 1.8 Loosing a file under watch is always fatal _2012-12-05_
 
