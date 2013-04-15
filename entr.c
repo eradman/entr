@@ -86,7 +86,6 @@ int
 main(int argc, char *argv[]) {
 	if ((*test_runner_main))
 		return(test_runner_main(argc, argv));
-	if (argc < 2) usage();
 
 	/* set up pointers to real functions */
 	run_script = run_script_fork;
@@ -98,6 +97,10 @@ main(int argc, char *argv[]) {
 	int ttyfd;
 	int i;
 	short argv_index;
+
+    /* call usage() if no command is supplied */
+	if (argc < 2) usage();
+	argv_index = set_global_options(argv);
 
 	/* normally a user will exit this utility by hitting Ctrl-C */
 	act.sa_flags = 0;
@@ -137,7 +140,6 @@ main(int argc, char *argv[]) {
 		}
 	}
 
-	argv_index = set_global_options(argv);
 	if (restart_mode)
 		run_script(argv[argv_index], argv+argv_index);
 	watch_loop(kq, 0, argv+argv_index);
@@ -192,9 +194,9 @@ set_fifo(char *argv[]) {
 
 int
 set_global_options(char *argv[]) {
-	/* entr only supports one flag, if more are added we'll parse argv */
 	if (strcmp(argv[1], "-r") == 0) {
 		restart_mode = 1;
+        if (argv[2] == '\0') usage();
 		return 2;
 	}
 	else

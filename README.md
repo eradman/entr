@@ -64,6 +64,11 @@ FIFO
     >   markdown2html $F
     > done < notify
 
+Next Release
+------------
+
+2.0 Slightly improved error handling
+
 
 Releases History
 ----------------
