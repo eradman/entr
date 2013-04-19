@@ -51,7 +51,7 @@ Recompile if header files change
 
     $ find. -name '*.c' | entr make
 
-Launch and auto-reload a node.js server (experimental)
+Launch and auto-reload a node.js server
 
     $ ls *.js | entr -r node index.js
 
@@ -63,12 +63,6 @@ FIFO
     > do
     >   markdown2html $F
     > done < notify
-
-Next Release
-------------
-
-2.0 Slightly improved error handling
-
 
 Releases History
 ----------------
