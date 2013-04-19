@@ -3,7 +3,7 @@
 copy_mk()
 {
     set -x
-    cp Makefile.$1 makefile
+    cp Makefile.$1 Makefile
 }
 
 case `uname` in

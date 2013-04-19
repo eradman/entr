@@ -27,16 +27,16 @@ entr_spec: entr.c entr_spec.c
 
 clean:
 	rm -f entr entr_spec *.o
-	rm -f makefile
+	rm -f Makefile
 
 install:
-	@mkdir -p ${PREFIX}/bin
-	@mkdir -p ${MANPREFIX}/man1
-	install entr ${PREFIX}/bin
-	install entr.1 ${MANPREFIX}/man1
+	@mkdir -p ${DESTDIR}${PREFIX}/bin
+	@mkdir -p ${DESTDIR}${MANPREFIX}/man1
+	install entr ${DESTDIR}${PREFIX}/bin
+	install entr.1 ${DESTDIR}${MANPREFIX}/man1
 
 uninstall:
-	rm ${PREFIX}/bin/entr
-	rm ${MANPREFIX}/man1/entr.1
+	rm ${DESTDIR}${PREFIX}/bin/entr
+	rm ${DESTDIR}${MANPREFIX}/man1/entr.1
 
 .PHONY: clean install uninstall

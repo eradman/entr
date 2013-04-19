@@ -5,8 +5,8 @@ A utility for running arbitrary commands when files change. Uses
 [kqueue(2)][kqueue_2] to avoid polling. `entr` responds to file system events by
 executing command line arguments or by writing to a FIFO.
 
-`entr` was written to provide an effective means of incorporating micro-tests
-into the daily workflow on UNIX platforms.
+`entr` was written to provide to make rapid feedback and automated testing
+natural and completely ordinary.
 
 Installation - BSD & Mac OS
 ---------------------------
