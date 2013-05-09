@@ -67,7 +67,7 @@ FIFO
 Next Release
 ------------
 
-2.0 Handle late events better in exec mode
+2.0 More portable build
 
 Releases History
 ----------------
