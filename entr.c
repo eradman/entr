@@ -267,6 +267,7 @@ watch_loop(int kq, int once, char *argv[]) {
 	int nev;
 	watch_file_t *file;
 	int i;
+	struct timespec evTimeout = { 0, 1000000L };
 
 	do {
 		nev = kevent(kq, NULL, 0, evList, 32, NULL);
@@ -294,7 +295,9 @@ watch_loop(int kq, int once, char *argv[]) {
 				evList[i].fflags & NOTE_EXTEND) {
 				if (!fifo.fd) {
 					run_script(argv[0], argv);
-					i=nev; /* don't process any more events */
+					/* don't process any more events */
+					i=nev;
+					kevent(kq, NULL, 0, evList, 32, &evTimeout);
 				}
 				else {
 					write(fifo.fd, file->fn, strlen(file->fn));

@@ -64,6 +64,11 @@ FIFO
     >   markdown2html $F
     > done < notify
 
+Next Release
+------------
+
+2.0 Handle late events better in exec mode
+
 Releases History
 ----------------
 
