@@ -15,10 +15,11 @@
  */
 
 #include <sys/stat.h>
-#include <stdio.h>
-#include <stdlib.h>
+
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "entr.c"
 
@@ -147,7 +148,7 @@ int watch_fd_01() {
 		/* fire event by removing file */
 		unlink_tmp_exit(&file);
 	else
-		watch_loop(kq, 1, argv);
+		watch_loop(kq, 0, argv);
 
 	_assert(strcmp(__exec_filename, "prog") == 0);
 	_assert(strcmp(__exec_argv[0], "prog") == 0);

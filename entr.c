@@ -21,16 +21,16 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 
-#include <limits.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <fcntl.h>
 #include <err.h>
 #include <errno.h>
-#include <signal.h>
+#include <fcntl.h>
+#include <limits.h>
 #include <paths.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 /* data */
 
@@ -80,8 +80,9 @@ static void handle_exit(int sig);
 
 #define NOTE_ALL NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND|NOTE_RENAME|NOTE_LINK
 
-/* the program */
-
+/*
+ * The Event Notify Test Runner - run arbitrary commands when files change
+ */
 int
 main(int argc, char *argv[]) {
 	struct rlimit rl;
@@ -113,7 +114,7 @@ main(int argc, char *argv[]) {
 
 	/* raise soft limit */
 	getrlimit(RLIMIT_NOFILE, &rl);
-	rl.rlim_cur = min(sysconf(_SC_OPEN_MAX), rl.rlim_max);
+	rl.rlim_cur = min((rlim_t)sysconf(_SC_OPEN_MAX), rl.rlim_max);
 	if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
 		err(1, "setrlimit cannot set rlim_cur to %d", (int)rl.rlim_cur);
 
@@ -143,7 +144,7 @@ main(int argc, char *argv[]) {
 
 	if (restart_mode)
 		run_script(argv[argv_index], argv+argv_index);
-	watch_loop(kq, 0, argv+argv_index);
+	watch_loop(kq, 1, argv+argv_index);
 	return 1;
 }
 
@@ -262,7 +263,7 @@ handle_exit(int sig) {
 }
 
 void
-watch_loop(int kq, int once, char *argv[]) {
+watch_loop(int kq, int repeat, char *argv[]) {
 	struct kevent evSet;
 	struct kevent evList[32];
 	int nev;
@@ -305,5 +306,5 @@ watch_loop(int kq, int once, char *argv[]) {
 				}
 			}
 		}
-	} while(!once);
+	} while (repeat == 1);
 }
