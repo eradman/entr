@@ -145,10 +145,10 @@ int watch_fd_01() {
 	_assert(kq != -1);
 
 	if ((pid = fork()) == 0)
-		/* fire event by removing file */
-		unlink_tmp_exit(&file);
+	    /* fire event by removing file */
+	    unlink_tmp_exit(&file);
 	else
-		watch_loop(kq, 0, argv);
+	    watch_loop(kq, 0, argv);
 
 	_assert(strcmp(__exec_filename, "prog") == 0);
 	_assert(strcmp(__exec_argv[0], "prog") == 0);
@@ -171,19 +171,19 @@ int set_fifo_01() {
 	argv[1] = fn;
 
 	if ((pid = fork()) > 0) {
-		_assert(set_fifo(argv));
-		_assert(fifo.fd > 0);
-		write(fifo.fd, "ping", 4);
-		waitpid(pid, &status, 0);
-		_assert(status == 0);
+	    _assert(set_fifo(argv));
+	    _assert(fifo.fd > 0);
+	    write(fifo.fd, "ping", 4);
+	    waitpid(pid, &status, 0);
+	    _assert(status == 0);
 	}
 	else {
-		while ((fd = open(fn+1, O_RDONLY)) == -1);
-			usleep(100000);
-		_assert(read(fd, buf, 4) > 0);
-		buf[4] = 0;
-		_assert(strcmp(buf, "ping") == 0);
-		exit(0);
+	    while ((fd = open(fn+1, O_RDONLY)) == -1);
+	        usleep(100000);
+	    _assert(read(fd, buf, 4) > 0);
+	    buf[4] = 0;
+	    _assert(strcmp(buf, "ping") == 0);
+	    exit(0);
 	}
 	_assert(close(fifo.fd) == 0);
 	_assert(unlink(fn+1) == 0);
@@ -220,7 +220,7 @@ int all_tests() {
 int test_main(int argc, char *argv[]) {
 	int result = all_tests();
 	if (result == 0)
-		printf("%d tests and %d assertions PASSED\n", tests_run, assertions);
+	    printf("%d tests and %d assertions PASSED\n", tests_run, assertions);
 	return result != 0;
 }
 
