@@ -163,10 +163,10 @@ int set_fifo_01() {
 	int pid;
 	int fd;
 	int status;
+	static char *argv[] = { "entr", "+fifo", NULL };
 
 	strlcpy(fn, "+/tmp/entr_spec.XXXXXXXXXX", PATH_MAX);
 	mkstemp(fn);
-	static char *argv[] = { "entr", "+fifo", NULL };
 	argv[1] = fn;
 
 	if ((pid = fork()) > 0) {

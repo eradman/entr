@@ -67,7 +67,7 @@ FIFO
 Next Release
 ------------
 
-2.0 More portable build
+2.0 Adapt to platforms with only ANSI C support such as VAX
 
 Releases History
 ----------------

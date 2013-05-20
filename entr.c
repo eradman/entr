@@ -84,12 +84,6 @@ static void handle_exit(int sig);
 
 int
 main(int argc, char *argv[]) {
-	if ((*test_runner_main))
-		return(test_runner_main(argc, argv));
-
-	/* set up pointers to real functions */
-	run_script = run_script_fork;
-
 	struct rlimit rl;
 	int kq;
 	int n_files;
@@ -97,6 +91,13 @@ main(int argc, char *argv[]) {
 	int ttyfd;
 	int i;
 	short argv_index;
+	watch_file_t **files;
+
+	if ((*test_runner_main))
+		return(test_runner_main(argc, argv));
+
+	/* set up pointers to real functions */
+	run_script = run_script_fork;
 
     /* call usage() if no command is supplied */
 	if (argc < 2) usage();
@@ -116,8 +117,8 @@ main(int argc, char *argv[]) {
 	if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
 		err(1, "setrlimit cannot set rlim_cur to %d", (int)rl.rlim_cur);
 
-	/* variable length array based on hard limit */
-	watch_file_t *files[rl.rlim_cur];
+	files = malloc(rl.rlim_cur);
+	memset(files, 0, rl.rlim_cur);
 
 	if ((kq = kqueue()) == -1)
 		err(1, "cannot create kqueue");
