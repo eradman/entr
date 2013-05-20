@@ -1,7 +1,7 @@
 PREFIX ?= /usr/local
 MANPREFIX ?= ${PREFIX}/man
 CC ?= cc
-CFLAGS ?= -Wall -std=ansi -pedantic
+CFLAGS ?= -Wall -std=c89 -pedantic
 LDFLAGS ?= 
 
 all: entr
