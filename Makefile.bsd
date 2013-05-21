@@ -29,7 +29,7 @@ clean:
 	rm -f entr entr_spec *.o
 	rm -f Makefile
 
-install:
+install: entr
 	@mkdir -p ${DESTDIR}${PREFIX}/bin
 	@mkdir -p ${DESTDIR}${MANPREFIX}/man1
 	install entr ${DESTDIR}${PREFIX}/bin

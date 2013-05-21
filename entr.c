@@ -47,10 +47,12 @@ typedef struct watch_file watch_file_t;
 
 /* globals */
 
+extern int optind;
 int (*test_runner_main)(int, char**);
 void (*run_script)(char *, char *[]);
 watch_file_t fifo;
 int restart_mode;
+int debug_mode;
 int child_pid;
 
 /* Linux hacks */
@@ -81,7 +83,8 @@ static void handle_exit(int sig);
 #define NOTE_ALL NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND|NOTE_RENAME|NOTE_LINK
 
 /*
- * The Event Notify Test Runner - run arbitrary commands when files change
+ * The Event Notify Test Runner
+ * run arbitrary commands when files change
  */
 int
 main(int argc, char *argv[]) {
@@ -100,7 +103,7 @@ main(int argc, char *argv[]) {
 	/* set up pointers to real functions */
 	run_script = run_script_fork;
 
-    /* call usage() if no command is supplied */
+	/* call usage() if no command is supplied */
 	if (argc < 2) usage();
 	argv_index = set_global_options(argv);
 
@@ -196,13 +199,30 @@ set_fifo(char *argv[]) {
 
 int
 set_global_options(char *argv[]) {
-	if (strcmp(argv[1], "-r") == 0) {
-	    restart_mode = 1;
-        if (argv[2] == '\0') usage();
-	    return 2;
+	int ch;
+	int argc;
+
+	/* only evaluate flags leading up to a command name */
+	argc = 1;
+	while (argv[argc] != '\0') {
+	    if (argv[argc][0] == '-') argc++;
+	    else break;
 	}
-	else
-	    return 1;
+	/* no command to run */
+	if (argv[argc] == '\0')
+	    usage();
+
+	while ((ch = getopt(argc, argv, "rD")) != -1) {
+	    switch (ch) {
+	        case 'r':
+	            restart_mode = 1;
+	            break;
+	        case 'D':
+	            debug_mode = 1;
+	            break;
+	    }
+	}
+	return optind;
 }
 
 void
@@ -211,9 +231,8 @@ run_script_fork(char *filename, char *argv[]) {
 	int status;
 
 	if ((restart_mode == 1) && (child_pid > 0)) {
-	    #ifdef DEBUG
-	    printf("SIGTERM sent to PID %d\n", child_pid);
-	    #endif
+	    if (debug_mode == 1)
+	    	printf("SIGTERM sent to PID %d\n", child_pid);
 	    kill(child_pid, SIGTERM);
 	    waitpid(child_pid, &status, 0);
 	    child_pid = 0;
@@ -287,14 +306,14 @@ watch_loop(int kq, int repeat, char *argv[]) {
 	    }
 	    /* respond to all events */
 	    for (i=0; i<nev; i++) {
-	        #ifdef DEBUG
-	        fprintf(stderr, "event %d/%d: 0x%x\n", i+1, nev, evList[i].fflags);
-	        #endif
+	        if (debug_mode == 1)
+	            fprintf(stderr, "event %d/%d: 0x%x\n", i+1, nev,
+	                evList[i].fflags);
 	        file = (watch_file_t *)evList[i].udata;
 	        if (evList[i].fflags & NOTE_DELETE ||
 	            evList[i].fflags & NOTE_WRITE ||
 	            evList[i].fflags & NOTE_EXTEND) {
-	            if (!fifo.fd) {
+	            if (fifo.fd == 0) {
 	                run_script(argv[0], argv);
 	                /* don't process any more events */
 	                i=nev;
