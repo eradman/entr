@@ -67,7 +67,13 @@ FIFO
 Next Release
 ------------
 
-2.0 Adapt to platforms with only ANSI C support such as VAX
+
+* better error handling
+* install/uninstall uses DESTDIR to be compatible with pkgsrc
+* more portable makefiles, including a static build for Linux
+* adapt to platforms with only ANSI C support such as VAX (gcc 2.95)
+* follow most of the rules in OpenBSD's style(9)
+* use ENTR_DEBUG environment to print debug messages
 
 Releases History
 ----------------
