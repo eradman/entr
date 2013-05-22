@@ -52,8 +52,8 @@ int (*test_runner_main)(int, char**);
 void (*run_script)(char *, char *[]);
 watch_file_t fifo;
 int restart_mode;
-int debug_mode;
 int child_pid;
+int DEBUG;
 
 /* Linux hacks */
 
@@ -72,7 +72,7 @@ strlcpy(char *to, const char *from, int l) {
 static void usage();
 static int process_input(FILE *, watch_file_t *[], int);
 static int set_fifo(char *[]);
-static int set_global_options(char *[]);
+static int set_options(char *[]);
 static void run_script_fork(char *, char *[]);
 static void watch_file(int, watch_file_t *);
 static void watch_loop(int, int, char *[]);
@@ -105,7 +105,7 @@ main(int argc, char *argv[]) {
 
 	/* call usage() if no command is supplied */
 	if (argc < 2) usage();
-	argv_index = set_global_options(argv);
+	argv_index = set_options(argv);
 
 	/* normally a user will exit this utility by hitting Ctrl-C */
 	act.sa_flags = 0;
@@ -133,7 +133,7 @@ main(int argc, char *argv[]) {
 	}
 
 	/* FIFO mode will block until reader connects */
-	if (set_fifo(argv));
+	if (set_fifo(argv+argv_index));
 	else {
 	    /* Attempt to open a tty so that editors such as ViM don't complain */
 	    if ((ttyfd = open(_PATH_TTY, O_RDONLY)) == -1)
@@ -184,8 +184,8 @@ process_input(FILE *file, watch_file_t *files[], int max_files) {
 
 int
 set_fifo(char *argv[]) {
-	if (argv[1][0] == (int)'+') {
-	    strlcpy(fifo.fn, argv[1]+1, MEMBER_SIZE(watch_file_t, fn));
+	if (argv[0][0] == (int)'+') {
+	    strlcpy(fifo.fn, argv[0]+1, MEMBER_SIZE(watch_file_t, fn));
 	    if (mkfifo(fifo.fn, S_IRUSR| S_IWUSR) == -1)
 	        err(1, "mkfifo '%s' failed", fifo.fn);
 	    if ((fifo.fd = open(fifo.fn, O_WRONLY, 0)) == -1)
@@ -198,9 +198,15 @@ set_fifo(char *argv[]) {
 }
 
 int
-set_global_options(char *argv[]) {
+set_options(char *argv[]) {
 	int ch;
 	int argc;
+	char *s;
+
+	/* debug cannot be set with a flag */
+	s = getenv("ENTR_DEBUG");
+	if (s != NULL && strlen(s) > 0)
+	    DEBUG = 1;
 
 	/* only evaluate flags leading up to a command name */
 	argc = 1;
@@ -212,13 +218,10 @@ set_global_options(char *argv[]) {
 	if (argv[argc] == '\0')
 	    usage();
 
-	while ((ch = getopt(argc, argv, "rD")) != -1) {
+	while ((ch = getopt(argc, argv, "r")) != -1) {
 	    switch (ch) {
 	        case 'r':
 	            restart_mode = 1;
-	            break;
-	        case 'D':
-	            debug_mode = 1;
 	            break;
 	    }
 	}
@@ -231,9 +234,9 @@ run_script_fork(char *filename, char *argv[]) {
 	int status;
 
 	if ((restart_mode == 1) && (child_pid > 0)) {
-	    if (debug_mode == 1)
-	    	printf("SIGTERM sent to PID %d\n", child_pid);
 	    kill(child_pid, SIGTERM);
+	    if (DEBUG)
+	    	printf("signal %d sent to pid %d\n", SIGTERM, child_pid);
 	    waitpid(child_pid, &status, 0);
 	    child_pid = 0;
 	}
@@ -306,9 +309,9 @@ watch_loop(int kq, int repeat, char *argv[]) {
 	    }
 	    /* respond to all events */
 	    for (i=0; i<nev; i++) {
-	        if (debug_mode == 1)
-	            fprintf(stderr, "event %d/%d: 0x%x\n", i+1, nev,
-	                evList[i].fflags);
+	        if (DEBUG)
+	            fprintf(stderr, "event %d/%d: flags: 0x%x fflags: 0x%x\n",
+	                i+1, nev, evList[i].flags, evList[i].fflags);
 	        file = (watch_file_t *)evList[i].udata;
 	        if (evList[i].fflags & NOTE_DELETE ||
 	            evList[i].fflags & NOTE_WRITE ||

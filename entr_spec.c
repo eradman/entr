@@ -171,7 +171,7 @@ int set_fifo_01() {
 	argv[1] = fn;
 
 	if ((pid = fork()) > 0) {
-	    _assert(set_fifo(argv));
+	    _assert(set_fifo(argv+1));
 	    _assert(fifo.fd > 0);
 	    write(fifo.fd, "ping", 4);
 	    waitpid(pid, &status, 0);
@@ -190,17 +190,17 @@ int set_fifo_01() {
 	return 0;
 }
 
-int set_global_options_01() {
+int set_options_01() {
 	int argv_offset;
 
 	char *exec_argv[] = { "entr", "ruby", "main.rb", NULL };
 	char *restart_argv[] = { "entr", "-r", "ruby", "main.rb", NULL };
 	
-	argv_offset = set_global_options(exec_argv);
+	argv_offset = set_options(exec_argv);
 	_assert(argv_offset == 1);
 	_assert(restart_mode == 0);
 
-	argv_offset = set_global_options(restart_argv);
+	argv_offset = set_options(restart_argv);
 	_assert(argv_offset == 2);
 	_assert(restart_mode == 1);
 	return 0;
@@ -212,7 +212,7 @@ int all_tests() {
 	_verify(process_input_01);
 	_verify(watch_fd_01);
 	_verify(set_fifo_01);
-	_verify(set_global_options_01);
+	_verify(set_options_01);
 
 	return 0;
 }

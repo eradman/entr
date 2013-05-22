@@ -1,7 +1,7 @@
 PREFIX ?= /usr/local
 MANPREFIX ?= ${PREFIX}/man
 CC ?= cc
-CFLAGS ?= -std=c89 -pedantic -Wall -W -Wpointer-arith -Wbad-function-cast
+CFLAGS ?= -std=c89 -pedantic -Wall -Wpointer-arith -Wbad-function-cast
 LDFLAGS ?= 
 
 all: entr
@@ -27,6 +27,8 @@ entr_spec: entr.c entr_spec.c
 
 clean:
 	rm -f entr entr_spec *.o
+
+distclean:
 	rm -f Makefile
 
 install: entr
