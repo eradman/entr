@@ -14,9 +14,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sys/types.h>
-#include <sys/event.h>
 #include <sys/param.h>
+#include <sys/event.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
@@ -70,13 +69,13 @@ strlcpy(char *to, const char *from, int l) {
 /* forwards */
 
 static void usage();
+static void handle_exit(int sig);
 static int process_input(FILE *, watch_file_t *[], int);
 static int set_fifo(char *[]);
 static int set_options(char *[]);
 static void run_script_fork(char *, char *[]);
 static void watch_file(int, watch_file_t *);
 static void watch_loop(int, int, char *[]);
-static void handle_exit(int sig);
 
 /* events to watch for */
 
@@ -151,6 +150,8 @@ main(int argc, char *argv[]) {
 	return 1;
 }
 
+/* Utility functions */
+
 void
 usage()
 {
@@ -162,9 +163,23 @@ usage()
 	exit(1);
 }
 
+/* Callbacks */
+
+void
+handle_exit(int sig) {
+	if (fifo.fd) {
+	    close(fifo.fd);
+	    unlink(fifo.fn);
+	}
+	exit(0);
+}
+
+/*
+ * Read lines from a file stream (normally STDIN) and populate the watch list
+ */
 int
 process_input(FILE *file, watch_file_t *files[], int max_files) {
-	char buf[PATH_MAX]; /* input is not arbitrary, we expect filenames */
+	char buf[PATH_MAX];
 	char *p;
 	int line = 0;
 
@@ -182,6 +197,10 @@ process_input(FILE *file, watch_file_t *files[], int max_files) {
 	return line;
 }
 
+/*
+ * Determine if the user is specifying FIFO mode by supplying a pathname
+ * prefixed with '+' and set the global mode flag accordingly
+ */
 int
 set_fifo(char *argv[]) {
 	if (argv[0][0] == (int)'+') {
@@ -197,18 +216,20 @@ set_fifo(char *argv[]) {
 	return 0;
 }
 
+/*
+ * Evaluate command line arguments and return an offset to the command to
+ * execute. Also sets a debug flag if set in the environment
+ */
 int
 set_options(char *argv[]) {
 	int ch;
 	int argc;
 	char *s;
 
-	/* debug cannot be set with a flag */
 	s = getenv("ENTR_DEBUG");
 	if (s != NULL && strlen(s) > 0)
 	    DEBUG = 1;
 
-	/* only evaluate flags leading up to a command name */
 	argc = 1;
 	while (argv[argc] != '\0') {
 	    if (argv[argc][0] == '-') argc++;
@@ -228,6 +249,10 @@ set_options(char *argv[]) {
 	return optind;
 }
 
+/*
+ * Execute the program supplied on the command line. If restart_mode was set
+ * then send the child process SIGTERM and restart it.
+ */
 void
 run_script_fork(char *filename, char *argv[]) {
 	int pid;
@@ -255,6 +280,9 @@ run_script_fork(char *filename, char *argv[]) {
 	    waitpid(pid, &status, 0);
 }
 
+/*
+ * Wait for file to become accessible and register a kevent to watch it
+ */
 void
 watch_file(int kq, watch_file_t *file) {
 	struct kevent evSet;
@@ -275,15 +303,10 @@ watch_file(int kq, watch_file_t *file) {
 	    err(1, "failed to register VNODE event");
 }
 
-void
-handle_exit(int sig) {
-	if (fifo.fd) {
-	    close(fifo.fd);
-	    unlink(fifo.fn);
-	}
-	exit(0);
-}
-
+/*
+ * Wait for events to fire and execute a command or write filename to a FIFO. If
+ * a file dissapears we'll spin waiting for it to reappear.
+ */
 void
 watch_loop(int kq, int repeat, char *argv[]) {
 	struct kevent evSet;

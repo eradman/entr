@@ -70,7 +70,7 @@ FILE *fmemopen(void *buf, size_t size, const char *mode)
 #endif
 #endif /* __linux__ */
 
-/* utility */
+/* utility functions */
 
 void
 open_tmp(watch_file_t *file) {
@@ -115,6 +115,9 @@ test_run_script_fork(char *filename, char *argv[]) {
 
 /* tests */
 
+/*
+ * Read a list of use supplied files, faking STDIN
+ */
 int process_input_01() {
 	int n_files;
 	watch_file_t *files[MAX_FILES_TEST];
@@ -130,6 +133,10 @@ int process_input_01() {
 	return 0;
 }
 
+/*
+ * Fire an event by removing a file. Assert that the use-supplied program was
+ * called with the correct arguments
+ */
 int watch_fd_01() {
 	int kq;
 	watch_file_t file;
@@ -158,6 +165,10 @@ int watch_fd_01() {
 	return 0;
 }
 
+/*
+ * Ensure that FIFO mode crates the named pipe. Read and write data to ensure
+ * that it works.
+ */
 int set_fifo_01() {
 	char fn[PATH_MAX];
 	char buf[1024];
@@ -190,6 +201,9 @@ int set_fifo_01() {
 	return 0;
 }
 
+/*
+ * Parse command line arguments up to but not including the utility to execute
+ */
 int set_options_01() {
 	int argv_offset;
 
