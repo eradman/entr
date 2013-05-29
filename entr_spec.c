@@ -18,7 +18,6 @@
 
 #include <fcntl.h>
 #include <stdio.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "entr.c"
@@ -31,8 +30,6 @@ int assertions = 0;
 #define FAIL() printf("\nfailure in %s() line %d\n", __func__, __LINE__)
 #define _assert(test) do { assertions++; if (!(test)) { FAIL(); return 1; } } while(0)
 #define _verify(test) do { int r=test(); tests_run++; if (r) return r; } while(0)
-
-#define MAX_FILES_TEST 3
 
 /* stubs */
 
@@ -120,12 +117,12 @@ test_run_script_fork(char *filename, char *argv[]) {
  */
 int process_input_01() {
 	int n_files;
-	watch_file_t *files[MAX_FILES_TEST];
+	watch_file_t *files[3]; /* less than the input to follow */
 	FILE *fake;
 	char input[] = "zero one\ntwo\nthree\nfour";
 
 	fake = fmemopen(input, strlen(input), "r");
-	n_files = process_input(fake, files, MAX_FILES_TEST);
+	n_files = process_input(fake, files, 3);
 	_assert(n_files == 3);
 	_assert(strcmp(files[0]->fn, "zero one") == 0);
 	_assert(strcmp(files[1]->fn, "two") == 0);
@@ -134,7 +131,7 @@ int process_input_01() {
 }
 
 /*
- * Fire an event by removing a file. Assert that the use-supplied program was
+ * Fire an event by removing a file. Assert that the user supplied program was
  * called with the correct arguments
  */
 int watch_fd_01() {

@@ -35,8 +35,8 @@ Installation - Red Hat Linux
 Get & install [libkqueue][libkqueue]
 
     ./configure
-    make && make rpm
-    sudo rpm -ivh pkg/libkqueue-1.0-1.x86_64.rpm
+    make package
+    sudo rpm -i libkqueue-*.rpm
 
 Build entr
 
@@ -74,6 +74,7 @@ Next Release
 * adapt to platforms with only ANSI C support such as VAX (gcc 2.95)
 * follow most of the rules in OpenBSD's style(9)
 * use ENTR_DEBUG environment to print debug messages
+* more aggressively remove duplicate events in EXEC mode
 
 Releases History
 ----------------
@@ -101,4 +102,4 @@ Releases History
 
 
 [kqueue_2]: http://www.openbsd.org/cgi-bin/man.cgi?query=kqueue&apropos=0&sektion=0&manpath=OpenBSD+Current&format=html
-[libkqueue]: http://www.heily.com/~mheily/proj/libkqueue/dist/
+[libkqueue]: http://sourceforge.net/projects/libkqueue/files/libkqueue-2.0/
