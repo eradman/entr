@@ -74,7 +74,6 @@ Next Release
 * adapt to platforms with only ANSI C support such as VAX (gcc 2.95)
 * follow most of the rules in OpenBSD's style(9)
 * use ENTR_DEBUG environment to print debug messages
-* more aggressively remove duplicate events in EXEC mode
 
 Releases History
 ----------------

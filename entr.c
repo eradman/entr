@@ -344,7 +344,6 @@ watch_loop(int kq, int repeat, char *argv[]) {
 	                run_script(argv[0], argv);
 	                /* don't process any more events */
 	                i=nev;
-	                (void) kevent(kq, NULL, 0, evList, 32, &ts);
 	            }
 	            else {
 	                write(fifo.fd, file->fn, strlen(file->fn));
