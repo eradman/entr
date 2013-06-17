@@ -52,7 +52,6 @@ void (*run_script)(char *, char *[]);
 watch_file_t fifo;
 int restart_mode;
 int child_pid;
-int DEBUG;
 
 /* Linux hacks */
 
@@ -218,17 +217,13 @@ set_fifo(char *argv[]) {
 
 /*
  * Evaluate command line arguments and return an offset to the command to
- * execute. Also sets a debug flag if set in the environment
+ * execute.
  */
 int
 set_options(char *argv[]) {
 	int ch;
 	int argc;
 	char *s;
-
-	s = getenv("ENTR_DEBUG");
-	if (s != NULL && strlen(s) > 0)
-	    DEBUG = 1;
 
 	argc = 1;
 	while (argv[argc] != '\0') {
@@ -260,8 +255,9 @@ run_script_fork(char *filename, char *argv[]) {
 
 	if ((restart_mode == 1) && (child_pid > 0)) {
 	    kill(child_pid, SIGTERM);
-	    if (DEBUG)
-	    	printf("signal %d sent to pid %d\n", SIGTERM, child_pid);
+	    #ifdef DEBUG
+	    printf("signal %d sent to pid %d\n", SIGTERM, child_pid);
+	    #endif
 	    waitpid(child_pid, &status, 0);
 	    child_pid = 0;
 	}
@@ -333,9 +329,10 @@ watch_loop(int kq, int repeat, char *argv[]) {
 	    }
 	    /* respond to all events */
 	    for (i=0; i<nev; i++) {
-	        if (DEBUG)
-	            fprintf(stderr, "event %d/%d: flags: 0x%x fflags: 0x%x\n",
-	                i+1, nev, evList[i].flags, evList[i].fflags);
+	        #ifdef DEBUG
+	        fprintf(stderr, "event %d/%d: flags: 0x%x fflags: 0x%x\n", i+1,
+	            nev, evList[i].flags, evList[i].fflags);
+	        #endif
 	        file = (watch_file_t *)evList[i].udata;
 	        if (evList[i].fflags & NOTE_DELETE ||
 	            evList[i].fflags & NOTE_WRITE ||
