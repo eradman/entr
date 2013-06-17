@@ -223,7 +223,6 @@ int
 set_options(char *argv[]) {
 	int ch;
 	int argc;
-	char *s;
 
 	argc = 1;
 	while (argv[argc] != '\0') {
@@ -310,7 +309,6 @@ watch_loop(int kq, int repeat, char *argv[]) {
 	int nev;
 	watch_file_t *file;
 	int i;
-	struct timespec ts = {0, 1000000};
 
 	do {
 	    nev = kevent(kq, NULL, 0, evList, 32, NULL);
