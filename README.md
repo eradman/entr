@@ -64,18 +64,11 @@ FIFO
     >   markdown2html $F
     > done < notify
 
-Next Release
-------------
-
-
-* better error handling
-* install/uninstall uses DESTDIR to be compatible with pkgsrc
-* more portable makefiles, including a static build for Linux
-* adapt to platforms with only ANSI C support such as VAX (gcc 2.95)
-* follow most of the rules in OpenBSD's style(9)
-
 Releases History
 ----------------
+
+2.0 More portable build; runs on old architectures without C99 support
+_2013-06-17_
 
 1.9 New auto-reload option _2013-04-13_
 
