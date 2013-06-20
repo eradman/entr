@@ -107,7 +107,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	    if (iev->mask & IN_MOVE_SELF)   fflags |= NOTE_EXTEND;
 
 	    /* scan or watch_file struct with this watch id */
-	    for (i=0; files[i+1] != NULL; i++)
+	    for (i=0; files[i] != NULL; i++)
 	        if (files[i]->fd == iev->wd) break;
 
 	    eventlist[n].ident = iev->wd;
@@ -115,7 +115,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	    eventlist[n].flags = 0; 
 	    eventlist[n].fflags = fflags;
 	    eventlist[n].data = 0;
-	    eventlist[n].udata = files[n];
+	    eventlist[n].udata = files[i];
 	    n++;
 	}
 	return n;
