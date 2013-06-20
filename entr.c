@@ -15,10 +15,15 @@
  */
 
 #include <sys/param.h>
-#include <sys/event.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+
+#if defined(__linux)
+#include "linux.h"
+#else
+#include <sys/event.h>
+#endif
 
 #include <err.h>
 #include <errno.h>
@@ -31,13 +36,7 @@
 #include <string.h>
 #include <unistd.h>
 
-/* data */
-
-struct watch_file {
-	char fn[PATH_MAX];
-	int fd;
-};
-typedef struct watch_file watch_file_t;
+#include "data.h"
 
 /* shortcuts */
 
@@ -47,23 +46,12 @@ typedef struct watch_file watch_file_t;
 /* globals */
 
 extern int optind;
+extern watch_file_t **files;
 int (*test_runner_main)(int, char**);
 void (*run_script)(char *, char *[]);
 watch_file_t fifo;
 int restart_mode;
 int child_pid;
-
-/* Linux hacks */
-
-#if defined(__linux)
-#define strlcpy _strlcpy
-static size_t
-strlcpy(char *to, const char *from, int l) {
-	memccpy(to, from, '\0', l);
-	to[l-1] = '\0';
-	return l - 1;
-}
-#endif
 
 /* forwards */
 
@@ -93,7 +81,6 @@ main(int argc, char *argv[]) {
 	int ttyfd;
 	int i;
 	short argv_index;
-	watch_file_t **files;
 
 	if ((*test_runner_main))
 	    return(test_runner_main(argc, argv));
@@ -119,8 +106,9 @@ main(int argc, char *argv[]) {
 	if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
 	    err(1, "setrlimit cannot set rlim_cur to %d", (int)rl.rlim_cur);
 
-	files = malloc(rl.rlim_cur);
-	memset(files, 0, rl.rlim_cur);
+	/* sequential scan may depend on a 0 at the end */
+	files = malloc(rl.rlim_cur+1);
+	memset(files, 0, rl.rlim_cur+1);
 
 	if ((kq = kqueue()) == -1)
 	    err(1, "cannot create kqueue");
@@ -314,6 +302,10 @@ watch_loop(int kq, int repeat, char *argv[]) {
 	    nev = kevent(kq, NULL, 0, evList, 32, NULL);
 	    /* reopen all files that were removed */
 	    for (i=0; i<nev; i++) {
+	        #ifdef DEBUG
+	        fprintf(stderr, "event %d/%d: flags: 0x%x fflags: 0x%x\n", i+1,
+	            nev, evList[i].flags, evList[i].fflags);
+	        #endif
 	        file = (watch_file_t *)evList[i].udata;
 	        if (evList[i].fflags & NOTE_DELETE) {
 	            EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_DELETE, NOTE_ALL, 0,
@@ -327,10 +319,6 @@ watch_loop(int kq, int repeat, char *argv[]) {
 	    }
 	    /* respond to all events */
 	    for (i=0; i<nev; i++) {
-	        #ifdef DEBUG
-	        fprintf(stderr, "event %d/%d: flags: 0x%x fflags: 0x%x\n", i+1,
-	            nev, evList[i].flags, evList[i].fflags);
-	        #endif
 	        file = (watch_file_t *)evList[i].udata;
 	        if (evList[i].fflags & NOTE_DELETE ||
 	            evList[i].fflags & NOTE_WRITE ||

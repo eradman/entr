@@ -1,6 +1,6 @@
-CFLAGS += -D_GNU_SOURCE -I/usr/include/kqueue
-LDFLAGS += -lpthread -lkqueue
 MANPREFIX ?= ${PREFIX}/share/man
+EXTRA_SRC = linux.c
 
 include Makefile.bsd
 
+CFLAGS += -D_GNU_SOURCE -DDEBUG -Iopenbsd-compat
