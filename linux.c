@@ -96,7 +96,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	    pos += EVENT_SIZE + iev->len;
 
 	    #ifdef DEBUG
-	    printf("wd: %d mask: 0x%x len:%d name:%s\n", iev->wd,
+	    fprintf(stderr, "wd: %d mask: 0x%x len:%d name:%s\n", iev->wd,
 	        iev->mask, iev->len, iev->name);
 	    #endif
 
@@ -105,6 +105,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	    if (iev->mask & IN_DELETE_SELF) fflags |= NOTE_DELETE;
 	    if (iev->mask & IN_CLOSE_WRITE) fflags |= NOTE_WRITE;
 	    if (iev->mask & IN_MOVE_SELF)   fflags |= NOTE_EXTEND;
+	    if (fflags == 0) continue;
 
 	    /* scan or watch_file struct with this watch id */
 	    for (i=0; files[i] != NULL; i++)

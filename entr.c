@@ -107,8 +107,8 @@ main(int argc, char *argv[]) {
 	    err(1, "setrlimit cannot set rlim_cur to %d", (int)rl.rlim_cur);
 
 	/* sequential scan may depend on a 0 at the end */
-	files = malloc(rl.rlim_cur+1);
-	memset(files, 0, rl.rlim_cur+1);
+	files = malloc(sizeof(char *) * rl.rlim_cur+1);
+	memset(files, 0, sizeof(char *) * rl.rlim_cur+1);
 
 	if ((kq = kqueue()) == -1)
 	    err(1, "cannot create kqueue");
@@ -243,7 +243,7 @@ run_script_fork(char *filename, char *argv[]) {
 	if ((restart_mode == 1) && (child_pid > 0)) {
 	    kill(child_pid, SIGTERM);
 	    #ifdef DEBUG
-	    printf("signal %d sent to pid %d\n", SIGTERM, child_pid);
+	    fprintf(stderr, "signal %d sent to pid %d\n", SIGTERM, child_pid);
 	    #endif
 	    waitpid(child_pid, &status, 0);
 	    child_pid = 0;

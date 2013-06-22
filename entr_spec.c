@@ -22,6 +22,10 @@
 
 #include "entr.c"
 
+/* globals */
+
+extern watch_file_t **files;
+
 /* test runner */
 
 int tests_run = 0;
@@ -117,17 +121,16 @@ test_run_script_fork(char *filename, char *argv[]) {
  */
 int process_input_01() {
 	int n_files;
-	watch_file_t *files[3]; /* less than the input to follow */
 	FILE *fake;
 	char input[] = "zero one\ntwo\nthree\nfour";
 
 	fake = fmemopen(input, strlen(input), "r");
-	n_files = process_input(fake, files, 3);
+	n_files = process_input(fake, files, 3); /* less than the input to follow */
 	_assert(n_files == 3);
+	return 0;
 	_assert(strcmp(files[0]->fn, "zero one") == 0);
 	_assert(strcmp(files[1]->fn, "two") == 0);
 	_assert(strcmp(files[2]->fn, "three") == 0);
-	return 0;
 }
 
 /*
@@ -136,21 +139,20 @@ int process_input_01() {
  */
 int watch_fd_01() {
 	int kq;
-	watch_file_t file;
 	char *msg = "0123456789\n";
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 	int pid;
 
-	open_tmp(&file);
-	write(file.fd, msg, strlen(msg));
+	open_tmp(files[0]);
+	write(files[0]->fd, msg, strlen(msg));
 	kq = kqueue();
-	watch_file(kq, &file);
-	_assert(file.fd != -1);
+	watch_file(kq, files[0]);
+	_assert(files[0]->fd != -1);
 	_assert(kq != -1);
 
 	if ((pid = fork()) == 0)
 	    /* fire event by removing file */
-	    unlink_tmp_exit(&file);
+	    unlink_tmp_exit(files[0]);
 	else
 	    watch_loop(kq, 0, argv);
 
@@ -158,7 +160,7 @@ int watch_fd_01() {
 	_assert(strcmp(__exec_argv[0], "prog") == 0);
 	_assert(strcmp(__exec_argv[1], "arg1") == 0);
 	_assert(strcmp(__exec_argv[2], "arg2") == 0);
-	close_tmp(&file);
+	close_tmp(files[0]);
 	return 0;
 }
 
@@ -229,10 +231,21 @@ int all_tests() {
 }
 
 int test_main(int argc, char *argv[]) {
-	int result = all_tests();
-	if (result == 0)
+	int i;
+	int max_files;
+
+	/* initialize global structures */
+	max_files  = 64;
+	files = malloc(sizeof(char *) * max_files);
+	memset(files, 0, sizeof(char *) * max_files);
+	for (i=0; i<max_files; i++)
+	    files[i] = malloc(sizeof(watch_file_t));
+
+	if (all_tests() == 0) {
 	    printf("%d tests and %d assertions PASSED\n", tests_run, assertions);
-	return result != 0;
+	    return 0;
+	}
+	return 1;
 }
 
 int (*test_runner_main)(int argc, char **argv) = test_main;

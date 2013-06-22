@@ -17,11 +17,11 @@ regress:
 debug: entr_spec
 	gdb -q entr_spec
 
-entr: entr.c
+entr: entr.c ${EXTRA_SRC}
 	${CC} ${CFLAGS} ${EXTRA_SRC} entr.c -o $@ ${LDFLAGS}
 	@chmod +x $@
 
-entr_spec: entr_spec.c
+entr_spec: entr_spec.c entr.c ${EXTRA_SRC}
 	${CC} ${CFLAGS} ${EXTRA_SRC} entr_spec.c -o $@ ${LDFLAGS}
 	@chmod +x $@
 

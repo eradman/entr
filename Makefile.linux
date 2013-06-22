@@ -3,4 +3,4 @@ EXTRA_SRC = linux.c
 
 include Makefile.bsd
 
-CFLAGS += -D_GNU_SOURCE -DDEBUG -Iopenbsd-compat
+CFLAGS += -D_GNU_SOURCE -DDEBUG -g
