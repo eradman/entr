@@ -1,6 +1,5 @@
+CFLAGS += -D_GNU_SOURCE -D_LINUX_EMULATION -g
 MANPREFIX ?= ${PREFIX}/share/man
 EXTRA_SRC = linux.c
 
 include Makefile.bsd
-
-CFLAGS += -D_GNU_SOURCE -DDEBUG -g

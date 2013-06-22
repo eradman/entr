@@ -1,0 +1,9 @@
+# Debian prereqs
+#   apt-get install libkqueue0 libkqueue-dev
+#   sudo apt-get install libbsd0 libbsd-dev
+
+CFLAGS += -D_GNU_SOURCE -I/usr/include/kqueue
+LDFLAGS += -lpthread -lkqueue -lbsd
+MANPREFIX ?= ${PREFIX}/share/man
+
+include Makefile.bsd

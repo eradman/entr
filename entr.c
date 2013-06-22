@@ -19,7 +19,7 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 
-#if defined(__linux)
+#if defined(_LINUX_EMULATION)
 #include "linux.h"
 #else
 #include <sys/event.h>

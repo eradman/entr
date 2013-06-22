@@ -2,14 +2,15 @@ Event Notify Test Runner
 ========================
 
 A utility for running arbitrary commands when files change. Uses
-[kqueue(2)][kqueue_2] to avoid polling. `entr` responds to file system events by
-executing command line arguments or by writing to a FIFO.
+[kqueue(2)][kqueue_2] or [inotify(7)][inotify_7] to avoid polling. `entr`
+responds to file system events by executing command line arguments or by writing
+to a FIFO.
 
 `entr` was written to provide to make rapid feedback and automated testing
 natural and completely ordinary.
 
-Installation - BSD & Mac OS
----------------------------
+Installation - BSD, Mac OS, and Linux
+-------------------------------------
 
     ./configure
     make test
@@ -21,28 +22,10 @@ Installation - Mac OS/Homebrew
     brew tap mitchty/entr
     brew install entr
 
-Installation - Debian Linux
----------------------------
+Installation - Ports
+--------------------
 
-    apt-get install libkqueue-dev
-    ./configure
-    make test
-    make install
-
-Installation - Red Hat Linux
-----------------------------
-
-Get & install [libkqueue][libkqueue]
-
-    ./configure
-    make package
-    sudo rpm -i libkqueue-*.rpm
-
-Build entr
-
-    ./configure
-    make test
-    make install
+Availabe in OpenBSD ports, FreeBSD ports, and pkgsrc under `sysutils/entr`.
 
 Examples
 --------
@@ -63,6 +46,13 @@ FIFO
     > do
     >   markdown2html $F
     > done < notify
+
+Next Release: 2.1
+-----------------
+
+* Zero depencency build on Linux using built-in translation layer
+* Optional build on GNU/Linux using external compatibility libraries
+  [libkqueue][libkqueue] and [libbsd][libbsd]
 
 Releases History
 ----------------
@@ -88,9 +78,9 @@ _2013-06-17_
 
 1.1 Support for Mac OS added. _2012-04-17_  
 
-1.0 Tested on all the major BSDs, included in OpenBSD 5.2 ports under
-`sysutils/entr`. _2012-04-12_  
-
+1.0 Tested on all the major BSDs _2012-04-12_  
 
 [kqueue_2]: http://www.openbsd.org/cgi-bin/man.cgi?query=kqueue&apropos=0&sektion=0&manpath=OpenBSD+Current&format=html
+[inotify_7]: http://man.he.net/?section=all&topic=inotify
 [libkqueue]: http://sourceforge.net/projects/libkqueue/files/libkqueue-2.0/
+[libbsd]: http://libbsd.freedesktop.org/wiki/
