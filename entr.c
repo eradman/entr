@@ -312,8 +312,10 @@ watch_loop(int kq, int repeat, char *argv[]) {
 	                file);
 	            if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 	                err(1, "failed to remove VNODE event");
-	            if (close(file->fd) == -1)
-	                err(errno, "unable to close file");
+	            if (file->fd != -1) {
+	                if (close(file->fd) == -1)
+	                    err(errno, "unable to close file");
+	            }
 	            watch_file(kq, file);
 	        }
 	    }

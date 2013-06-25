@@ -74,7 +74,8 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	        kev = changelist + (sizeof(struct kevent)*n);
 	        file = (watch_file_t *)kev->udata;
 	        if (kev->flags & EV_DELETE) {
-	            return inotify_rm_watch(kq /* ifd */, kev->ident);
+	            inotify_rm_watch(kq /* ifd */, kev->ident);
+	            file->fd = -1; /* invalidate */
 	        }
 	        if (kev->flags & EV_ADD) {
 	            wd = inotify_add_watch(kq /* ifd */, file->fn, IN_ALL);
@@ -85,6 +86,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	            file->fd = wd;
 	        }
 	    }
+	    /* TODO: actually count how many changes occured */
 	    return nchanges;
 	}
 
@@ -96,15 +98,13 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	    pos += EVENT_SIZE + iev->len;
 
 	    #ifdef DEBUG
-	    fprintf(stderr, "wd: %d mask: 0x%x len:%d name:%s\n", iev->wd,
-	        iev->mask, iev->len, iev->name);
+	    fprintf(stderr, "wd: %d mask: 0x%x\n", iev->wd, iev->mask);
 	    #endif
 
 	    /* convert iev->mask; to comperable kqueue flags */
 	    fflags = 0;
 	    if (iev->mask & IN_DELETE_SELF) fflags |= NOTE_DELETE;
 	    if (iev->mask & IN_CLOSE_WRITE) fflags |= NOTE_WRITE;
-	    if (iev->mask & IN_MOVE_SELF)   fflags |= NOTE_EXTEND;
 	    if (fflags == 0) continue;
 
 	    /* scan or watch_file struct with this watch id */
