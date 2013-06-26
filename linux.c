@@ -28,6 +28,23 @@
 
 extern watch_file_t **files;
 
+/* utility forwards */
+
+static watch_file_t * file_by_descriptor(int fd);
+
+/* utility functions */
+
+static watch_file_t *
+file_by_descriptor(int wd) {
+	int i;
+
+	for (i=0; files[i] != NULL; i++) {
+	    if (files[i]->fd == wd)
+	        return files[i];
+	}
+	return NULL; /* lookup failed */
+}
+
 /* string interface */
 
 size_t
@@ -38,8 +55,6 @@ strlcpy(char *to, const char *from, int l) {
 }
 
 /* kqueue interface */
-
-#define IN_ALL IN_CLOSE_WRITE|IN_DELETE_SELF|IN_MOVE_SELF
 
 #define EVENT_SIZE (sizeof (struct inotify_event))
 #define EVENT_BUF_LEN (32 * (EVENT_SIZE + 16))
@@ -59,7 +74,7 @@ kqueue(void) {
 int
 kevent(int kq, const struct kevent *changelist, int nchanges, struct
     kevent *eventlist, int nevents, const struct timespec *timeout) {
-	int n, i;
+	int n;
 	int wd;
 	watch_file_t *file;
 	char buf[EVENT_BUF_LEN];
@@ -68,8 +83,10 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	struct inotify_event *iev;
 	u_int fflags;
 	const struct kevent *kev;
+	int ignored;
 
 	if (nchanges > 0) {
+	    ignored = 0;
 	    for (n=0; n<nchanges; n++) {
 	        kev = changelist + (sizeof(struct kevent)*n);
 	        file = (watch_file_t *)kev->udata;
@@ -77,17 +94,18 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	            inotify_rm_watch(kq /* ifd */, kev->ident);
 	            file->fd = -1; /* invalidate */
 	        }
-	        if (kev->flags & EV_ADD) {
-	            wd = inotify_add_watch(kq /* ifd */, file->fn, IN_ALL);
+	        else if (kev->flags & EV_ADD) {
+	            wd = inotify_add_watch(kq /* ifd */, file->fn,
+	                IN_CLOSE_WRITE|IN_DELETE_SELF);
 	            if (wd < 0)
 	                return -1;
-	            /* replace the file descriptor with an inotify watch descriptor */
 	            close(file->fd);
-	            file->fd = wd;
+	            file->fd = wd; /* replace with watch descriptor */
 	        }
+	        else
+	            ignored++;
 	    }
-	    /* TODO: actually count how many changes occured */
-	    return nchanges;
+	    return nchanges - ignored;
 	}
 
 	len = read(kq /* ifd */, &buf, EVENT_BUF_LEN);
@@ -107,16 +125,12 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	    if (iev->mask & IN_CLOSE_WRITE) fflags |= NOTE_WRITE;
 	    if (fflags == 0) continue;
 
-	    /* scan or watch_file struct with this watch id */
-	    for (i=0; files[i] != NULL; i++)
-	        if (files[i]->fd == iev->wd) break;
-
 	    eventlist[n].ident = iev->wd;
 	    eventlist[n].filter = EVFILT_VNODE;
 	    eventlist[n].flags = 0; 
 	    eventlist[n].fflags = fflags;
 	    eventlist[n].data = 0;
-	    eventlist[n].udata = files[i];
+	    eventlist[n].udata = file_by_descriptor(iev->wd);
 	    n++;
 	}
 	return n;

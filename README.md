@@ -16,6 +16,12 @@ Installation - BSD, Mac OS, and Linux
     make test
     make install
 
+If you're work environment spans many machines, you may find it useful to
+build a static binary and install `entr` to your home directory
+
+    ./configure
+    PREFIX=$HOME/local CFLAGS=-static make install
+
 Installation - Mac OS/Homebrew
 ------------------------------
 
@@ -53,6 +59,7 @@ Next Release: 2.1
 * Zero depencency build on Linux using built-in translation layer
 * Optional build on GNU/Linux using external compatibility libraries
   [libkqueue][libkqueue] and [libbsd][libbsd]
+* 
 
 Releases History
 ----------------

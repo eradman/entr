@@ -26,8 +26,8 @@ function assert {
 	printf "\nFAIL: $this\n'$1' != '$2'\n"; exit 1
 }
 
-function pause { sleep 0.2; }
-function setup { rm -f $tmp/file?; touch $tmp/file{1,2}; sleep 0.1; }
+function pause { sleep 0.3; }
+function setup { rm -f $tmp/file?; touch $tmp/file{1,2}; sleep 0.2; }
 tmp=$(mktemp -d /tmp/entr_regress.XXXXXXXXXX)
 
 
