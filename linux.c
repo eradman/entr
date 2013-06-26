@@ -1,5 +1,4 @@
-/*
- * Copyright (c) 2012 Eric Radman <ericshane@eradman.com>
+/* * Copyright (c) 2012 Eric Radman <ericshane@eradman.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,6 +16,7 @@
 #include <sys/inotify.h>
 
 #include <limits.h>
+#include <poll.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -84,6 +84,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	u_int fflags;
 	const struct kevent *kev;
 	int ignored;
+	struct pollfd pfd;
 
 	if (nchanges > 0) {
 	    ignored = 0;
@@ -107,6 +108,11 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	    }
 	    return nchanges - ignored;
 	}
+
+	pfd.fd = kq;
+	pfd.events = POLLIN;
+	if ((timeout != 0 && (poll(&pfd, 1, timeout->tv_nsec/1000000L) == 0)))
+	    return 0;
 
 	len = read(kq /* ifd */, &buf, EVENT_BUF_LEN);
 	pos = 0;
