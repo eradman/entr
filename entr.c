@@ -38,6 +38,10 @@
 
 #include "data.h"
 
+/* events to watch for */
+
+#define NOTE_ALL NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND
+
 /* shortcuts */
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -276,7 +280,7 @@ watch_file(int kq, watch_file_t *file) {
 	if (file->fd == -1)
 	    err(errno, "cannot open `%s'", file->fn);
 
-	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_DELETE|NOTE_WRITE, 0,
+	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_ALL, 0,
 	    file);
 	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 	    err(1, "failed to register VNODE event");
@@ -305,7 +309,7 @@ watch_loop(int kq, int repeat, char *argv[]) {
 	        #endif
 	        file = (watch_file_t *)evList[i].udata;
 	        if (evList[i].fflags & NOTE_DELETE) {
-	            EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_DELETE, NOTE_DELETE|NOTE_WRITE, 0,
+	            EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_DELETE, NOTE_ALL, 0,
 	                file);
 	            if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 	                err(1, "failed to remove VNODE event");

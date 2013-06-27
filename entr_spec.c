@@ -80,23 +80,6 @@ open_tmp(watch_file_t *file) {
 	file->fd = open(file->fn, O_WRONLY | O_CREAT, DEFFILEMODE);
 }
 
-void *
-unlink_tmp_exit(void *arg) {
-	watch_file_t *file = (watch_file_t *)arg;
-	char *msg = "0123456789\n";
-	char fn[PATH_MAX];
-	int fd;
-
-	/* copy in case an event frees the fd */
-	strlcpy(fn, file->fn, PATH_MAX);
-	unlink(file->fn);
-
-	fd = open(fn, O_WRONLY | O_CREAT, DEFFILEMODE);
-	write(fd, msg, strlen(msg));
-	close(fd);
-	exit(0);
-}
-
 void
 close_tmp(watch_file_t *file) {
 	close(file->fd);
@@ -134,14 +117,14 @@ int process_input_01() {
 }
 
 /*
- * Fire an event by removing a file. Assert that the user supplied program was
+ * Fire an event by writing to a file. Assert that the user supplied program was
  * called with the correct arguments
  */
 int watch_fd_01() {
 	int kq;
 	char *msg = "0123456789\n";
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
-	int pid;
+	int fd;
 
 	open_tmp(files[0]);
 	write(files[0]->fd, msg, strlen(msg));
@@ -150,17 +133,15 @@ int watch_fd_01() {
 	_assert(files[0]->fd != -1);
 	_assert(kq != -1);
 
-	if ((pid = fork()) == 0)
-	    /* fire event by removing file */
-	    unlink_tmp_exit(files[0]);
-	else
-	    watch_loop(kq, 0, argv);
+	fd = open(files[0]->fn, O_RDWR);
+	write(fd, msg, strlen(msg));
+	close(fd);
+	watch_loop(kq, 0, argv);
 
 	_assert(strcmp(__exec_filename, "prog") == 0);
 	_assert(strcmp(__exec_argv[0], "prog") == 0);
 	_assert(strcmp(__exec_argv[1], "arg1") == 0);
 	_assert(strcmp(__exec_argv[2], "arg2") == 0);
-	close_tmp(files[0]);
 	return 0;
 }
 

@@ -60,7 +60,7 @@ strlcpy(char *to, const char *from, int l) {
 #define EVENT_BUF_LEN (32 * (EVENT_SIZE + 16))
 
 /*
- * inotify and kqueue ids both have the type `int`
+ * Conveniently inotify and kqueue ids both have the type `int`
  */
 int
 kqueue(void) {
@@ -97,7 +97,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	        }
 	        else if (kev->flags & EV_ADD) {
 	            wd = inotify_add_watch(kq /* ifd */, file->fn,
-	                IN_CLOSE_WRITE|IN_DELETE_SELF);
+	                IN_CLOSE_WRITE|IN_DELETE_SELF|IN_MODIFY);
 	            if (wd < 0)
 	                return -1;
 	            close(file->fd);
@@ -125,7 +125,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	    fprintf(stderr, "wd: %d mask: 0x%x\n", iev->wd, iev->mask);
 	    #endif
 
-	    /* convert iev->mask; to comperable kqueue flags */
+	    /* convert iev->mask; to comparable kqueue flags */
 	    fflags = 0;
 	    if (iev->mask & IN_DELETE_SELF) fflags |= NOTE_DELETE;
 	    if (iev->mask & IN_CLOSE_WRITE) fflags |= NOTE_WRITE;
