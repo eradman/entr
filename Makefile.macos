@@ -1,5 +1,3 @@
-CFLAGS += -D_GNU_SOURCE
-LDFLAGS +=
 MANPREFIX ?= ${PREFIX}/share/man
 
 include Makefile.bsd
