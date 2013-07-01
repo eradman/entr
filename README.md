@@ -20,7 +20,8 @@ If you're work environment spans many machines, you may find it useful to
 build a static binary and install `entr` to your home directory
 
     ./configure
-    PREFIX=$HOME/local CFLAGS=-static make install
+    CFLAGS="-static" make test
+    PREFIX=$HOME/local make install
 
 Installation - Mac OS/Homebrew
 ------------------------------
@@ -31,7 +32,7 @@ Installation - Mac OS/Homebrew
 Installation - Ports
 --------------------
 
-Availabe in OpenBSD ports, FreeBSD ports, and pkgsrc under `sysutils/entr`.
+Available in OpenBSD ports, FreeBSD ports, and pkgsrc under `sysutils/entr`.
 
 Examples
 --------
@@ -53,16 +54,10 @@ FIFO
     >   markdown2html $F
     > done < notify
 
-Next Release: 2.1
------------------
-
-* Zero depencency build on Linux using built-in translation layer
-* Optional build on GNU/Linux using external compatibility libraries
-  [libkqueue][libkqueue] and [libbsd][libbsd]
-* 
-
 Releases History
 ----------------
+
+2.1 Zero-dependency build on Linux using built-in compatibility layer _2013-07-01_
 
 2.0 More portable build; runs on old architectures without C99 support
 _2013-06-17_
@@ -81,13 +76,11 @@ _2013-06-17_
 
 1.3 New FIFO mode and better support of Mac OS _2012-05-17_
 
-1.2 Support for Linux via [libkqueue][libkqueue] _2012-04-26_
+1.2 Support for Linux via libkqueue _2012-04-26_
 
 1.1 Support for Mac OS added. _2012-04-17_  
 
 1.0 Tested on all the major BSDs _2012-04-12_  
 
-[kqueue_2]: http://www.openbsd.org/cgi-bin/man.cgi?query=kqueue&apropos=0&sektion=0&manpath=OpenBSD+Current&format=html
+[kqueue_2]: http://www.openbsd.org/cgi-bin/man.cgi?query=kqueue&manpath=OpenBSD+Current&format=html
 [inotify_7]: http://man.he.net/?section=all&topic=inotify
-[libkqueue]: http://sourceforge.net/projects/libkqueue/files/libkqueue-2.0/
-[libbsd]: http://libbsd.freedesktop.org/wiki/
