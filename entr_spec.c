@@ -46,11 +46,7 @@ struct fmem {
 typedef struct fmem fmem_t;
 
 #ifndef __linux__
-#ifdef __NetBSD__
-static fpos_t seekfn() { fpos_t pos; return pos; }
-#else
 static fpos_t seekfn() { return 0; }
-#endif
 static int writefn() { return 0; }
 static int closefn() { return 0; }
 
@@ -169,7 +165,7 @@ int set_fifo_01() {
 	    _assert(status == 0);
 	}
 	else {
-	    while ((fd = open(fn+1, O_RDONLY)) == -1);
+	    while ((fd = open(fn+1, O_RDONLY)) == -1)
 	        usleep(100000);
 	    _assert(read(fd, buf, 4) > 0);
 	    buf[4] = 0;

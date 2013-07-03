@@ -1,4 +1,4 @@
-/* * Copyright (c) 2012 Eric Radman <ericshane@eradman.com>
+/* * Copyright (c) 2013 Eric Radman <ericshane@eradman.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
