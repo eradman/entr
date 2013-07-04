@@ -128,7 +128,7 @@ try "exec an interactive utility when a file changes"
 	kill -INT $bgpid
 
 	wait $bgpid
-	assert "$(cat $tmp/exec.out)" "/dev/tty"
+	assert "$(cat $tmp/exec.out | tr '/pts' '/tty')" "/dev/tty"
 }
 
 # cleanup

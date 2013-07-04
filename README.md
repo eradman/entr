@@ -37,7 +37,7 @@ Available in OpenBSD ports, FreeBSD ports, and pkgsrc under `sysutils/entr`.
 Examples
 --------
 
-Recompile if header files change
+Recompile if source files change
 
     $ find. -name '*.c' | entr make
 
@@ -45,8 +45,8 @@ Launch and auto-reload a node.js server
 
     $ ls *.js | entr -r node index.js
 
-Convert any altered Markdown in the current directory to HTML using a
-FIFO
+Convert Markdown files to HTML using a FIFO. Only files that change will be
+processed.
 
     $ ls *.md | entr +notify &
     $ while read F
