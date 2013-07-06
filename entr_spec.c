@@ -158,19 +158,19 @@ int set_fifo_01() {
 	argv[1] = fn;
 
 	if ((pid = fork()) > 0) {
-	    _assert(set_fifo(argv+1));
-	    _assert(fifo.fd > 0);
-	    write(fifo.fd, "ping", 4);
-	    waitpid(pid, &status, 0);
-	    _assert(status == 0);
+		_assert(set_fifo(argv+1));
+		_assert(fifo.fd > 0);
+		write(fifo.fd, "ping", 4);
+		waitpid(pid, &status, 0);
+		_assert(status == 0);
 	}
 	else {
-	    while ((fd = open(fn+1, O_RDONLY)) == -1)
-	        usleep(100000);
-	    _assert(read(fd, buf, 4) > 0);
-	    buf[4] = 0;
-	    _assert(strcmp(buf, "ping") == 0);
-	    exit(0);
+		while ((fd = open(fn+1, O_RDONLY)) == -1)
+			usleep(100000);
+		_assert(read(fd, buf, 4) > 0);
+		buf[4] = 0;
+		_assert(strcmp(buf, "ping") == 0);
+		exit(0);
 	}
 	_assert(close(fifo.fd) == 0);
 	_assert(unlink(fn+1) == 0);
@@ -216,11 +216,11 @@ int test_main(int argc, char *argv[]) {
 	files = malloc(sizeof(char *) * max_files);
 	memset(files, 0, sizeof(char *) * max_files);
 	for (i=0; i<max_files; i++)
-	    files[i] = malloc(sizeof(WatchFile));
+		files[i] = malloc(sizeof(WatchFile));
 
 	if (all_tests() == 0) {
-	    printf("%d tests and %d assertions PASSED\n", tests_run, assertions);
-	    return 0;
+		printf("%d tests and %d assertions PASSED\n", tests_run, assertions);
+		return 0;
 	}
 	return 1;
 }
