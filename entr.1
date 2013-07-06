@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: July 29 2012 $
+.Dd $Mdocdate: July 06 2013 $
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -59,7 +59,8 @@ signal
 .Dv SIGINT
 or
 .Dv SIGTERM
-was received.
+was received. An exit status of 1 indicates that no regular files were provided
+as input.
 .Os
 .Sh EXAMPLES
 .Pp
@@ -78,3 +79,6 @@ Convert individual Markdown files to HTML if they're modified
 .Dl >   markdown2html $F
 .Dl > done < notify
 .Os
+.Sh CAVEATS
+Only regular files are monitored, directories and special files are ignored.
+

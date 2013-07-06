@@ -76,11 +76,12 @@ int
 main(int argc, char *argv[]) {
 	struct rlimit rl;
 	int kq;
-	int n_files;
+	int n_files, n_reg_files;
 	struct sigaction act;
 	int ttyfd;
 	int i;
 	short argv_index;
+	struct stat sb;
 
 	if ((*test_runner_main))
 	    return(test_runner_main(argc, argv));
@@ -114,8 +115,17 @@ main(int argc, char *argv[]) {
 	    err(1, "cannot create kqueue");
 
 	n_files = process_input(stdin, files, rl.rlim_cur);
+	n_reg_files = 0;
 	for (i=0; i<n_files; i++) {
-	    watch_file(kq, files[i]);
+	    stat(files[i]->fn, &sb);
+	    if (S_ISREG(sb.st_mode) != 0) {
+	        watch_file(kq, files[i]);
+	        n_reg_files++;
+	    }
+	}
+	if (n_reg_files == 0) {
+	    fprintf(stderr, "No regular files to watch\n");
+	    exit(1);
 	}
 
 	/* FIFO mode will block until reader connects */
@@ -147,7 +157,7 @@ usage()
 	    __progname);
 	fprintf(stderr, "       %s +fifo < filenames\n",
 	    __progname);
-	exit(1);
+	exit(2);
 }
 
 /* Callbacks */

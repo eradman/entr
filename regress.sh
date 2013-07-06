@@ -33,10 +33,19 @@ tmp=$(mktemp -d /tmp/entr_regress.XXXXXXXXXX)
 
 try "no arguments"
 	./entr 2> /dev/null || code=$?
-	assert $code 1
+	assert $code 2
 
 try "reload option with no command to run"
 	./entr -r 2> /dev/null || code=$?
+	assert $code 2
+
+try "empty input"
+	echo "" | ./entr echo 2> /dev/null || code=$?
+	assert $code 1
+
+try "no regular files provided as input"
+	mkdir $tmp/dir1
+	ls $tmp | ./entr echo 2> /dev/null || code=$?
 	assert $code 1
 
 try "exec single shell command when a file is removed and replaced"

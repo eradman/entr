@@ -54,6 +54,13 @@ processed.
     >   markdown2html $F
     > done < notify
 
+Next Relase: 2.2
+----------------
+
+* Ignore directories and special files
+* Exit with error code 1 if no regular files are provided as input
+* Exit with error code >1 if an error occurs
+
 Releases History
 ----------------
 
