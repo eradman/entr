@@ -26,15 +26,15 @@
 
 /* globals */
 
-extern watch_file_t **files;
+extern WatchFile **files;
 
 /* utility forwards */
 
-static watch_file_t * file_by_descriptor(int fd);
+static WatchFile * file_by_descriptor(int fd);
 
 /* utility functions */
 
-static watch_file_t *
+static WatchFile *
 file_by_descriptor(int wd) {
 	int i;
 
@@ -76,7 +76,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
     kevent *eventlist, int nevents, const struct timespec *timeout) {
 	int n;
 	int wd;
-	watch_file_t *file;
+	WatchFile *file;
 	char buf[EVENT_BUF_LEN];
 	ssize_t len;
 	int pos;
@@ -90,7 +90,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	    ignored = 0;
 	    for (n=0; n<nchanges; n++) {
 	        kev = changelist + (sizeof(struct kevent)*n);
-	        file = (watch_file_t *)kev->udata;
+	        file = (WatchFile *)kev->udata;
 	        if (kev->flags & EV_DELETE) {
 	            inotify_rm_watch(kq /* ifd */, kev->ident);
 	            file->fd = -1; /* invalidate */

@@ -24,7 +24,7 @@
 
 /* globals */
 
-extern watch_file_t **files;
+extern WatchFile **files;
 
 /* test runner */
 
@@ -70,14 +70,14 @@ FILE *fmemopen(void *buf, size_t size, const char *mode)
 /* utility functions */
 
 void
-open_tmp(watch_file_t *file) {
+open_tmp(WatchFile *file) {
 	strlcpy(file->fn, "/tmp/entr_spec.XXXXXXXXXX", PATH_MAX);
 	mkstemp(file->fn);
 	file->fd = open(file->fn, O_WRONLY | O_CREAT, DEFFILEMODE);
 }
 
 void
-close_tmp(watch_file_t *file) {
+close_tmp(WatchFile *file) {
 	close(file->fd);
 	unlink(file->fn);
 }
@@ -216,7 +216,7 @@ int test_main(int argc, char *argv[]) {
 	files = malloc(sizeof(char *) * max_files);
 	memset(files, 0, sizeof(char *) * max_files);
 	for (i=0; i<max_files; i++)
-	    files[i] = malloc(sizeof(watch_file_t));
+	    files[i] = malloc(sizeof(WatchFile));
 
 	if (all_tests() == 0) {
 	    printf("%d tests and %d assertions PASSED\n", tests_run, assertions);

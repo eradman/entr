@@ -50,10 +50,10 @@
 /* globals */
 
 extern int optind;
-extern watch_file_t **files;
+extern WatchFile **files;
 int (*test_runner_main)(int, char**);
 void (*run_script)(char *, char *[]);
-watch_file_t fifo;
+WatchFile fifo;
 int restart_mode;
 int child_pid;
 
@@ -61,11 +61,11 @@ int child_pid;
 
 static void usage();
 static void handle_exit(int sig);
-static int process_input(FILE *, watch_file_t *[], int);
+static int process_input(FILE *, WatchFile *[], int);
 static int set_fifo(char *[]);
 static int set_options(char *[]);
 static void run_script_fork(char *, char *[]);
-static void watch_file(int, watch_file_t *);
+static void watch_file(int, WatchFile *);
 static void watch_loop(int, int, char *[]);
 
 /*
@@ -175,7 +175,7 @@ handle_exit(int sig) {
  * Read lines from a file stream (normally STDIN) and populate the watch list
  */
 int
-process_input(FILE *file, watch_file_t *files[], int max_files) {
+process_input(FILE *file, WatchFile *files[], int max_files) {
 	char buf[PATH_MAX];
 	char *p;
 	int line = 0;
@@ -187,8 +187,8 @@ process_input(FILE *file, watch_file_t *files[], int max_files) {
 	        if (buf[0] == '\0')
 	                continue;
 
-	        files[line] = malloc(sizeof(watch_file_t));
-	        strlcpy(files[line]->fn, buf, MEMBER_SIZE(watch_file_t, fn));
+	        files[line] = malloc(sizeof(WatchFile));
+	        strlcpy(files[line]->fn, buf, MEMBER_SIZE(WatchFile, fn));
 	        if (++line >= max_files) break;
 	}
 	return line;
@@ -201,7 +201,7 @@ process_input(FILE *file, watch_file_t *files[], int max_files) {
 int
 set_fifo(char *argv[]) {
 	if (argv[0][0] == (int)'+') {
-	    strlcpy(fifo.fn, argv[0]+1, MEMBER_SIZE(watch_file_t, fn));
+	    strlcpy(fifo.fn, argv[0]+1, MEMBER_SIZE(WatchFile, fn));
 	    if (mkfifo(fifo.fn, S_IRUSR| S_IWUSR) == -1)
 	        err(1, "mkfifo '%s' failed", fifo.fn);
 	    if ((fifo.fd = open(fifo.fn, O_WRONLY, 0)) == -1)
@@ -277,7 +277,7 @@ run_script_fork(char *filename, char *argv[]) {
  * Wait for file to become accessible and register a kevent to watch it
  */
 void
-watch_file(int kq, watch_file_t *file) {
+watch_file(int kq, WatchFile *file) {
 	struct kevent evSet;
 	int i;
 
@@ -305,7 +305,7 @@ watch_loop(int kq, int repeat, char *argv[]) {
 	struct kevent evSet;
 	struct kevent evList[32];
 	int nev;
-	watch_file_t *file;
+	WatchFile *file;
 	int i;
 	struct timespec evTimeout = { 0, 1000000L };
 
@@ -317,7 +317,7 @@ watch_loop(int kq, int repeat, char *argv[]) {
 	        fprintf(stderr, "event %d/%d: flags: 0x%x fflags: 0x%x\n", i+1,
 	            nev, evList[i].flags, evList[i].fflags);
 	        #endif
-	        file = (watch_file_t *)evList[i].udata;
+	        file = (WatchFile *)evList[i].udata;
 	        if (evList[i].fflags & NOTE_DELETE) {
 	            EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_DELETE, NOTE_ALL, 0,
 	                file);
@@ -332,7 +332,7 @@ watch_loop(int kq, int repeat, char *argv[]) {
 	    }
 	    /* respond to all events */
 	    for (i=0; i<nev; i++) {
-	        file = (watch_file_t *)evList[i].udata;
+	        file = (WatchFile *)evList[i].udata;
 	        if (evList[i].fflags & NOTE_DELETE ||
 	            evList[i].fflags & NOTE_WRITE ||
 	            evList[i].fflags & NOTE_EXTEND) {

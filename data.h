@@ -18,11 +18,10 @@
 
 /* data */
 
-struct watch_file {
+typedef struct {
 	char fn[PATH_MAX];
 	int fd;
-};
-typedef struct watch_file watch_file_t;
+} WatchFile;
 
 /* declare as extern in source */
-watch_file_t **files;
+WatchFile **files;
