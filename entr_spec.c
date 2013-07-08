@@ -37,6 +37,12 @@ int assertions = 0;
 
 /* stubs */
 
+int
+fake_stat(const char *path, struct stat *sb) {
+	sb->st_mode = S_IFREG;
+	return 0;
+}
+
 #ifndef fmemopen
 struct fmem {
 	size_t pos;
@@ -57,7 +63,6 @@ static int readfn(void *handler, char *buf, int size)
 	return size;
 }
 
-
 FILE *fmemopen(void *buf, size_t size, const char *mode)
 {
 	fmem_t *mem = (fmem_t *) malloc(sizeof(fmem_t));
@@ -66,6 +71,17 @@ FILE *fmemopen(void *buf, size_t size, const char *mode)
 }
 #endif
 #endif /* __linux__ */
+
+/* spies */
+
+char *__exec_filename;
+char **__exec_argv;
+
+void
+test_run_script_fork(char *filename, char *argv[]) {
+	__exec_filename = filename;
+	__exec_argv = argv;
+}
 
 /* utility functions */
 
@@ -82,17 +98,6 @@ close_tmp(WatchFile *file) {
 	unlink(file->fn);
 }
 
-/* spies */
-
-char *__exec_filename;
-char **__exec_argv;
-
-void
-test_run_script_fork(char *filename, char *argv[]) {
-	__exec_filename = filename;
-	__exec_argv = argv;
-}
-
 /* tests */
 
 /*
@@ -101,15 +106,23 @@ test_run_script_fork(char *filename, char *argv[]) {
 int process_input_01() {
 	int n_files;
 	FILE *fake;
-	char input[] = "zero one\ntwo\nthree\nfour";
+	char input[] = "zero one\ntwo\nthree";
 
 	fake = fmemopen(input, strlen(input), "r");
 	n_files = process_input(fake, files, 3); /* less than the input to follow */
-	_assert(n_files == 3);
-	return 0;
+	_assert(n_files == -1);
+	
+	/*
+	fake = fmemopen(input, strlen(input), "r");
+	n_files = process_input(fake, files, 5);
+	printf("** n_files %d\n", n_files);
+	_assert(n_files == 4);
+	*/
+
 	_assert(strcmp(files[0]->fn, "zero one") == 0);
 	_assert(strcmp(files[1]->fn, "two") == 0);
 	_assert(strcmp(files[2]->fn, "three") == 0);
+	return 0;
 }
 
 /*
@@ -227,4 +240,5 @@ int test_main(int argc, char *argv[]) {
 
 int (*test_runner_main)(int argc, char **argv) = test_main;
 void (*run_script)(char *, char *[]) = test_run_script_fork;
+int (*run_stat)(const char *, struct stat *) = fake_stat;
 

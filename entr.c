@@ -47,12 +47,16 @@
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #define MEMBER_SIZE(S, M) sizeof(((S *)0)->M)
 
+/* function pointers */
+
+int (*test_runner_main)(int, char**);
+void (*run_script)(char *, char *[]);
+int (*run_stat)(const char *, struct stat *);
+
 /* globals */
 
 extern int optind;
 extern WatchFile **files;
-int (*test_runner_main)(int, char**);
-void (*run_script)(char *, char *[]);
 WatchFile fifo;
 int restart_mode;
 int child_pid;
@@ -87,6 +91,7 @@ main(int argc, char *argv[]) {
 
 	/* set up pointers to real functions */
 	run_script = run_script_fork;
+	run_stat = stat;
 
 	/* call usage() if no command is supplied */
 	if (argc < 2) usage();
@@ -186,7 +191,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 		if (buf[0] == '\0')
 			continue;
 
-		ret = stat(buf, &sb);
+		ret = run_stat(buf, &sb);
 		if (ret == -1)
 			err(1, "cannot stat '%s'", buf);
 		if (S_ISREG(sb.st_mode) != 0) {
