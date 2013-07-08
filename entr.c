@@ -76,12 +76,11 @@ int
 main(int argc, char *argv[]) {
 	struct rlimit rl;
 	int kq;
-	int n_files, n_reg_files;
 	struct sigaction act;
 	int ttyfd;
-	int i;
 	short argv_index;
-	struct stat sb;
+	int n_files;
+	int i;
 
 	if ((*test_runner_main))
 		return(test_runner_main(argc, argv));
@@ -114,19 +113,15 @@ main(int argc, char *argv[]) {
 	if ((kq = kqueue()) == -1)
 		err(1, "cannot create kqueue");
 
+	/* read input and populate watch list, skipping non-regular files */
 	n_files = process_input(stdin, files, rl.rlim_cur);
-	n_reg_files = 0;
-	for (i=0; i<n_files; i++) {
-		stat(files[i]->fn, &sb);
-		if (S_ISREG(sb.st_mode) != 0) {
-			watch_file(kq, files[i]);
-			n_reg_files++;
-		}
-	}
-	if (n_reg_files == 0) {
-		fprintf(stderr, "No regular files to watch\n");
-		exit(1);
-	}
+	if (n_files == 0)
+		errx(2, "No regular files to watch");
+	if (n_files == -1)
+		errx(1, "Too many files listed; the hard limit for your login"
+		    " class is %d", (int)rl.rlim_cur);
+	for (i=0; i<n_files; i++)
+		watch_file(kq, files[i]);
 
 	/* FIFO mode will block until reader connects */
 	if (set_fifo(argv+argv_index));
@@ -172,13 +167,17 @@ handle_exit(int sig) {
 }
 
 /*
- * Read lines from a file stream (normally STDIN) and populate the watch list
+ * Read lines from a file stream (normally STDIN)
+ * Returns the number of regular files to be watched or -1 if max_files is
+ * exceeded
  */
 int
 process_input(FILE *file, WatchFile *files[], int max_files) {
 	char buf[PATH_MAX];
 	char *p;
-	int line = 0;
+	int n_files = 0;
+	struct stat sb;
+	int ret;
 
 	while (fgets(buf, sizeof(buf), file) != NULL) {
 		buf[PATH_MAX-1] = '\0';
@@ -187,11 +186,18 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 		if (buf[0] == '\0')
 			continue;
 
-		files[line] = malloc(sizeof(WatchFile));
-		strlcpy(files[line]->fn, buf, MEMBER_SIZE(WatchFile, fn));
-		if (++line >= max_files) break;
+		ret = stat(buf, &sb);
+		if (ret == -1)
+			err(1, "cannot stat '%s'", buf);
+		if (S_ISREG(sb.st_mode) != 0) {
+			files[n_files] = malloc(sizeof(WatchFile));
+			strlcpy(files[n_files]->fn, buf, MEMBER_SIZE(WatchFile, fn));
+			n_files++;
+		}
+		if (n_files+1 > max_files)
+			return -1;
 	}
-	return line;
+	return n_files;
 }
 
 /*
@@ -315,7 +321,7 @@ watch_loop(int kq, int repeat, char *argv[]) {
 	for (i=0; i<nev; i++) {
 		#ifdef DEBUG
 		fprintf(stderr, "event %d/%d: flags: 0x%x fflags: 0x%x\n", i+1,
-			nev, evList[i].flags, evList[i].fflags);
+		    nev, evList[i].flags, evList[i].fflags);
 		#endif
 		file = (WatchFile *)evList[i].udata;
 		if (evList[i].fflags & NOTE_DELETE) {
@@ -323,10 +329,8 @@ watch_loop(int kq, int repeat, char *argv[]) {
 			    NOTE_ALL, 0, file);
 			if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 				err(1, "failed to remove VNODE event");
-			if (file->fd != -1) {
-				if (close(file->fd) == -1)
-					err(errno, "unable to close file");
-			}
+			if ((file->fd != -1) && (close(file->fd) == -1))
+				err(1, "unable to close file");
 			watch_file(kq, file);
 		}
 	}

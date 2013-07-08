@@ -41,12 +41,12 @@ try "reload option with no command to run"
 
 try "empty input"
 	echo "" | ./entr echo 2> /dev/null || code=$?
-	assert $code 1
+	assert $code 2
 
 try "no regular files provided as input"
 	mkdir $tmp/dir1
 	ls $tmp | ./entr echo 2> /dev/null || code=$?
-	assert $code 1
+	assert $code 2
 
 try "exec single shell command when a file is removed and replaced"
 	setup
@@ -123,7 +123,7 @@ try "read each filename from a named pipe until a file is removed"
 
 	wait $bgpid
 	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(printf 'file1')"
-	assert $code 1
+	assert $code 2
 
 tty > /dev/null && {
 try "exec an interactive utility when a file changes"
