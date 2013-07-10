@@ -39,35 +39,44 @@ int assertions = 0;
 
 int
 fake_stat(const char *path, struct stat *sb) {
-	sb->st_mode = S_IFREG;
+	if (strncmp(path, "dir", 3) == 0)
+		sb->st_mode = S_IFDIR;
+	else
+		sb->st_mode = S_IFREG;
 	return 0;
 }
 
-#ifndef fmemopen
-struct fmem {
-	size_t pos;
-	size_t size;
-	char *buffer;
-};
-typedef struct fmem fmem_t;
+/* mocks */
 
 #ifndef __linux__
-static fpos_t seekfn() { return 0; }
-static int writefn() { return 0; }
-static int closefn() { return 0; }
+#ifndef fmemopen
+struct fmem {
+	char *string;
+	size_t pos;
+	size_t size;
+	size_t len;
+};
 
-static int readfn(void *handler, char *buf, int size)
-{
-	fmem_t *mem = handler;
-	bcopy(mem->buffer, buf, size);
-	return size;
+static int
+stringread(void *v, char *b, int l) {
+	struct fmem *mem = v;
+	int i;
+
+	for (i = 0; i < l && i + mem->pos < mem->len; i++)
+		b[i] = mem->string[mem->pos + i];
+	mem->pos += i;
+	return i;
 }
 
-FILE *fmemopen(void *buf, size_t size, const char *mode)
-{
-	fmem_t *mem = (fmem_t *) malloc(sizeof(fmem_t));
-	mem->pos = 0, mem->size = size, mem->buffer = buf;
-	return funopen(mem, readfn, writefn, seekfn, closefn);
+FILE *fmemopen(void *buf, size_t size, const char *mode) {
+	struct fmem *mem;
+
+	mem = malloc(sizeof(*mem));
+	mem->pos = 0;
+	mem->size = size;
+	mem->len = strlen(buf);
+	mem->string = buf;
+	return funopen(mem, stringread, NULL, NULL, NULL);
 }
 #endif
 #endif /* __linux__ */
@@ -86,64 +95,76 @@ test_run_script_fork(char *filename, char *argv[]) {
 /* utility functions */
 
 void
-open_tmp(WatchFile *file) {
-	strlcpy(file->fn, "/tmp/entr_spec.XXXXXXXXXX", PATH_MAX);
-	mkstemp(file->fn);
-	file->fd = open(file->fn, O_WRONLY | O_CREAT, DEFFILEMODE);
+touch(WatchFile *file) {
+	int fd;
+
+	fd = open(file->fn, O_WRONLY | O_CREAT, DEFFILEMODE);
+	close(fd);
 }
 
 void
-close_tmp(WatchFile *file) {
-	close(file->fd);
-	unlink(file->fn);
+open_tmp(WatchFile *file) {
+	char *msg = "0123456789\n";
+
+	strlcpy(file->fn, "/tmp/entr_spec.XXXXXXXXXX", PATH_MAX);
+	mkstemp(file->fn);
+	file->fd = open(file->fn, O_WRONLY | O_CREAT, DEFFILEMODE);
+	write(file->fd, msg, strlen(msg));
 }
 
 /* tests */
 
 /*
- * Read a list of use supplied files, faking STDIN
+ * Read a list of use supplied files where input exceeds available watch
+ * descriptors
  */
 int process_input_01() {
 	int n_files;
 	FILE *fake;
-	char input[] = "zero one\ntwo\nthree";
+	char input[] = "file1\nfile2\nfile3";
 
 	fake = fmemopen(input, strlen(input), "r");
-	n_files = process_input(fake, files, 3); /* less than the input to follow */
+	n_files = process_input(fake, files, 3);
+
 	_assert(n_files == -1);
-	
-	/*
-	fake = fmemopen(input, strlen(input), "r");
-	n_files = process_input(fake, files, 5);
-	printf("** n_files %d\n", n_files);
-	_assert(n_files == 4);
-	*/
+	_assert(strcmp(files[0]->fn, "file1") == 0);
+	_assert(strcmp(files[1]->fn, "file2") == 0);
+	_assert(strcmp(files[2]->fn, "file3") == 0);
+	return 0;
+}
+/*
+ * Read a list of use supplied files and populate files array
+ */
+int process_input_02() {
+	int n_files;
+	FILE *fake;
+	char input[] = "dir1\nfile1\nfile2\nfile3";
 
-	_assert(strcmp(files[0]->fn, "zero one") == 0);
-	_assert(strcmp(files[1]->fn, "two") == 0);
-	_assert(strcmp(files[2]->fn, "three") == 0);
+	fake = fmemopen(input, strlen(input), "r");
+	n_files = process_input(fake, files, 16);
+
+	_assert(n_files == 3);
+	_assert(strcmp(files[0]->fn, "file1") == 0);
+	_assert(strcmp(files[1]->fn, "file2") == 0);
+	_assert(strcmp(files[2]->fn, "file3") == 0);
 	return 0;
 }
 
 /*
- * Fire an event by writing to a file. Assert that the user supplied program was
- * called with the correct arguments
+ * Fire an event by writing to a file. Assert that the user supplied program
+ * was called with the correct arguments
  */
 int watch_fd_01() {
 	int kq;
-	char *msg = "0123456789\n";
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 	int fd;
 
 	open_tmp(files[0]);
-	write(files[0]->fd, msg, strlen(msg));
 	kq = kqueue();
 	watch_file(kq, files[0]);
-	_assert(files[0]->fd != -1);
-	_assert(kq != -1);
 
 	fd = open(files[0]->fn, O_RDWR);
-	write(fd, msg, strlen(msg));
+	write(fd, "!@#", 3);
 	close(fd);
 	watch_loop(kq, 0, argv);
 
@@ -151,6 +172,36 @@ int watch_fd_01() {
 	_assert(strcmp(__exec_argv[0], "prog") == 0);
 	_assert(strcmp(__exec_argv[1], "arg1") == 0);
 	_assert(strcmp(__exec_argv[2], "arg2") == 0);
+	__exec_filename = 0;
+	__exec_argv = 0;
+	return 0;
+}
+
+/*
+ * Fire an event by deleting and re-creating a file. Assert that the user
+ * supplied program was called with the correct arguments
+ */
+int watch_fd_02() {
+	int kq;
+	static char *argv[] = { "prog", "arg1", "arg2", NULL };
+	int fd;
+
+	open_tmp(files[0]);
+	kq = kqueue();
+	watch_file(kq, files[0]);
+
+	fd = open(files[0]->fn, O_RDWR);
+	close(fd);
+	unlink(files[0]->fn);
+	touch(files[0]);
+	watch_loop(kq, 0, argv);
+
+	_assert(strcmp(__exec_filename, "prog") == 0);
+	_assert(strcmp(__exec_argv[0], "prog") == 0);
+	_assert(strcmp(__exec_argv[1], "arg1") == 0);
+	_assert(strcmp(__exec_argv[2], "arg2") == 0);
+	__exec_filename = 0;
+	__exec_argv = 0;
 	return 0;
 }
 
@@ -213,7 +264,9 @@ int set_options_01() {
 
 int all_tests() {
 	_verify(process_input_01);
+	_verify(process_input_02);
 	_verify(watch_fd_01);
+	_verify(watch_fd_02);
 	_verify(set_fifo_01);
 	_verify(set_options_01);
 
