@@ -1,6 +1,11 @@
-# Debian prereqs
-#   apt-get install libkqueue0 libkqueue-dev
-#   sudo apt-get install libbsd0 libbsd-dev
+# `entr` provides a built-in compability layer for Linux. To use compatibility
+# libraries instead insteall libkqueue and libbsd
+#
+# Debian:
+#     sudo apt-get install libkqueue0 libkqueue-dev
+#     sudo libbsd0 libbsd-dev
+#     make test -f Makefile.linux-lbsd
+#     sudo make install
 
 CFLAGS += -D_GNU_SOURCE -I/usr/include/kqueue
 LDFLAGS += -lpthread -lkqueue -lbsd

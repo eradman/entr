@@ -61,8 +61,9 @@ Next Relase: 2.2
   regular files only
 * Exit with error code 2 if usage is incorrect or if no regular files are
   provided as input
-* Exit with error code 1 if list of regular files exceeds the hard limit for
-  the user's login class
+* Exit with informative error message if the list of regular files exceeds the
+  hard limit for the user's login class
+* More coverage in unit tests
 
 Releases History
 ----------------
