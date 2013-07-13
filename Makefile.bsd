@@ -1,8 +1,5 @@
 PREFIX ?= /usr/local
 MANPREFIX ?= ${PREFIX}/man
-CC ?= cc
-CFLAGS ?= -std=c89 -pedantic -Wall -Wpointer-arith -Wbad-function-cast -Wempty-body
-LDFLAGS ?= 
 
 all: entr
 

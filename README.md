@@ -64,6 +64,7 @@ Next Relase: 2.2
 * Exit with informative error message if the list of regular files exceeds the
   hard limit for the user's login class
 * More coverage in unit tests
+* Don't use GCC-specific flags in Makefile
 
 Releases History
 ----------------
