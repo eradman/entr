@@ -133,7 +133,7 @@ main(int argc, char *argv[]) {
 	else {
 		/* Attempt to open a tty so that editors such as ViM don't complain */
 		if ((ttyfd = open(_PATH_TTY, O_RDONLY)) == -1)
-			warn("can't open /dev/tty");
+			warn("can't open %s", _PATH_TTY);
 		if (ttyfd > STDIN_FILENO) {
 			if (dup2(ttyfd, STDIN_FILENO) != 0)
 				warn("can't dup2 to stdin");
@@ -260,6 +260,7 @@ void
 run_script_fork(char *filename, char *argv[]) {
 	int pid;
 	int status;
+	int i;
 
 	if ((restart_mode == 1) && (child_pid > 0)) {
 		kill(child_pid, SIGTERM);
@@ -275,7 +276,12 @@ run_script_fork(char *filename, char *argv[]) {
 		err(errno, "can't fork");
 
 	if (pid == 0) {
-		execvp(filename, argv);
+		/* wait up to 2 seconds for file to become available */
+		for (i=0; i < 20; i++) {
+			execvp(filename, argv);
+			if (errno == ETXTBSY) usleep(100000);
+			else break;
+		}
 		err(1, "exec %s", filename);
 	}
 	child_pid = pid;

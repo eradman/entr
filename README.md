@@ -65,6 +65,7 @@ Next Relase: 2.2
   hard limit for the user's login class
 * More coverage in unit tests
 * Don't use GCC-specific flags in Makefile
+* Execute mode can run a file under watch by retrying if text file is busy
 
 Releases History
 ----------------
