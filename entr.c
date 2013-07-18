@@ -300,7 +300,11 @@ watch_file(int kq, WatchFile *file) {
 
 	/* wait up to 2 seconds for file to become available */
 	for (i=0; i < 20; i++) {
+		#ifdef O_EVTONLY
+		file->fd = open(file->fn, O_RDONLY|O_EVTONLY);
+		#else
 		file->fd = open(file->fn, O_RDONLY);
+		#endif
 		if (file->fd == -1) usleep(100000);
 		else break;
 	}

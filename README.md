@@ -54,8 +54,8 @@ processed.
     >   markdown2html $F
     > done < notify
 
-Next Relase: 2.2
-----------------
+Next Release: 2.2
+-----------------
 
 * Ignore directories and special files, using available file descriptors for
   regular files only
@@ -66,6 +66,8 @@ Next Relase: 2.2
 * More coverage in unit tests
 * Don't use GCC-specific flags in Makefile
 * Execute mode can run a file under watch by retrying if text file is busy
+* On platforms that support O_EVTONLY (MacOS) watching files does prevent the
+  and unmount of removable media
 
 Releases History
 ----------------
