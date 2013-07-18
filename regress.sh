@@ -48,6 +48,21 @@ try "no regular files provided as input"
 	ls $tmp | ./entr echo 2> /dev/null || code=$?
 	assert $code 1
 
+try "watch and exec a program that is overwritten"
+	setup
+	cp $(which ls) $tmp/ls
+	chmod 755 $tmp/ls
+	echo $tmp/ls | ./entr $tmp/ls $tmp/file1 > $tmp/exec.out &
+	bgpid=$!
+	pause
+
+	cp $(which ls) $tmp/ls
+	pause
+	kill -INT $bgpid
+
+	wait $bgpid
+	assert "$(cat $tmp/exec.out)" "$(ls $tmp/file1)"
+
 try "exec single shell command when a file is removed and replaced"
 	setup
 	ls $tmp/file* | ./entr file $tmp/file2 > $tmp/exec.out &
