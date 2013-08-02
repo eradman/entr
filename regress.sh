@@ -133,6 +133,7 @@ try "read each filename from a named pipe until a file is removed"
 	pause
 
 	echo 123 >> $tmp/file1
+	pause
 	rm $tmp/file2
 	pause
 	kill -INT $bgpid
