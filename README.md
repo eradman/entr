@@ -68,6 +68,9 @@ Next Release: 2.2
 * Execute mode can run a file under watch by retrying if text file is busy
 * On platforms that support O_EVTONLY (MacOS) watching files does prevent the
   and unmount of removable media
+* GCC-specific CFLAGS are only set during `make gcc-lint`
+* inotify(7) events are consolodated for a duration of 50ms as a workaround for
+  a bug in gio
 
 Releases History
 ----------------

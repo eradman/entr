@@ -116,6 +116,7 @@ try "read each filename from a named pipe as they're modified"
 	pause
 
 	echo 123 >> $tmp/file1
+	pause
 	echo 789 >> $tmp/file2
 	pause
 	kill -INT $bgpid

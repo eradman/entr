@@ -7,6 +7,9 @@ test: entr_spec entr
 	@/bin/echo "Running unit tests"
 	@./entr_spec
 
+gcc-lint: clean
+	@CFLAGS="-std=c89 -pedantic -Wall -Wpointer-arith -Wbad-function-cast" make test
+
 regress:
 	@/bin/echo -n "Running functional tests"
 	@./regress.sh
