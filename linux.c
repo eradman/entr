@@ -114,7 +114,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	if ((timeout != 0 && (poll(&pfd, 1, timeout->tv_nsec/1000) == 0)))
 		return 0;
 
-	/* Consolodate events within a 50ms timeframe */
+	/* Consolodate events within a 10ms timeframe */
 	n_total = 0;
 	do {
 		pos = 0;
@@ -143,9 +143,9 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			n++;
 		}
 		n_total += n;
-		usleep(25000);
+		usleep(10000);
 	}
-	while ((poll(&pfd, 1, 25) > 0));
+	while ((poll(&pfd, 1, 0) > 0));
 
 	return n_total;
 }
