@@ -71,6 +71,7 @@ Next Release: 2.2
 * GCC-specific CFLAGS are only set during `make gcc-lint`
 * inotify(7) events are consolodated for a duration of 50ms as a workaround for
   a bug in gio
+* Always process delete or rename events to prevent a files from escaping watch
 
 Releases History
 ----------------

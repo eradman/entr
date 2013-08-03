@@ -329,9 +329,14 @@ watch_loop(int kq, int repeat, char *argv[]) {
 	WatchFile *file;
 	int i;
 	struct timespec evTimeout = { 0, 1000000L };
+	int reopen_only = 0;
 
-	do {
-	nev = kevent(kq, NULL, 0, evList, 32, NULL);
+main:
+	if (reopen_only == 1)
+		nev = kevent(kq, NULL, 0, evList, 32, &evTimeout);
+	else
+		nev = kevent(kq, NULL, 0, evList, 32, NULL);
+
 	/* reopen all files that were removed */
 	for (i=0; i<nev; i++) {
 		#ifdef DEBUG
@@ -349,8 +354,12 @@ watch_loop(int kq, int repeat, char *argv[]) {
 			watch_file(kq, file);
 		}
 	}
+	if (reopen_only == 1) {
+		reopen_only = 0;
+		goto main;
+	}
 	/* respond to all events */
-	for (i=0; i<nev; i++) {
+	for (i=0; i<nev && reopen_only == 0; i++) {
 		file = (WatchFile *)evList[i].udata;
 		if (evList[i].fflags & NOTE_DELETE ||
 		    evList[i].fflags & NOTE_WRITE ||
@@ -359,7 +368,7 @@ watch_loop(int kq, int repeat, char *argv[]) {
 				run_script(argv[0], argv);
 				/* don't process any more events */
 				i=nev;
-				kevent(kq, NULL, 0, evList, 32, &evTimeout);
+				reopen_only = 1;
 			}
 			else {
 				write(fifo.fd, file->fn, strlen(file->fn));
@@ -368,5 +377,6 @@ watch_loop(int kq, int repeat, char *argv[]) {
 			}
 		}
 	}
-	} while (repeat == 1);
+	if (repeat == 1)
+		goto main;
 }

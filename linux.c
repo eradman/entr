@@ -143,8 +143,9 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			n++;
 		}
 		n_total += n;
+		usleep(25000);
 	}
-	while ((poll(&pfd, 1, 50) > 0));
+	while ((poll(&pfd, 1, 25) > 0));
 
 	return n_total;
 }
