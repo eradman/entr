@@ -74,7 +74,7 @@ kqueue(void) {
 int
 kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	kevent *eventlist, int nevents, const struct timespec *timeout) {
-	int n;
+	int n, n_total;
 	int wd;
 	WatchFile *file;
 	char buf[EVENT_BUF_LEN];
@@ -114,31 +114,38 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	if ((timeout != 0 && (poll(&pfd, 1, timeout->tv_nsec/1000) == 0)))
 		return 0;
 
-	pos = 0;
-	n = 0;
-	len = read(kq /* ifd */, &buf, EVENT_BUF_LEN);
-	while ((pos < len) && (n < nevents)) {
-		iev = (struct inotify_event *) &buf[pos];
-		pos += EVENT_SIZE + iev->len;
+	/* Consolidate events within 50ms */
+	n_total = 0;
+	do {
+		pos = 0;
+		n = 0;
+		len = read(kq /* ifd */, &buf, EVENT_BUF_LEN);
+		while ((pos < len) && (n < nevents)) {
+			iev = (struct inotify_event *) &buf[pos];
+			pos += EVENT_SIZE + iev->len;
 
-		#ifdef DEBUG
-		fprintf(stderr, "wd: %d mask: 0x%x\n", iev->wd, iev->mask);
-		#endif
+			#ifdef DEBUG
+			fprintf(stderr, "wd: %d mask: 0x%x\n", iev->wd, iev->mask);
+			#endif
 
-		/* convert iev->mask; to comparable kqueue flags */
-		fflags = 0;
-		if (iev->mask & IN_DELETE_SELF) fflags |= NOTE_DELETE;
-		if (iev->mask & IN_CLOSE_WRITE) fflags |= NOTE_WRITE;
-		if (fflags == 0) continue;
+			/* convert iev->mask; to comparable kqueue flags */
+			fflags = 0;
+			if (iev->mask & IN_DELETE_SELF) fflags |= NOTE_DELETE;
+			if (iev->mask & IN_CLOSE_WRITE) fflags |= NOTE_WRITE;
+			if (fflags == 0) continue;
 
-		eventlist[n].ident = iev->wd;
-		eventlist[n].filter = EVFILT_VNODE;
-		eventlist[n].flags = 0; 
-		eventlist[n].fflags = fflags;
-		eventlist[n].data = 0;
-		eventlist[n].udata = file_by_descriptor(iev->wd);
-		n++;
+			eventlist[n].ident = iev->wd;
+			eventlist[n].filter = EVFILT_VNODE;
+			eventlist[n].flags = 0; 
+			eventlist[n].fflags = fflags;
+			eventlist[n].data = 0;
+			eventlist[n].udata = file_by_descriptor(iev->wd);
+			n++;
+		}
+		n_total += n;
+		usleep(25000);
 	}
+	while ((poll(&pfd, 1, 25) > 0));
 
-	return n;
+	return n_total;
 }
