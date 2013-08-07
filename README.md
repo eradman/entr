@@ -54,27 +54,10 @@ processed.
     >   markdown2html $F
     > done < notify
 
-Next Release: 2.2
------------------
-
-* Ignore directories and special files, using available file descriptors for
-  regular files only
-* Exit with error code 2 if usage is incorrect or if no regular files are
-  provided as input
-* Exit with informative error message if the list of regular files exceeds the
-  hard limit for the user's login class
-* More coverage in unit tests
-* Don't use GCC-specific flags in Makefile
-* Execute mode can run a file under watch by retrying if text file is busy
-* On platforms that support O_EVTONLY (MacOS) watching files does prevent the
-  and unmount of removable media
-* GCC-specific CFLAGS are only set during `make gcc-lint`
-* inotify(7) events are consolodated for a duration of 50ms as a workaround for
-  a bug in gio
-* Always process delete or rename events to prevent a files from escaping watch
-
 Releases History
 ----------------
+
+2.2 Process every delete or rename event to ensure files remain tracked _2013_08_07_
 
 2.1 Zero-dependency build on Linux using built-in compatibility layer _2013-07-01_
 
