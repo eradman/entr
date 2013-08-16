@@ -14,6 +14,7 @@
  */
 
 #include <sys/inotify.h>
+#include <sys/event.h>
 
 #include <limits.h>
 #include <poll.h>
@@ -21,7 +22,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "linux.h"
+#include "compat.h"
+
 #include "data.h"
 
 /* globals */

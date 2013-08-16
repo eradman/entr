@@ -18,12 +18,7 @@
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
-
-#if defined(_LINUX_EMULATION)
-#include "linux.h"
-#else
 #include <sys/event.h>
-#endif
 
 #include <err.h>
 #include <errno.h>
@@ -35,6 +30,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#include "compat.h"
 
 #include "data.h"
 

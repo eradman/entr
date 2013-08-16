@@ -54,6 +54,17 @@ processed.
     >   markdown2html $F
     > done < notify
 
+One-shot mode; block until Makefile is changed
+
+    $ ls Makefile | entr sh -c 'kill $PPID'
+
+Next Release: 2.3
+-----------------
+
+* Additional examples in README
+* Only emulate fmemopen(3) on FreeBSD since it's available everywhere else
+* Move platform-specific includes to compat.h
+
 Releases History
 ----------------
 

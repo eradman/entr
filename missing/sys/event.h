@@ -1,12 +1,6 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
-/* declarations from string.h */
-
-size_t strlcpy(char *to, const char *from, int l);
-
-/* declarations from sys/event.h */
-
 #define EVFILT_VNODE		(-4)	/* attached to vnodes */
 
 /* actions */

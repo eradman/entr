@@ -46,41 +46,6 @@ fake_stat(const char *path, struct stat *sb) {
 	return 0;
 }
 
-/* mocks */
-
-#ifndef __linux__
-#ifndef fmemopen
-struct fmem {
-	char *string;
-	size_t pos;
-	size_t size;
-	size_t len;
-};
-
-static int
-stringread(void *v, char *b, int l) {
-	struct fmem *mem = v;
-	int i;
-
-	for (i = 0; i < l && i + mem->pos < mem->len; i++)
-		b[i] = mem->string[mem->pos + i];
-	mem->pos += i;
-	return i;
-}
-
-FILE *fmemopen(void *buf, size_t size, const char *mode) {
-	struct fmem *mem;
-
-	mem = malloc(sizeof(*mem));
-	mem->pos = 0;
-	mem->size = size;
-	mem->len = strlen(buf);
-	mem->string = buf;
-	return funopen(mem, stringread, NULL, NULL, NULL);
-}
-#endif
-#endif /* __linux__ */
-
 /* spies */
 
 char *__exec_filename;
