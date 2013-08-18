@@ -31,7 +31,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "compat.h"
+#include "missing/compat.h"
 
 #include "data.h"
 

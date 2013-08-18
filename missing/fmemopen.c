@@ -20,7 +20,6 @@
 
 #include "compat.h"
 
-#ifndef fmemopen
 struct fmem {
 	char *string;
 	size_t pos;
@@ -49,4 +48,3 @@ FILE *fmemopen(void *buf, size_t size, const char *mode) {
 	mem->string = buf;
 	return funopen(mem, stringread, NULL, NULL, NULL);
 }
-#endif

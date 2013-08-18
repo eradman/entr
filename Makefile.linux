@@ -1,5 +1,5 @@
-CFLAGS += -D_GNU_SOURCE -D_LINUX_EMULATION -Imissing
+CFLAGS += -D_GNU_SOURCE -Imissing
 MANPREFIX ?= ${PREFIX}/share/man
-EXTRA_SRC = linux.c
+EXTRA_SRC = missing/strlcpy.c missing/kqueue.c
 
 include Makefile.bsd

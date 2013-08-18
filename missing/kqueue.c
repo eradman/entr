@@ -24,7 +24,7 @@
 
 #include "compat.h"
 
-#include "data.h"
+#include "../data.h"
 
 /* globals */
 
@@ -45,15 +45,6 @@ file_by_descriptor(int wd) {
 			return files[i];
 	}
 	return NULL; /* lookup failed */
-}
-
-/* string interface */
-
-size_t
-strlcpy(char *to, const char *from, int l) {
-	memccpy(to, from, '\0', l);
-	to[l-1] = '\0';
-	return l - 1;
 }
 
 /* kqueue interface */

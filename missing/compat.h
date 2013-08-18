@@ -1,15 +1,14 @@
 /* compat.h */
 
-#if defined(_LINUX_EMULATION)
+#if defined(__linux)
 #include <sys/types.h>
-#include <sys/time.h>
 
 #undef strlcpy
 size_t strlcpy(char *to, const char *from, int l);
 #endif
 
 
-#if defined(_MACOS_EMULATION)
+#if defined(__APPLE__)
 #include <stdio.h>
 
 #undef fmemopen
