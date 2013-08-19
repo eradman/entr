@@ -1,5 +1,8 @@
+/*	$OpenBSD: fmemopen.c,v 1.2 2013/03/27 15:06:25 mpi Exp $	*/
+
 /*
- * Copyright (c) 2012 Eric Radman <ericshane@eradman.com>
+ * Copyright (c) 2011 Martin Pieuchot <mpi@openbsd.org>
+ * Copyright (c) 2009 Ted Unangst
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -14,37 +17,168 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "compat.h"
+FILE	*__sfp(void);
 
-struct fmem {
-	char *string;
-	size_t pos;
-	size_t size;
-	size_t len;
+struct state {
+	char		*string;	/* actual stream */
+	size_t		 pos;		/* current position */
+	size_t		 size;		/* allocated size */
+	size_t		 len;		/* length of the data */
+	int		 update;	/* open for update */
 };
 
 static int
-stringread(void *v, char *b, int l) {
-	struct fmem *mem = v;
-	int i;
+fmemopen_read(void *v, char *b, int l)
+{
+	struct state	*st = v;
+	int		 i;
 
-	for (i = 0; i < l && i + mem->pos < mem->len; i++)
-		b[i] = mem->string[mem->pos + i];
-	mem->pos += i;
-	return i;
+	for (i = 0; i < l && i + st->pos < st->len; i++)
+		b[i] = st->string[st->pos + i];
+	st->pos += i;
+
+	return (i);
 }
 
-FILE *fmemopen(void *buf, size_t size, const char *mode) {
-	struct fmem *mem;
+static int
+fmemopen_write(void *v, const char *b, int l)
+{
+	struct state	*st = v;
+	int		i;
 
-	mem = malloc(sizeof(*mem));
-	mem->pos = 0;
-	mem->size = size;
-	mem->len = strlen(buf);
-	mem->string = buf;
-	return funopen(mem, stringread, NULL, NULL, NULL);
+	for (i = 0; i < l && i + st->pos < st->size; i++)
+		st->string[st->pos + i] = b[i];
+	st->pos += i;
+
+	if (st->pos >= st->len) {
+		st->len = st->pos;
+
+		if (st->len < st->size)
+			st->string[st->len] = '\0';
+		else if (!st->update)
+			st->string[st->size - 1] = '\0';
+	}
+
+	return (i);
+}
+
+static fpos_t
+fmemopen_seek(void *v, fpos_t off, int whence)
+{
+	struct state	*st = v;
+	ssize_t		 base = 0;
+
+	switch (whence) {
+	case SEEK_SET:
+		break;
+	case SEEK_CUR:
+		base = st->pos;
+		break;
+	case SEEK_END:
+		base = st->len;
+		break;
+	}
+
+	if (off > st->size - base || off < -base) {
+		errno = EOVERFLOW;
+		return (-1);
+	}
+
+	st->pos = base + off;
+
+	return (st->pos);
+}
+
+static int
+fmemopen_close(void *v)
+{
+	free(v);
+
+	return (0);
+}
+
+static int
+fmemopen_close_free(void *v)
+{
+	struct state	*st = v;
+
+	free(st->string);
+	free(st);
+
+	return (0);
+}
+
+FILE *
+fmemopen(void *buf, size_t size, const char *mode)
+{
+	struct state	*st;
+	FILE		*fp;
+	int		 flags, oflags;
+
+	if (size == 0) {
+		errno = EINVAL;
+		return (NULL);
+	}
+
+	if ((flags = __sflags(mode, &oflags)) == 0) {
+		errno = EINVAL;
+		return (NULL);
+	}
+
+	if (buf == NULL && ((oflags & O_RDWR) == 0)) {
+		errno = EINVAL;
+		return (NULL);
+	}
+
+	if ((st = malloc(sizeof(*st))) == NULL)
+		return (NULL);
+
+	if ((fp = __sfp()) == NULL) {
+		free(st);
+		return (NULL);
+	}
+
+	st->pos = 0;
+	st->len = (oflags & O_WRONLY) ? 0 : size;
+	st->size = size;
+	st->update = oflags & O_RDWR;
+
+	if (buf == NULL) {
+		if ((st->string = malloc(size)) == NULL) {
+			free(st);
+			fp->_flags = 0;
+			return (NULL);
+		}
+		*st->string = '\0';
+	} else {
+		st->string = (char *)buf;
+
+		if (oflags & O_TRUNC)
+			*st->string = '\0';
+
+		if (oflags & O_APPEND) {
+			char	*p;
+
+			if ((p = memchr(st->string, '\0', size)) != NULL)
+				st->pos = st->len = (p - st->string);
+			else
+				st->pos = st->len = size;
+		}
+	}
+
+	fp->_flags = (short)flags;
+	fp->_file = -1;
+	fp->_cookie = (void *)st;
+	fp->_read = (flags & __SWR) ? NULL : fmemopen_read;
+	fp->_write = (flags & __SRD) ? NULL : fmemopen_write;
+	fp->_seek = fmemopen_seek;
+	fp->_close = (buf == NULL) ? fmemopen_close_free : fmemopen_close;
+
+	return (fp);
 }
