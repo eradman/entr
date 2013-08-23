@@ -62,8 +62,9 @@ Next Release: 2.3
 -----------------
 
 * Additional examples in README
-* Only emulate fmemopen(3) on FreeBSD since it's available everywhere else
+* Only emulate fmemopen(3) on MacOS since it's available everywhere else
 * Move platform-specific includes to compat.h
+* Replace the now depricated usleep(3) with nanosleep(2)
 
 Releases History
 ----------------

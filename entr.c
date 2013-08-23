@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "missing/compat.h"
@@ -43,6 +44,7 @@
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #define MEMBER_SIZE(S, M) sizeof(((S *)0)->M)
+#define MILLISECOND 1000000
 
 /* function pointers */
 
@@ -258,6 +260,7 @@ run_script_fork(char *filename, char *argv[]) {
 	int pid;
 	int status;
 	int i;
+	struct timespec delay = { 0, 100 * MILLISECOND };
 
 	if ((restart_mode == 1) && (child_pid > 0)) {
 		kill(child_pid, SIGTERM);
@@ -276,7 +279,7 @@ run_script_fork(char *filename, char *argv[]) {
 		/* wait up to 2 seconds for file to become available */
 		for (i=0; i < 20; i++) {
 			execvp(filename, argv);
-			if (errno == ETXTBSY) usleep(100000);
+			if (errno == ETXTBSY) nanosleep(&delay, NULL);
 			else break;
 		}
 		err(1, "exec %s", filename);
@@ -294,6 +297,7 @@ void
 watch_file(int kq, WatchFile *file) {
 	struct kevent evSet;
 	int i;
+	struct timespec delay = { 0, 100 * MILLISECOND };
 
 	/* wait up to 2 seconds for file to become available */
 	for (i=0; i < 20; i++) {
@@ -302,7 +306,7 @@ watch_file(int kq, WatchFile *file) {
 		#else
 		file->fd = open(file->fn, O_RDONLY);
 		#endif
-		if (file->fd == -1) usleep(100000);
+		if (file->fd == -1) nanosleep(&delay, NULL);
 		else break;
 	}
 	if (file->fd == -1)
@@ -325,7 +329,7 @@ watch_loop(int kq, int repeat, char *argv[]) {
 	int nev;
 	WatchFile *file;
 	int i;
-	struct timespec evTimeout = { 0, 1000000L };
+	struct timespec evTimeout = { 0, MILLISECOND };
 	int reopen_only = 0;
 
 main:

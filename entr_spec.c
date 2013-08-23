@@ -181,6 +181,7 @@ int set_fifo_01() {
 	int fd;
 	int status;
 	static char *argv[] = { "entr", "+fifo", NULL };
+	struct timespec delay = { 0, 100 * MILLISECOND };
 
 	strlcpy(fn, "+/tmp/entr_spec.XXXXXXXXXX", PATH_MAX);
 	mkstemp(fn);
@@ -195,7 +196,7 @@ int set_fifo_01() {
 	}
 	else {
 		while ((fd = open(fn+1, O_RDONLY)) == -1)
-			usleep(100000);
+			nanosleep(&delay, NULL);
 		_assert(read(fd, buf, 4) > 0);
 		buf[4] = 0;
 		_assert(strcmp(buf, "ping") == 0);

@@ -20,6 +20,7 @@
 #include <poll.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "compat.h"
@@ -47,7 +48,11 @@ file_by_descriptor(int wd) {
 	return NULL; /* lookup failed */
 }
 
-/* kqueue interface */
+/* shortcuts */
+
+#define MILLISECOND 1000000
+
+/* interface */
 
 #define EVENT_SIZE (sizeof (struct inotify_event))
 #define EVENT_BUF_LEN (32 * (EVENT_SIZE + 16))
@@ -78,6 +83,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	const struct kevent *kev;
 	int ignored;
 	struct pollfd pfd;
+	struct timespec delay = { 0, 30 * MILLISECOND };
 
 	if (nchanges > 0) {
 		ignored = 0;
@@ -136,9 +142,9 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			n++;
 		}
 		n_total += n;
-		usleep(25000);
+		nanosleep(&delay, NULL);
 	}
-	while ((poll(&pfd, 1, 25) > 0));
+	while ((poll(&pfd, 1, 30) > 0));
 
 	return n_total;
 }
