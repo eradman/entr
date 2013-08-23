@@ -64,7 +64,8 @@ Next Release: 2.3
 * Additional examples in README
 * Only emulate fmemopen(3) on MacOS since it's available everywhere else
 * Move platform-specific includes to compat.h
-* Replace the now depricated usleep(3) with nanosleep(2)
+* Replace the now deprecated usleep(3) with nanosleep(2)
+* Reduce number of attempts to re-open files to 1 second (10 attempts)
 
 Releases History
 ----------------

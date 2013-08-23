@@ -276,8 +276,8 @@ run_script_fork(char *filename, char *argv[]) {
 		err(errno, "can't fork");
 
 	if (pid == 0) {
-		/* wait up to 2 seconds for file to become available */
-		for (i=0; i < 20; i++) {
+		/* wait up to 1 second for each file to become available */
+		for (i=0; i < 10; i++) {
 			execvp(filename, argv);
 			if (errno == ETXTBSY) nanosleep(&delay, NULL);
 			else break;
@@ -299,8 +299,8 @@ watch_file(int kq, WatchFile *file) {
 	int i;
 	struct timespec delay = { 0, 100 * MILLISECOND };
 
-	/* wait up to 2 seconds for file to become available */
-	for (i=0; i < 20; i++) {
+	/* wait up to 1 second for file to become available */
+	for (i=0; i < 10; i++) {
 		#ifdef O_EVTONLY
 		file->fd = open(file->fn, O_RDONLY|O_EVTONLY);
 		#else
