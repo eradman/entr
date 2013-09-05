@@ -46,6 +46,14 @@ fake_stat(const char *path, struct stat *sb) {
 	return 0;
 }
 
+int
+fake_kevent(int kq, const struct kevent *changelist, int nchanges, struct
+	kevent *eventlist, int nevents, const struct timespec *timeout) {
+	/* fall through to the real call */
+	return kevent(kq, changelist, nchanges, eventlist, nevents, timeout);
+}
+
+
 /* spies */
 
 char *__exec_filename;
@@ -243,6 +251,11 @@ int test_main(int argc, char *argv[]) {
 	int i;
 	int max_files;
 
+	/* set up pointers to test doubles */
+	run_script = test_run_script_fork;
+	_stat = fake_stat;
+	_kevent = fake_kevent;
+
 	/* initialize global structures */
 	max_files  = 64;
 	files = malloc(sizeof(char *) * max_files);
@@ -258,6 +271,5 @@ int test_main(int argc, char *argv[]) {
 }
 
 int (*test_runner_main)(int argc, char **argv) = test_main;
-void (*run_script)(char *, char *[]) = test_run_script_fork;
-int (*run_stat)(const char *, struct stat *) = fake_stat;
+
 

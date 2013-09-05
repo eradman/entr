@@ -50,7 +50,10 @@
 
 int (*test_runner_main)(int, char**);
 void (*run_script)(char *, char *[]);
-int (*run_stat)(const char *, struct stat *);
+int (*_stat)(const char *, struct stat *);
+int (*_kevent)(int, const struct kevent *, int, struct kevent *, int , const
+    struct timespec *);
+
 
 /* globals */
 
@@ -90,7 +93,8 @@ main(int argc, char *argv[]) {
 
 	/* set up pointers to real functions */
 	run_script = run_script_fork;
-	run_stat = stat;
+	_stat = stat;
+	_kevent = kevent;
 
 	/* call usage() if no command is supplied */
 	if (argc < 2) usage();
@@ -190,7 +194,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 		if (buf[0] == '\0')
 			continue;
 
-		ret = run_stat(buf, &sb);
+		ret = _stat(buf, &sb);
 		if (ret == -1)
 			err(1, "cannot stat '%s'", buf);
 		if (S_ISREG(sb.st_mode) != 0) {
@@ -314,7 +318,7 @@ watch_file(int kq, WatchFile *file) {
 
 	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_ALL, 0,
 	    file);
-	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+	if (_kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 		err(1, "failed to register VNODE event");
 }
 
@@ -334,9 +338,9 @@ watch_loop(int kq, int repeat, char *argv[]) {
 
 main:
 	if (reopen_only == 1)
-		nev = kevent(kq, NULL, 0, evList, 32, &evTimeout);
+		nev = _kevent(kq, NULL, 0, evList, 32, &evTimeout);
 	else
-		nev = kevent(kq, NULL, 0, evList, 32, NULL);
+		nev = _kevent(kq, NULL, 0, evList, 32, NULL);
 
 	/* reopen all files that were removed */
 	for (i=0; i<nev; i++) {
@@ -348,7 +352,7 @@ main:
 		if (evList[i].fflags & NOTE_DELETE) {
 			EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_DELETE,
 			    NOTE_ALL, 0, file);
-			if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+			if (_kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 				err(1, "failed to remove VNODE event");
 			if ((file->fd != -1) && (close(file->fd) == -1))
 				err(1, "unable to close file");
