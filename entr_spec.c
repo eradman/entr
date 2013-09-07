@@ -161,7 +161,7 @@ int watch_fd_01() {
 	int fd = open(fn, 'r');
 
 	zero_data();
-	strlcpy(files[0]->fn, fn, sizeof(fn));
+	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
 	files[0]->fd = fd;
 	__evList[0].ident = files[0]->fd;
 	__evList[0].filter = EVFILT_VNODE;
@@ -192,7 +192,7 @@ int watch_fd_02() {
 	int fd = open(fn, 'r');
 
 	zero_data();
-	strlcpy(files[0]->fn, fn, sizeof(fn));
+	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
 	files[0]->fd = fd;
 	__evList[0].ident = files[0]->fd;
 	__evList[0].filter = EVFILT_VNODE;

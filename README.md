@@ -66,6 +66,8 @@ Next Release: 2.3
 * Move platform-specific includes to compat.h
 * Replace the now deprecated usleep(3) with nanosleep(2)
 * Reduce number of attempts to re-open files to 1 second (10 attempts)
+* Unit tests use mock kqueue() instead of tiggering events through the
+  filesystem
 
 Releases History
 ----------------
