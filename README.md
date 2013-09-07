@@ -54,10 +54,6 @@ processed.
     >   markdown2html $F
     > done < notify
 
-One-shot mode; block until Makefile is changed
-
-    $ ls Makefile | entr sh -c 'kill $PPID'
-
 Next Release: 2.3
 -----------------
 
@@ -72,7 +68,7 @@ Next Release: 2.3
 Releases History
 ----------------
 
-2.2 Process every delete or rename event to ensure files remain tracked _2013_08_07_
+2.2 Process every delete or rename event to ensure files remain tracked _2013-08-07_
 
 2.1 Zero-dependency build on Linux using built-in compatibility layer _2013-07-01_
 
