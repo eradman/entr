@@ -113,24 +113,6 @@ void zero_data() {
 	__evSet = 0;
 }
 
-void
-touch(WatchFile *file) {
-	int fd;
-
-	fd = open(file->fn, O_WRONLY | O_CREAT, DEFFILEMODE);
-	close(fd);
-}
-
-void
-open_tmp(WatchFile *file) {
-	char *msg = "0123456789\n";
-
-	strlcpy(file->fn, "/tmp/entr_spec.XXXXXXXXXX", PATH_MAX);
-	mkstemp(file->fn);
-	file->fd = open(file->fn, O_WRONLY | O_CREAT, DEFFILEMODE);
-	write(file->fd, msg, strlen(msg));
-}
-
 /* tests */
 
 /*
