@@ -100,10 +100,9 @@ test_run_script_fork(char *filename, char *argv[]) {
 /* utility functions */
 
 void zero_data() {
+	int max_files = 4;
 	int i;
-	int max_files;
 
-	max_files  = 64;
 	for (i=0; i<max_files; i++)
 		memset(files[i], 0, sizeof(WatchFile));
 	memset(__evList, 0, sizeof(__evList));
@@ -120,9 +119,9 @@ void zero_data() {
  * descriptors
  */
 int process_input_01() {
-	int n_files;
-	FILE *fake;
 	char input[] = "file1\nfile2\nfile3";
+	FILE *fake;
+	int n_files;
 
 	fake = fmemopen(input, strlen(input), "r");
 	n_files = process_input(fake, files, 3);
@@ -173,8 +172,9 @@ int watch_fd_01() {
 
 	watch_file(kq, files[0]);
 	watch_loop(kq, 0, argv);
-        close(fd);
+	close(fd);
 
+	_assert(__exec_filename != 0);
 	_assert(strcmp(__exec_filename, "prog") == 0);
 	_assert(strcmp(__exec_argv[0], "prog") == 0);
 	_assert(strcmp(__exec_argv[1], "arg1") == 0);
@@ -203,7 +203,7 @@ int watch_fd_02() {
 
 	watch_file(kq, files[0]);
 	watch_loop(kq, 0, argv);
-        close(fd);
+	close(fd);
 
 	_assert(__exec_filename == 0);
 	return 0;
@@ -251,15 +251,25 @@ int set_fifo_01() {
  */
 int set_options_01() {
 	int argv_offset;
-
 	char *exec_argv[] = { "entr", "ruby", "main.rb", NULL };
-	char *restart_argv[] = { "entr", "-r", "ruby", "main.rb", NULL };
 	
+	zero_data();
 	argv_offset = set_options(exec_argv);
+
 	_assert(argv_offset == 1);
 	_assert(restart_mode == 0);
-
+	return 0;
+}
+/*
+ * Parse command line arguments for restart mode
+ */
+int set_options_02() {
+	int argv_offset;
+	char *restart_argv[] = { "entr", "-r", "ruby", "main.rb", NULL };
+	
+	zero_data();
 	argv_offset = set_options(restart_argv);
+
 	_assert(argv_offset == 2);
 	_assert(restart_mode == 1);
 	return 0;
@@ -274,13 +284,14 @@ int all_tests() {
 	_verify(watch_fd_02);
 	_verify(set_fifo_01);
 	_verify(set_options_01);
+	_verify(set_options_02);
 
 	return 0;
 }
 
 int test_main(int argc, char *argv[]) {
+	int max_files = 4;
 	int i;
-	int max_files;
 
 	/* set up pointers to test doubles */
 	run_script = test_run_script_fork;
@@ -288,9 +299,7 @@ int test_main(int argc, char *argv[]) {
 	_kevent = fake_kevent;
 
 	/* initialize global structures */
-	max_files  = 64;
 	files = malloc(sizeof(char *) * max_files);
-	memset(files, 0, sizeof(char *) * max_files);
 	for (i=0; i<max_files; i++)
 		files[i] = malloc(sizeof(WatchFile));
 
