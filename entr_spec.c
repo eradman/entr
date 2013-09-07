@@ -26,6 +26,13 @@
 
 extern WatchFile **files;
 
+/* text context */
+
+char *__exec_filename;
+char **__exec_argv;
+const struct kevent *__evSet;
+struct kevent __evList[32];
+
 /* test runner */
 
 int tests_run = 0;
@@ -46,18 +53,43 @@ fake_stat(const char *path, struct stat *sb) {
 	return 0;
 }
 
+/* mock objects */
+
 int
 fake_kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	kevent *eventlist, int nevents, const struct timespec *timeout) {
+	if (nchanges > 0) {
+		__evSet = changelist;
+		#ifdef DEBUG
+		fprintf(stderr, "evSet:  %d 0x%x 0x%x 0x%x %d %p\n",
+		    __evSet[0].ident,
+		    __evSet[0].filter,
+		    __evSet[0].flags,
+		    __evSet[0].fflags,
+		    __evSet[0].data,
+		    __evSet[0].udata);
+		#endif
+		return nchanges;
+	}
+	if (nevents > 0) {
+		memcpy((void *)eventlist, (void *)__evList, sizeof(struct kevent));
+		#ifdef DEBUG
+		fprintf(stderr, "evList: %d 0x%x 0x%x 0x%x %d %p\n",
+		    __evList[0].ident,
+		    __evList[0].filter,
+		    __evList[0].flags,
+		    __evList[0].fflags,
+		    __evList[0].data,
+		    __evList[0].udata);
+		#endif
+		return 1; /* return one event */
+	}
 	/* fall through to the real call */
 	return kevent(kq, changelist, nchanges, eventlist, nevents, timeout);
 }
 
 
 /* spies */
-
-char *__exec_filename;
-char **__exec_argv;
 
 void
 test_run_script_fork(char *filename, char *argv[]) {
@@ -66,6 +98,20 @@ test_run_script_fork(char *filename, char *argv[]) {
 }
 
 /* utility functions */
+
+void zero_data() {
+	int i;
+	int max_files;
+
+	max_files  = 64;
+	for (i=0; i<max_files; i++)
+		memset(files[i], 0, sizeof(WatchFile));
+	memset(__evList, 0, sizeof(__evList));
+	__evSet = 0;
+	__exec_filename = 0;
+	__exec_argv = 0;
+	__evSet = 0;
+}
 
 void
 touch(WatchFile *file) {
@@ -124,57 +170,60 @@ int process_input_02() {
 }
 
 /*
- * Fire an event by writing to a file. Assert that the user supplied program
- * was called with the correct arguments
+ * Fire an event by writing to a file. Assert that the user supplied program was
+ * called with the correct arguments
  */
 int watch_fd_01() {
-	int kq;
+	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
-	int fd;
+	static char fn[] = "/dev/null";
+	int fd = open(fn, 'r');
 
-	open_tmp(files[0]);
-	kq = kqueue();
+	zero_data();
+	strlcpy(files[0]->fn, fn, sizeof(fn));
+	files[0]->fd = fd;
+	__evList[0].ident = files[0]->fd;
+	__evList[0].filter = EVFILT_VNODE;
+	__evList[0].flags = EV_DELETE;
+	__evList[0].fflags = NOTE_WRITE;
+	__evList[0].data = 0;
+	__evList[0].udata = &files[0];
+
 	watch_file(kq, files[0]);
-
-	fd = open(files[0]->fn, O_RDWR);
-	write(fd, "!@#", 3);
-	close(fd);
 	watch_loop(kq, 0, argv);
+        close(fd);
 
 	_assert(strcmp(__exec_filename, "prog") == 0);
 	_assert(strcmp(__exec_argv[0], "prog") == 0);
 	_assert(strcmp(__exec_argv[1], "arg1") == 0);
 	_assert(strcmp(__exec_argv[2], "arg2") == 0);
-	__exec_filename = 0;
-	__exec_argv = 0;
 	return 0;
 }
-
 /*
- * Fire an event by deleting and re-creating a file. Assert that the user
- * supplied program was called with the correct arguments
+ * Fire an event that is not entr is not interested in. Assert that no actoin
+ * was taken.
  */
 int watch_fd_02() {
-	int kq;
+	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
-	int fd;
+	static char fn[] = "/dev/null";
+	int fd = open(fn, 'r');
 
-	open_tmp(files[0]);
-	kq = kqueue();
+	zero_data();
+	strlcpy(files[0]->fn, fn, sizeof(fn));
+	files[0]->fd = fd;
+	__evList[0].ident = files[0]->fd;
+	__evList[0].filter = EVFILT_VNODE;
+	__evList[0].flags = EV_DELETE;
+	__evList[0].fflags = NOTE_ATTRIB;
+	__evList[0].data = 0;
+	__evList[0].udata = &files[0];
+
 	watch_file(kq, files[0]);
-
-	fd = open(files[0]->fn, O_RDWR);
-	close(fd);
-	unlink(files[0]->fn);
-	touch(files[0]);
 	watch_loop(kq, 0, argv);
+        close(fd);
 
-	_assert(strcmp(__exec_filename, "prog") == 0);
-	_assert(strcmp(__exec_argv[0], "prog") == 0);
-	_assert(strcmp(__exec_argv[1], "arg1") == 0);
-	_assert(strcmp(__exec_argv[2], "arg2") == 0);
-	__exec_filename = 0;
-	__exec_argv = 0;
+	_assert(__exec_filename == 0);
 	return 0;
 }
 
