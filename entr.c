@@ -345,8 +345,14 @@ main:
 	/* reopen all files that were removed */
 	for (i=0; i<nev; i++) {
 		#ifdef DEBUG
-		fprintf(stderr, "event %d/%d: flags: 0x%x fflags: 0x%x\n", i+1,
-		    nev, evList[i].flags, evList[i].fflags);
+		fprintf(stderr, "event %d/%d: %d 0x%x 0x%x 0x%x %d %p\n", i+1,
+		    nev,
+		    __evList[0].ident,
+		    __evList[0].filter,
+		    __evList[0].flags,
+		    __evList[0].fflags,
+		    __evList[0].data,
+		    __evList[0].udata);
 		#endif
 		file = (WatchFile *)evList[i].udata;
 		if (evList[i].fflags & NOTE_DELETE) {

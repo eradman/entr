@@ -26,12 +26,14 @@
 
 extern WatchFile **files;
 
-/* text context */
+/* test context */
 
 char *__exec_filename;
 char **__exec_argv;
-const struct kevent *__evSet;
+struct kevent __evSet[32];
 struct kevent __evList[32];
+int __nevents;
+int __nchanges;
 
 /* test runner */
 
@@ -57,35 +59,21 @@ fake_stat(const char *path, struct stat *sb) {
 
 int
 fake_kevent(int kq, const struct kevent *changelist, int nchanges, struct
-	kevent *eventlist, int nevents, const struct timespec *timeout) {
+    kevent *eventlist, int nevents, const struct timespec *timeout) {
+	int i;
+
 	if (nchanges > 0) {
-		__evSet = changelist;
-		#ifdef DEBUG
-		fprintf(stderr, "evSet:  %d 0x%x 0x%x 0x%x %d %p\n",
-		    __evSet[0].ident,
-		    __evSet[0].filter,
-		    __evSet[0].flags,
-		    __evSet[0].fflags,
-		    __evSet[0].data,
-		    __evSet[0].udata);
-		#endif
+		__nchanges += nchanges;
+		memcpy((void *)__evSet, (void *)changelist,
+		    sizeof(struct kevent) * nchanges);
 		return nchanges;
 	}
 	if (nevents > 0) {
-		memcpy((void *)eventlist, (void *)__evList, sizeof(struct kevent));
-		#ifdef DEBUG
-		fprintf(stderr, "evList: %d 0x%x 0x%x 0x%x %d %p\n",
-		    __evList[0].ident,
-		    __evList[0].filter,
-		    __evList[0].flags,
-		    __evList[0].fflags,
-		    __evList[0].data,
-		    __evList[0].udata);
-		#endif
-		return 1; /* return one event */
+		memcpy((void *)eventlist, (void *)__evList,
+		    sizeof(struct kevent) * nevents);
+		return __nevents;
 	}
-	/* fall through to the real call */
-	return kevent(kq, changelist, nchanges, eventlist, nevents, timeout);
+	return -1;
 }
 
 
@@ -106,10 +94,11 @@ void zero_data() {
 	for (i=0; i<max_files; i++)
 		memset(files[i], 0, sizeof(WatchFile));
 	memset(__evList, 0, sizeof(__evList));
-	__evSet = 0;
+	memset(__evList, 0, sizeof(__evSet));
 	__exec_filename = 0;
 	__exec_argv = 0;
-	__evSet = 0;
+	__nevents = 0;
+	__nchanges = 0;
 }
 
 /* tests */
@@ -151,8 +140,10 @@ int process_input_02() {
 }
 
 /*
- * Fire an event by writing to a file. Assert that the user supplied program was
- * called with the correct arguments
+ * Fire an event by removing a file. Assert that the file was added for watch
+ * again. The file is not explictly removed from the queue because close(2)
+ * does this. Ensure that the user-supplied application was called with the
+ * correct arguments.
  */
 int watch_fd_01() {
 	int kq = kqueue();
@@ -169,10 +160,19 @@ int watch_fd_01() {
 	__evList[0].fflags = NOTE_WRITE;
 	__evList[0].data = 0;
 	__evList[0].udata = &files[0];
+	__nevents = 1;
 
 	watch_file(kq, files[0]);
 	watch_loop(kq, 0, argv);
 	close(fd);
+
+	_assert(__nchanges == 1);
+	_assert(__evSet[0].ident);
+	_assert(__evSet[0].filter == EVFILT_VNODE);
+	_assert(__evSet[0].flags == EV_CLEAR | EV_ADD);
+	_assert(__evSet[0].fflags == NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND);
+	_assert(__evSet[0].data == 0);
+	_assert(strcmp(((WatchFile *)__evSet[0].udata)->fn, fn) == 0);
 
 	_assert(__exec_filename != 0);
 	_assert(strcmp(__exec_filename, "prog") == 0);
@@ -181,6 +181,7 @@ int watch_fd_01() {
 	_assert(strcmp(__exec_argv[2], "arg2") == 0);
 	return 0;
 }
+
 /*
  * Fire an event that is not entr is not interested in. Assert that no actoin
  * was taken.
