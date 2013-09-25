@@ -345,7 +345,7 @@ main:
 	/* reopen all files that were removed */
 	for (i=0; i<nev; i++) {
 		#ifdef DEBUG
-		fprintf(stderr, "event %d/%d: %d 0x%x 0x%x 0x%x %d %p\n", i+1,
+		fprintf(stderr, "event %d/%d: %d (%d) 0x%x 0x%x %d %p\n", i+1,
 		    nev,
 		    __evList[0].ident,
 		    __evList[0].filter,

@@ -63,14 +63,15 @@ fake_kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	int i;
 
 	if (nchanges > 0) {
-		__nchanges += nchanges;
-		memcpy((void *)__evSet, (void *)changelist,
+		memcpy((void *)__evSet + sizeof(struct kevent) * __nchanges,
+                    (void *)changelist,
 		    sizeof(struct kevent) * nchanges);
+		__nchanges += nchanges;
 		return nchanges;
 	}
 	if (nevents > 0) {
 		memcpy((void *)eventlist, (void *)__evList,
-		    sizeof(struct kevent) * nevents);
+		    sizeof(struct kevent) * __nevents);
 		return __nevents;
 	}
 	return -1;
@@ -149,30 +150,45 @@ int watch_fd_01() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 	static char fn[] = "/dev/null";
-	int fd = open(fn, 'r');
 
 	zero_data();
 	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
-	files[0]->fd = fd;
+	watch_file(kq, files[0]);
+
+	__nevents = 1;
 	__evList[0].ident = files[0]->fd;
 	__evList[0].filter = EVFILT_VNODE;
-	__evList[0].flags = EV_DELETE;
-	__evList[0].fflags = NOTE_WRITE;
+	__evList[0].flags = 0;
+	__evList[0].fflags = NOTE_DELETE;
 	__evList[0].data = 0;
-	__evList[0].udata = &files[0];
-	__nevents = 1;
+	__evList[0].udata = files[0];
 
-	watch_file(kq, files[0]);
 	watch_loop(kq, 0, argv);
-	close(fd);
 
-	_assert(__nchanges == 1);
+	_assert(__nchanges == 3);
 	_assert(__evSet[0].ident);
 	_assert(__evSet[0].filter == EVFILT_VNODE);
 	_assert(__evSet[0].flags == EV_CLEAR | EV_ADD);
 	_assert(__evSet[0].fflags == NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND);
 	_assert(__evSet[0].data == 0);
-	_assert(strcmp(((WatchFile *)__evSet[0].udata)->fn, fn) == 0);
+	_assert(strcmp(((WatchFile *)__evSet[0].udata)->fn,
+            files[0]->fn) == 0);
+
+	_assert(__evSet[1].ident);
+	_assert(__evSet[1].filter == EVFILT_VNODE);
+	_assert(__evSet[1].flags == EV_DELETE);
+	_assert(__evSet[1].fflags == NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND);
+	_assert(__evSet[1].data == 0);
+	_assert(strcmp(((WatchFile *)__evSet[1].udata)->fn,
+            files[0]->fn) == 0);
+
+	_assert(__evSet[2].ident);
+	_assert(__evSet[2].filter == EVFILT_VNODE);
+	_assert(__evSet[2].flags == EV_CLEAR | EV_ADD);
+	_assert(__evSet[2].fflags == NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND);
+	_assert(__evSet[2].data == 0);
+	_assert(strcmp(((WatchFile *)__evSet[2].udata)->fn,
+            files[0]->fn) == 0);
 
 	_assert(__exec_filename != 0);
 	_assert(strcmp(__exec_filename, "prog") == 0);
@@ -181,7 +197,6 @@ int watch_fd_01() {
 	_assert(strcmp(__exec_argv[2], "arg2") == 0);
 	return 0;
 }
-
 /*
  * Fire an event that is not entr is not interested in. Assert that no actoin
  * was taken.
@@ -190,21 +205,28 @@ int watch_fd_02() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 	static char fn[] = "/dev/null";
-	int fd = open(fn, 'r');
 
 	zero_data();
 	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
-	files[0]->fd = fd;
+	watch_file(kq, files[0]);
+
+	__nevents = 1;
 	__evList[0].ident = files[0]->fd;
 	__evList[0].filter = EVFILT_VNODE;
-	__evList[0].flags = EV_DELETE;
+	__evList[0].flags = 0;
 	__evList[0].fflags = NOTE_ATTRIB;
 	__evList[0].data = 0;
 	__evList[0].udata = &files[0];
 
-	watch_file(kq, files[0]);
 	watch_loop(kq, 0, argv);
-	close(fd);
+
+	_assert(__nchanges == 1);
+	_assert(__evSet[0].ident);
+	_assert(__evSet[0].filter == EVFILT_VNODE);
+	_assert(__evSet[0].flags == EV_CLEAR | EV_ADD);
+	_assert(__evSet[0].fflags == NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND);
+	_assert(__evSet[0].data == 0);
+	_assert(strcmp(((WatchFile *)__evSet[0].udata)->fn, fn) == 0);
 
 	_assert(__exec_filename == 0);
 	return 0;
