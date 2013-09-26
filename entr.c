@@ -72,7 +72,7 @@ static int set_fifo(char *[]);
 static int set_options(char *[]);
 static void run_script_fork(char *, char *[]);
 static void watch_file(int, WatchFile *);
-static void watch_loop(int, int, char *[]);
+static void watch_loop(int, char *[]);
 
 /*
  * The Event Notify Test Runner
@@ -146,7 +146,7 @@ main(int argc, char *argv[]) {
 
 	if (restart_mode)
 		run_script(argv[argv_index], argv+argv_index);
-	watch_loop(kq, 1, argv+argv_index);
+	watch_loop(kq, argv+argv_index);
 	return 1;
 }
 
@@ -327,7 +327,7 @@ watch_file(int kq, WatchFile *file) {
  * a file dissapears we'll spin waiting for it to reappear.
  */
 void
-watch_loop(int kq, int repeat, char *argv[]) {
+watch_loop(int kq, char *argv[]) {
 	struct kevent evSet;
 	struct kevent evList[32];
 	int nev;
@@ -341,6 +341,8 @@ main:
 		nev = _kevent(kq, NULL, 0, evList, 32, &evTimeout);
 	else
 		nev = _kevent(kq, NULL, 0, evList, 32, NULL);
+	if (nev == -2) /* test runner */
+		return;
 
 	/* reopen all files that were removed */
 	for (i=0; i<nev; i++) {
@@ -388,6 +390,5 @@ main:
 			}
 		}
 	}
-	if (repeat == 1)
-		goto main;
+	goto main;
 }
