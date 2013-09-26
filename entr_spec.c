@@ -14,12 +14,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sys/stat.h>
-
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "entr.c"
 
 /* globals */
@@ -28,14 +22,20 @@ extern WatchFile **files;
 
 /* test context */
 
-int __exec_count;
-char *__exec_filename;
-char **__exec_argv;
-struct kevent __evSet[32];
-struct kevent __evList[32];
-int __nevents;
-int __nchanges;
-int __ndecrement;
+struct {
+	struct {
+	    int count;
+	    char *filename;
+	    char **argv;
+	} exec;
+	struct {
+	    struct kevent Set[32];
+	    struct kevent List[32];
+	    int nset;
+	    int nlist;
+	    int decrement;
+	} event;
+} ctx;
 
 /* test runner */
 
@@ -63,15 +63,15 @@ fake_kevent(int kq, const struct kevent *changelist, int nchanges, struct
     kevent *eventlist, int nevents, const struct timespec *timeout) {
 	/* record each event that the application sets */
 	if (nchanges > 0) {
-		memcpy(&__evSet[__nchanges], changelist, sizeof(struct kevent) * nchanges);
-		__nchanges += nchanges;
+		memcpy(&ctx.event.Set[ctx.event.nset], changelist, sizeof(struct kevent) * nchanges);
+		ctx.event.nset += nchanges;
 		return nchanges;
 	}
 	/* return list of events that each test sets up */
-	if ((nevents > 0) && (__nevents > 0)) {
-		memcpy(eventlist, &__evList, sizeof(struct kevent) * __nevents);
-		__nevents -= __ndecrement;
-		return __ndecrement;
+	if ((nevents > 0) && (ctx.event.nlist > 0)) {
+		memcpy(eventlist, &ctx.event.List, sizeof(struct kevent) * ctx.event.nlist);
+		ctx.event.nlist -= ctx.event.decrement;
+		return ctx.event.decrement;
 	}
 	/* no more events, use bogus return code to cause the main loop to exit */
 	return -2;
@@ -82,12 +82,21 @@ fake_kevent(int kq, const struct kevent *changelist, int nchanges, struct
 
 void
 test_run_script_fork(char *filename, char *argv[]) {
-	__exec_count++;
-	__exec_filename = filename;
-	__exec_argv = argv;
+	ctx.exec.count++;
+	ctx.exec.filename = filename;
+	ctx.exec.argv = argv;
 }
 
 /* utility functions */
+
+#define EV_ASSERT(kevp, a, b, c, d, e, f) do {	\
+	_assert((kevp)->ident == (a));		\
+	_assert((kevp)->filter == (b));		\
+	_assert((kevp)->flags == (c));		\
+	_assert((kevp)->fflags == (d));		\
+	_assert((kevp)->data == (e));		\
+	_assert((kevp)->udata == (f));		\
+} while(0)
 
 void zero_data() {
 	int max_files = 4;
@@ -95,14 +104,8 @@ void zero_data() {
 
 	for (i=0; i<max_files; i++)
 		memset(files[i], 0, sizeof(WatchFile));
-	memset(__evList, 0, sizeof(struct kevent));
-	memset(__evSet, 0, sizeof(struct kevent));
-	__exec_filename = 0;
-	__exec_argv = 0;
-	__exec_count = 0;
-	__nevents = 0;
-	__nchanges = 0;
-	__ndecrement = 1;
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.event.decrement = 1;
 }
 
 /* tests */
@@ -156,40 +159,36 @@ int watch_fd_01() {
 	watch_file(kq, files[0]);
 
 	/* event 1/1: 4 (-4) 0x21 0x1 0 0x84d5e800 */
-	__nevents = 1;
-	__evList[0].ident = files[0]->fd;
-	__evList[0].filter = EVFILT_VNODE;
-	__evList[0].flags = 0;
-	__evList[0].fflags = NOTE_DELETE;
-	__evList[0].udata = files[0];
+	ctx.event.nlist = 1;
+	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_DELETE, 0, files[0]);
 
 	watch_loop(kq, argv);
 
-	_assert(__nchanges == 3);
-	_assert(__evSet[0].ident);
-	_assert(__evSet[0].filter == EVFILT_VNODE);
-	_assert(__evSet[0].flags == (EV_CLEAR|EV_ADD)); /* open */
-	_assert(__evSet[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(strcmp(((WatchFile *)__evSet[0].udata)->fn, files[0]->fn) == 0);
+	_assert(ctx.event.nset == 3);
+	_assert(ctx.event.Set[0].ident);
+	_assert(ctx.event.Set[0].filter == EVFILT_VNODE);
+	_assert(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
+	_assert(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	_assert(ctx.event.Set[0].udata == files[0]);
 
-	_assert(__evSet[1].ident);
-	_assert(__evSet[1].filter == EVFILT_VNODE);
-	_assert(__evSet[1].flags == EV_DELETE); /* remove */
-	_assert(__evSet[1].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(strcmp(((WatchFile *)__evSet[1].udata)->fn, files[0]->fn) == 0);
+	_assert(ctx.event.Set[1].ident);
+	_assert(ctx.event.Set[1].filter == EVFILT_VNODE);
+	_assert(ctx.event.Set[1].flags == EV_DELETE); /* remove */
+	_assert(ctx.event.Set[1].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	_assert(ctx.event.Set[1].udata == files[0]);
 
-	_assert(__evSet[2].ident);
-	_assert(__evSet[2].filter == EVFILT_VNODE);
-	_assert(__evSet[2].flags == (EV_CLEAR|EV_ADD)); /* reopen */
-	_assert(__evSet[2].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(strcmp(((WatchFile *)__evSet[2].udata)->fn, files[0]->fn) == 0);
+	_assert(ctx.event.Set[2].ident);
+	_assert(ctx.event.Set[2].filter == EVFILT_VNODE);
+	_assert(ctx.event.Set[2].flags == (EV_CLEAR|EV_ADD)); /* reopen */
+	_assert(ctx.event.Set[2].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	_assert(ctx.event.Set[2].udata == files[0]);
 
-	_assert(__exec_count == 1);
-	_assert(__exec_filename != 0);
-	_assert(strcmp(__exec_filename, "prog") == 0);
-	_assert(strcmp(__exec_argv[0], "prog") == 0);
-	_assert(strcmp(__exec_argv[1], "arg1") == 0);
-	_assert(strcmp(__exec_argv[2], "arg2") == 0);
+	_assert(ctx.exec.count == 1);
+	_assert(ctx.exec.filename != 0);
+	_assert(strcmp(ctx.exec.filename, "prog") == 0);
+	_assert(strcmp(ctx.exec.argv[0], "prog") == 0);
+	_assert(strcmp(ctx.exec.argv[1], "arg1") == 0);
+	_assert(strcmp(ctx.exec.argv[2], "arg2") == 0);
 	return 0;
 }
 
@@ -205,24 +204,20 @@ int watch_fd_02() {
 	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 
-	__nevents = 1;
-	__evList[0].ident = files[0]->fd;
-	__evList[0].filter = EVFILT_VNODE;
-	__evList[0].flags = 0;
-	__evList[0].fflags = NOTE_ATTRIB;
-	__evList[0].udata = &files[0];
+	ctx.event.nlist = 1;
+	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_ATTRIB, 0, files[0]);
 
 	watch_loop(kq, argv);
 
-	_assert(__nchanges == 1);
-	_assert(__evSet[0].ident);
-	_assert(__evSet[0].filter == EVFILT_VNODE);
-	_assert(__evSet[0].flags == (EV_CLEAR|EV_ADD));
-	_assert(__evSet[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(strcmp(((WatchFile *)__evSet[0].udata)->fn, fn) == 0);
+	_assert(ctx.event.nset == 1);
+	_assert(ctx.event.Set[0].ident);
+	_assert(ctx.event.Set[0].filter == EVFILT_VNODE);
+	_assert(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD));
+	_assert(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	_assert(ctx.event.Set[0].udata == files[0]);
 
-	_assert(__exec_count == 0);
-	_assert(__exec_filename == 0);
+	_assert(ctx.exec.count == 0);
+	_assert(ctx.exec.filename == 0);
 	return 0;
 }
 
@@ -240,35 +235,26 @@ int watch_fd_03() {
 	strlcpy(files[1]->fn, fn, sizeof(files[1]->fn));
 	watch_file(kq, files[1]);
 
-	__nevents = 2;
-	__evList[0].ident = files[0]->fd;
-	__evList[0].filter = EVFILT_VNODE;
-	__evList[0].flags = 0;
-	__evList[0].fflags = NOTE_WRITE;
-	__evList[0].udata = files[0];
-
-	__evList[1].ident = files[1]->fd;
-	__evList[1].filter = EVFILT_VNODE;
-	__evList[1].flags = 0;
-	__evList[1].fflags = NOTE_WRITE;
-	__evList[1].udata = files[1];
+	ctx.event.nlist = 2;
+	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_WRITE, 0, files[0]);
+	EV_SET(&ctx.event.List[1], files[1]->fd, EVFILT_VNODE, 0, NOTE_WRITE, 0, files[1]);
 
 	watch_loop(kq, argv);
 
-	_assert(__nchanges == 2);
-	_assert(__evSet[0].ident);
-	_assert(__evSet[0].filter == EVFILT_VNODE);
-	_assert(__evSet[0].flags == (EV_CLEAR|EV_ADD)); /* open */
-	_assert(__evSet[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(__evSet[0].data == 0);
-	_assert(strcmp(((WatchFile *)__evSet[0].udata)->fn, files[0]->fn) == 0);
+	_assert(ctx.event.nset == 2);
+	_assert(ctx.event.Set[0].ident);
+	_assert(ctx.event.Set[0].filter == EVFILT_VNODE);
+	_assert(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
+	_assert(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	_assert(ctx.event.Set[0].data == 0);
+	_assert(strcmp(((WatchFile *)ctx.event.Set[0].udata)->fn, fn) == 0);
 
-	_assert(__exec_count == 1);
-	_assert(__exec_filename != 0);
-	_assert(strcmp(__exec_filename, "prog") == 0);
-	_assert(strcmp(__exec_argv[0], "prog") == 0);
-	_assert(strcmp(__exec_argv[1], "arg1") == 0);
-	_assert(strcmp(__exec_argv[2], "arg2") == 0);
+	_assert(ctx.exec.count == 1);
+	_assert(ctx.exec.filename != 0);
+	_assert(strcmp(ctx.exec.filename, "prog") == 0);
+	_assert(strcmp(ctx.exec.argv[0], "prog") == 0);
+	_assert(strcmp(ctx.exec.argv[1], "arg1") == 0);
+	_assert(strcmp(ctx.exec.argv[2], "arg2") == 0);
 	return 0;
 }
 
@@ -284,48 +270,38 @@ int watch_fd_04() {
 	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 
-	__nevents = 2;
-	__ndecrement = 2;
-
-	__evList[0].ident = files[0]->fd;
-	__evList[0].filter = EVFILT_VNODE;
-	__evList[0].flags = 0;
-	__evList[0].fflags = NOTE_WRITE;
-	__evList[0].udata = files[0];
-
-	__evList[1].ident = files[0]->fd;
-	__evList[1].filter = EVFILT_VNODE;
-	__evList[1].flags = 0;
-	__evList[1].fflags = NOTE_DELETE;
-	__evList[1].udata = files[0];
+	ctx.event.nlist = 2;
+	ctx.event.decrement = 2;
+	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_WRITE, 0, files[0]);
+	EV_SET(&ctx.event.List[1], files[0]->fd, EVFILT_VNODE, 0, NOTE_DELETE, 0, files[0]);
 
 	watch_loop(kq, argv);
 
-	_assert(__nchanges == 3);
-	_assert(__evSet[0].ident);
-	_assert(__evSet[0].filter == EVFILT_VNODE);
-	_assert(__evSet[0].flags == (EV_CLEAR|EV_ADD)); /* open */
-	_assert(__evSet[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(strcmp(((WatchFile *)__evSet[0].udata)->fn, files[0]->fn) == 0);
+	_assert(ctx.event.nset == 3);
+	_assert(ctx.event.Set[0].ident);
+	_assert(ctx.event.Set[0].filter == EVFILT_VNODE);
+	_assert(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
+	_assert(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	_assert(strcmp(((WatchFile *)ctx.event.Set[0].udata)->fn, fn) == 0);
 
-	_assert(__evSet[1].ident);
-	_assert(__evSet[1].filter == EVFILT_VNODE);
-	_assert(__evSet[1].flags == EV_DELETE); /* remove */
-	_assert(__evSet[1].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(strcmp(((WatchFile *)__evSet[1].udata)->fn, files[0]->fn) == 0);
+	_assert(ctx.event.Set[1].ident);
+	_assert(ctx.event.Set[1].filter == EVFILT_VNODE);
+	_assert(ctx.event.Set[1].flags == EV_DELETE); /* remove */
+	_assert(ctx.event.Set[1].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	_assert(strcmp(((WatchFile *)ctx.event.Set[1].udata)->fn, files[0]->fn) == 0);
 
-	_assert(__evSet[2].ident);
-	_assert(__evSet[2].filter == EVFILT_VNODE);
-	_assert(__evSet[2].flags == (EV_CLEAR|EV_ADD)); /* reopen */
-	_assert(__evSet[2].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(strcmp(((WatchFile *)__evSet[2].udata)->fn, files[0]->fn) == 0);
+	_assert(ctx.event.Set[2].ident);
+	_assert(ctx.event.Set[2].filter == EVFILT_VNODE);
+	_assert(ctx.event.Set[2].flags == (EV_CLEAR|EV_ADD)); /* reopen */
+	_assert(ctx.event.Set[2].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	_assert(strcmp(((WatchFile *)ctx.event.Set[2].udata)->fn, files[0]->fn) == 0);
 
-	_assert(__exec_count == 1);
-	_assert(__exec_filename != 0);
-	_assert(strcmp(__exec_filename, "prog") == 0);
-	_assert(strcmp(__exec_argv[0], "prog") == 0);
-	_assert(strcmp(__exec_argv[1], "arg1") == 0);
-	_assert(strcmp(__exec_argv[2], "arg2") == 0);
+	_assert(ctx.exec.count == 1);
+	_assert(ctx.exec.filename != 0);
+	_assert(strcmp(ctx.exec.filename, "prog") == 0);
+	_assert(strcmp(ctx.exec.argv[0], "prog") == 0);
+	_assert(strcmp(ctx.exec.argv[1], "arg1") == 0);
+	_assert(strcmp(ctx.exec.argv[2], "arg2") == 0);
 	return 0;
 }
 
