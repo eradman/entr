@@ -24,21 +24,21 @@ extern WatchFile **files;
 
 struct {
 	struct {
-	    int count;
-	    char *filename;
-	    char **argv;
+		int count;
+		char *filename;
+		char **argv;
 	} exec;
 	struct {
-	    struct kevent Set[32];
-	    struct kevent List[32];
-	    int nset;
-	    int nlist;
-	    int decrement;
+		struct kevent Set[32];
+		struct kevent List[32];
+		int nset;
+		int nlist;
+		int decrement;
 	} event;
 	struct {
-	    int pid;
-	    int sig;
-	    int count;
+		int pid;
+		int sig;
+		int count;
 	} signal;
 } ctx;
 
@@ -47,8 +47,8 @@ struct {
 int tests_run = 0;
 
 #define FAIL() printf("\nfailure in %s() line %d\n", __func__, __LINE__)
-#define _assert(test) do { if (!(test)) { FAIL(); return 1; } } while(0)
-#define _verify(test) do { int r=test(); tests_run++; printf("."); if (r) return r; } while(0)
+#define ok(test) do { if (!(test)) { FAIL(); return 1; } } while(0)
+#define run(test) do { int r=test(); tests_run++; printf("."); if (r) return r; } while(0)
 
 /* stubs */
 
@@ -90,7 +90,7 @@ fake_kill(pid_t pid, int sig) {
 	ctx.signal.pid = pid;
 	ctx.signal.sig = sig;
 	ctx.signal.count++;
-        return 0;
+	return 0;
 }
 
 void
@@ -128,10 +128,10 @@ int process_input_01() {
 	fake = fmemopen(input, strlen(input), "r");
 	n_files = process_input(fake, files, 3);
 
-	_assert(n_files == -1);
-	_assert(strcmp(files[0]->fn, "file1") == 0);
-	_assert(strcmp(files[1]->fn, "file2") == 0);
-	_assert(strcmp(files[2]->fn, "file3") == 0);
+	ok(n_files == -1);
+	ok(strcmp(files[0]->fn, "file1") == 0);
+	ok(strcmp(files[1]->fn, "file2") == 0);
+	ok(strcmp(files[2]->fn, "file3") == 0);
 	return 0;
 }
 /*
@@ -145,10 +145,10 @@ int process_input_02() {
 	fake = fmemopen(input, strlen(input), "r");
 	n_files = process_input(fake, files, 16);
 
-	_assert(n_files == 3);
-	_assert(strcmp(files[0]->fn, "file1") == 0);
-	_assert(strcmp(files[1]->fn, "file2") == 0);
-	_assert(strcmp(files[2]->fn, "file3") == 0);
+	ok(n_files == 3);
+	ok(strcmp(files[0]->fn, "file1") == 0);
+	ok(strcmp(files[1]->fn, "file2") == 0);
+	ok(strcmp(files[2]->fn, "file3") == 0);
 	return 0;
 }
 
@@ -170,31 +170,31 @@ int watch_fd_exec_01() {
 
 	watch_loop(kq, argv);
 
-	_assert(ctx.event.nset == 3);
-	_assert(ctx.event.Set[0].ident);
-	_assert(ctx.event.Set[0].filter == EVFILT_VNODE);
-	_assert(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
-	_assert(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(ctx.event.Set[0].udata == files[0]);
+	ok(ctx.event.nset == 3);
+	ok(ctx.event.Set[0].ident);
+	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
+	ok(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[0].udata == files[0]);
 
-	_assert(ctx.event.Set[1].ident);
-	_assert(ctx.event.Set[1].filter == EVFILT_VNODE);
-	_assert(ctx.event.Set[1].flags == EV_DELETE); /* remove */
-	_assert(ctx.event.Set[1].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(ctx.event.Set[1].udata == files[0]);
+	ok(ctx.event.Set[1].ident);
+	ok(ctx.event.Set[1].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[1].flags == EV_DELETE); /* remove */
+	ok(ctx.event.Set[1].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[1].udata == files[0]);
 
-	_assert(ctx.event.Set[2].ident);
-	_assert(ctx.event.Set[2].filter == EVFILT_VNODE);
-	_assert(ctx.event.Set[2].flags == (EV_CLEAR|EV_ADD)); /* reopen */
-	_assert(ctx.event.Set[2].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(ctx.event.Set[2].udata == files[0]);
+	ok(ctx.event.Set[2].ident);
+	ok(ctx.event.Set[2].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[2].flags == (EV_CLEAR|EV_ADD)); /* reopen */
+	ok(ctx.event.Set[2].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[2].udata == files[0]);
 
-	_assert(ctx.exec.count == 1);
-	_assert(ctx.exec.filename != 0);
-	_assert(strcmp(ctx.exec.filename, "prog") == 0);
-	_assert(strcmp(ctx.exec.argv[0], "prog") == 0);
-	_assert(strcmp(ctx.exec.argv[1], "arg1") == 0);
-	_assert(strcmp(ctx.exec.argv[2], "arg2") == 0);
+	ok(ctx.exec.count == 1);
+	ok(ctx.exec.filename != 0);
+	ok(strcmp(ctx.exec.filename, "prog") == 0);
+	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
+	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
+	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
 	return 0;
 }
 
@@ -215,15 +215,15 @@ int watch_fd_exec_02() {
 
 	watch_loop(kq, argv);
 
-	_assert(ctx.event.nset == 1);
-	_assert(ctx.event.Set[0].ident);
-	_assert(ctx.event.Set[0].filter == EVFILT_VNODE);
-	_assert(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD));
-	_assert(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(ctx.event.Set[0].udata == files[0]);
+	ok(ctx.event.nset == 1);
+	ok(ctx.event.Set[0].ident);
+	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD));
+	ok(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[0].udata == files[0]);
 
-	_assert(ctx.exec.count == 0);
-	_assert(ctx.exec.filename == 0);
+	ok(ctx.exec.count == 0);
+	ok(ctx.exec.filename == 0);
 	return 0;
 }
 
@@ -247,20 +247,20 @@ int watch_fd_exec_03() {
 
 	watch_loop(kq, argv);
 
-	_assert(ctx.event.nset == 2);
-	_assert(ctx.event.Set[0].ident);
-	_assert(ctx.event.Set[0].filter == EVFILT_VNODE);
-	_assert(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
-	_assert(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(ctx.event.Set[0].data == 0);
-	_assert(ctx.event.Set[0].udata == files[0]->fn);
+	ok(ctx.event.nset == 2);
+	ok(ctx.event.Set[0].ident);
+	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
+	ok(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[0].data == 0);
+	ok(ctx.event.Set[0].udata == files[0]->fn);
 
-	_assert(ctx.exec.count == 1);
-	_assert(ctx.exec.filename != 0);
-	_assert(strcmp(ctx.exec.filename, "prog") == 0);
-	_assert(strcmp(ctx.exec.argv[0], "prog") == 0);
-	_assert(strcmp(ctx.exec.argv[1], "arg1") == 0);
-	_assert(strcmp(ctx.exec.argv[2], "arg2") == 0);
+	ok(ctx.exec.count == 1);
+	ok(ctx.exec.filename != 0);
+	ok(strcmp(ctx.exec.filename, "prog") == 0);
+	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
+	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
+	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
 	return 0;
 }
 
@@ -283,31 +283,31 @@ int watch_fd_exec_04() {
 
 	watch_loop(kq, argv);
 
-	_assert(ctx.event.nset == 3);
-	_assert(ctx.event.Set[0].ident);
-	_assert(ctx.event.Set[0].filter == EVFILT_VNODE);
-	_assert(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
-	_assert(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(ctx.event.Set[0].udata == files[0]->fn);
+	ok(ctx.event.nset == 3);
+	ok(ctx.event.Set[0].ident);
+	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
+	ok(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[0].udata == files[0]->fn);
 
-	_assert(ctx.event.Set[1].ident);
-	_assert(ctx.event.Set[1].filter == EVFILT_VNODE);
-	_assert(ctx.event.Set[1].flags == EV_DELETE); /* remove */
-	_assert(ctx.event.Set[1].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(ctx.event.Set[1].udata == files[0]->fn);
+	ok(ctx.event.Set[1].ident);
+	ok(ctx.event.Set[1].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[1].flags == EV_DELETE); /* remove */
+	ok(ctx.event.Set[1].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[1].udata == files[0]->fn);
 
-	_assert(ctx.event.Set[2].ident);
-	_assert(ctx.event.Set[2].filter == EVFILT_VNODE);
-	_assert(ctx.event.Set[2].flags == (EV_CLEAR|EV_ADD)); /* reopen */
-	_assert(ctx.event.Set[2].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(ctx.event.Set[2].udata == files[0]->fn);
+	ok(ctx.event.Set[2].ident);
+	ok(ctx.event.Set[2].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[2].flags == (EV_CLEAR|EV_ADD)); /* reopen */
+	ok(ctx.event.Set[2].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[2].udata == files[0]->fn);
 
-	_assert(ctx.exec.count == 1);
-	_assert(ctx.exec.filename != 0);
-	_assert(strcmp(ctx.exec.filename, "prog") == 0);
-	_assert(strcmp(ctx.exec.argv[0], "prog") == 0);
-	_assert(strcmp(ctx.exec.argv[1], "arg1") == 0);
-	_assert(strcmp(ctx.exec.argv[2], "arg2") == 0);
+	ok(ctx.exec.count == 1);
+	ok(ctx.exec.filename != 0);
+	ok(strcmp(ctx.exec.filename, "prog") == 0);
+	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
+	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
+	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
 	return 0;
 }
 
@@ -329,22 +329,22 @@ int set_fifo_01() {
 	argv[1] = fn;
 
 	if ((pid = fork()) > 0) {
-		_assert(set_fifo(argv+1));
-		_assert(fifo.fd > 0);
+		ok(set_fifo(argv+1));
+		ok(fifo.fd > 0);
 		write(fifo.fd, "ping", 4);
 		waitpid(pid, &status, 0);
-		_assert(status == 0);
+		ok(status == 0);
 	}
 	else {
 		while ((fd = open(fn+1, O_RDONLY)) == -1)
 			nanosleep(&delay, NULL);
-		_assert(read(fd, buf, 4) > 0);
+		ok(read(fd, buf, 4) > 0);
 		buf[4] = 0;
-		_assert(strcmp(buf, "ping") == 0);
+		ok(strcmp(buf, "ping") == 0);
 		exit(0);
 	}
-	_assert(close(fifo.fd) == 0);
-	_assert(unlink(fn+1) == 0);
+	ok(close(fifo.fd) == 0);
+	ok(unlink(fn+1) == 0);
 	return 0;
 }
 
@@ -358,8 +358,8 @@ int set_options_01() {
 	zero_data();
 	argv_offset = set_options(argv);
 
-	_assert(argv_offset == 1);
-	_assert(restart_mode == 0);
+	ok(argv_offset == 1);
+	ok(restart_mode == 0);
 	return 0;
 }
 /*
@@ -372,8 +372,8 @@ int set_options_02() {
 	zero_data();
 	argv_offset = set_options(argv);
 
-	_assert(argv_offset == 2);
-	_assert(restart_mode == 1);
+	ok(argv_offset == 2);
+	ok(restart_mode == 1);
 	return 0;
 }
 
@@ -393,34 +393,34 @@ int watch_fd_restart_01() {
 	ctx.event.nlist = 0;
 	watch_loop(kq, argv);
 
-	_assert(ctx.event.nset == 1);
-	_assert(ctx.event.Set[0].ident);
-	_assert(ctx.event.Set[0].filter == EVFILT_VNODE);
-	_assert(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
-	_assert(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(ctx.event.Set[0].udata == files[0]);
+	ok(ctx.event.nset == 1);
+	ok(ctx.event.Set[0].ident);
+	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
+	ok(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[0].udata == files[0]);
 
-	_assert(ctx.exec.count == 1);
-	_assert(ctx.exec.filename != 0);
-	_assert(strcmp(ctx.exec.filename, "ruby") == 0);
-	_assert(strcmp(ctx.exec.argv[0], "ruby") == 0);
-	_assert(strcmp(ctx.exec.argv[1], "main.rb") == 0);
+	ok(ctx.exec.count == 1);
+	ok(ctx.exec.filename != 0);
+	ok(strcmp(ctx.exec.filename, "ruby") == 0);
+	ok(strcmp(ctx.exec.argv[0], "ruby") == 0);
+	ok(strcmp(ctx.exec.argv[1], "main.rb") == 0);
 	return 0;
 }
 
 /* main */
 
 int all_tests() {
-	_verify(process_input_01);
-	_verify(process_input_02);
-	_verify(watch_fd_exec_01);
-	_verify(watch_fd_exec_02);
-	_verify(watch_fd_exec_03);
-	_verify(watch_fd_exec_04);
-	_verify(set_fifo_01);
-	_verify(set_options_01);
-	_verify(set_options_02);
-	_verify(watch_fd_restart_01);
+	run(process_input_01);
+	run(process_input_02);
+	run(watch_fd_exec_01);
+	run(watch_fd_exec_02);
+	run(watch_fd_exec_03);
+	run(watch_fd_exec_04);
+	run(set_fifo_01);
+	run(set_options_01);
+	run(set_options_02);
+	run(watch_fd_restart_01);
 
 	return 0;
 }
