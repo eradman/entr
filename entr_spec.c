@@ -25,7 +25,7 @@ extern WatchFile **files;
 struct {
 	struct {
 		int count;
-		char *filename;
+		char *file;
 		char **argv;
 	} exec;
 	struct {
@@ -61,6 +61,19 @@ fake_stat(const char *path, struct stat *sb) {
 	return 0;
 }
 
+
+pid_t
+fake_waitpid(pid_t wpid, int *status, int options) {
+	return wpid;
+}
+
+pid_t
+fake_fork() {
+	return 0; /* pretend to be the child */
+}
+
+
+
 /* mock objects */
 
 int
@@ -93,12 +106,12 @@ fake_kill(pid_t pid, int sig) {
 	return 0;
 }
 
-void
-test_run_script_fork(char *argv[]) {
+int
+fake_execvp(const char *file, char *const argv[]) {
 	ctx.exec.count++;
-	ctx.exec.filename = argv[0];
-	ctx.exec.argv = argv;
-	child_pid = 42;
+	ctx.exec.file = (char *)file;
+	ctx.exec.argv = (char **)argv;
+	return 0;
 }
 
 /* utility functions */
@@ -190,8 +203,8 @@ int watch_fd_exec_01() {
 	ok(ctx.event.Set[2].udata == files[0]);
 
 	ok(ctx.exec.count == 1);
-	ok(ctx.exec.filename != 0);
-	ok(strcmp(ctx.exec.filename, "prog") == 0);
+	ok(ctx.exec.file != 0);
+	ok(strcmp(ctx.exec.file, "prog") == 0);
 	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
 	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
 	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
@@ -223,7 +236,7 @@ int watch_fd_exec_02() {
 	ok(ctx.event.Set[0].udata == files[0]);
 
 	ok(ctx.exec.count == 0);
-	ok(ctx.exec.filename == 0);
+	ok(ctx.exec.file == 0);
 	return 0;
 }
 
@@ -256,8 +269,8 @@ int watch_fd_exec_03() {
 	ok(ctx.event.Set[0].udata == files[0]->fn);
 
 	ok(ctx.exec.count == 1);
-	ok(ctx.exec.filename != 0);
-	ok(strcmp(ctx.exec.filename, "prog") == 0);
+	ok(ctx.exec.file != 0);
+	ok(strcmp(ctx.exec.file, "prog") == 0);
 	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
 	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
 	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
@@ -303,8 +316,8 @@ int watch_fd_exec_04() {
 	ok(ctx.event.Set[2].udata == files[0]->fn);
 
 	ok(ctx.exec.count == 1);
-	ok(ctx.exec.filename != 0);
-	ok(strcmp(ctx.exec.filename, "prog") == 0);
+	ok(ctx.exec.file != 0);
+	ok(strcmp(ctx.exec.file, "prog") == 0);
 	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
 	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
 	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
@@ -401,8 +414,8 @@ int watch_fd_restart_01() {
 	ok(ctx.event.Set[0].udata == files[0]);
 
 	ok(ctx.exec.count == 1);
-	ok(ctx.exec.filename != 0);
-	ok(strcmp(ctx.exec.filename, "ruby") == 0);
+	ok(ctx.exec.file != 0);
+	ok(strcmp(ctx.exec.file, "ruby") == 0);
 	ok(strcmp(ctx.exec.argv[0], "ruby") == 0);
 	ok(strcmp(ctx.exec.argv[1], "main.rb") == 0);
 	return 0;
@@ -430,10 +443,12 @@ int test_main(int argc, char *argv[]) {
 	int i;
 
 	/* set up pointers to test doubles */
-	run_script = test_run_script_fork;
 	_stat = fake_stat;
 	_kevent = fake_kevent;
 	_kill = fake_kill;
+	_waitpid = fake_waitpid;
+	_execvp = fake_execvp;
+	_fork = fake_fork;
 
 	/* initialize global structures */
 	files = malloc(sizeof(char *) * max_files);

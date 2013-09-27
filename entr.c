@@ -49,9 +49,11 @@
 /* function pointers */
 
 int (*test_runner_main)(int, char**);
-void (*run_script)(char *[]);
 int (*_stat)(const char *, struct stat *);
 int (*_kill)(pid_t, int);
+int (*_execvp)(const char *, char *const []);
+pid_t (*_waitpid)(pid_t, int *, int);
+pid_t (*_fork)();
 int (*_kevent)(int, const struct kevent *, int, struct kevent *, int , const
     struct timespec *);
 
@@ -71,7 +73,7 @@ static void handle_exit(int sig);
 static int process_input(FILE *, WatchFile *[], int);
 static int set_fifo(char *[]);
 static int set_options(char *[]);
-static void run_script_fork(char *[]);
+static void run_script(char *[]);
 static void watch_file(int, WatchFile *);
 static void watch_loop(int, char *[]);
 
@@ -93,10 +95,12 @@ main(int argc, char *argv[]) {
 		return(test_runner_main(argc, argv));
 
 	/* set up pointers to real functions */
-	run_script = run_script_fork;
 	_stat = stat;
 	_kevent = kevent;
 	_kill = kill;
+	_execvp = execvp;
+	_waitpid = waitpid;
+	_fork = fork;
 
 	/* call usage() if no command is supplied */
 	if (argc < 2) usage();
@@ -260,10 +264,11 @@ set_options(char *argv[]) {
  * then send the child process SIGTERM and restart it.
  */
 void
-run_script_fork(char *argv[]) {
+run_script(char *argv[]) {
 	int pid;
 	int status;
 	int i;
+	int ret;
 	struct timespec delay = { 0, 100 * MILLISECOND };
 
 	if ((restart_mode == 1) && (child_pid > 0)) {
@@ -271,27 +276,28 @@ run_script_fork(char *argv[]) {
 		#ifdef DEBUG
 		fprintf(stderr, "signal %d sent to pid %d\n", SIGTERM, child_pid);
 		#endif
-		waitpid(child_pid, &status, 0);
+		_waitpid(child_pid, &status, 0);
 		child_pid = 0;
 	}
 
-	pid = fork();
+	pid = _fork();
 	if (pid == -1)
 		err(errno, "can't fork");
 
 	if (pid == 0) {
 		/* wait up to 1 second for each file to become available */
 		for (i=0; i < 10; i++) {
-			execvp(argv[0], argv);
+			ret = _execvp(argv[0], argv);
 			if (errno == ETXTBSY) nanosleep(&delay, NULL);
 			else break;
 		}
-		err(1, "exec %s", argv[0]);
+		if (ret != 0)
+			err(1, "exec %s", argv[0]);
 	}
 	child_pid = pid;
 
 	if (restart_mode == 0)
-		waitpid(pid, &status, 0);
+		_waitpid(pid, &status, 0);
 }
 
 /*
