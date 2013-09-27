@@ -35,6 +35,11 @@ struct {
 	    int nlist;
 	    int decrement;
 	} event;
+	struct {
+	    int pid;
+	    int sig;
+	    int count;
+	} signal;
 } ctx;
 
 /* test runner */
@@ -42,8 +47,8 @@ struct {
 int tests_run = 0;
 
 #define FAIL() printf("\nfailure in %s() line %d\n", __func__, __LINE__)
-#define _assert(test) do { printf("."); if (!(test)) { FAIL(); return 1; } } while(0)
-#define _verify(test) do { int r=test(); printf("\n"); tests_run++; if (r) return r; } while(0)
+#define _assert(test) do { if (!(test)) { FAIL(); return 1; } } while(0)
+#define _verify(test) do { int r=test(); tests_run++; printf("."); if (r) return r; } while(0)
 
 /* stubs */
 
@@ -80,23 +85,23 @@ fake_kevent(int kq, const struct kevent *changelist, int nchanges, struct
 
 /* spies */
 
+int
+fake_kill(pid_t pid, int sig) {
+	ctx.signal.pid = pid;
+	ctx.signal.sig = sig;
+	ctx.signal.count++;
+        return 0;
+}
+
 void
-test_run_script_fork(char *filename, char *argv[]) {
+test_run_script_fork(char *argv[]) {
 	ctx.exec.count++;
-	ctx.exec.filename = filename;
+	ctx.exec.filename = argv[0];
 	ctx.exec.argv = argv;
+	child_pid = 42;
 }
 
 /* utility functions */
-
-#define EV_ASSERT(kevp, a, b, c, d, e, f) do {	\
-	_assert((kevp)->ident == (a));		\
-	_assert((kevp)->filter == (b));		\
-	_assert((kevp)->flags == (c));		\
-	_assert((kevp)->fflags == (d));		\
-	_assert((kevp)->data == (e));		\
-	_assert((kevp)->udata == (f));		\
-} while(0)
 
 void zero_data() {
 	int max_files = 4;
@@ -106,6 +111,7 @@ void zero_data() {
 		memset(files[i], 0, sizeof(WatchFile));
 	memset(&ctx, 0, sizeof(ctx));
 	ctx.event.decrement = 1;
+	restart_mode = 0;
 }
 
 /* tests */
@@ -149,7 +155,7 @@ int process_input_02() {
 /*
  * Remove a file
  */
-int watch_fd_01() {
+int watch_fd_exec_01() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 	static char fn[] = "/dev/null";
@@ -195,7 +201,7 @@ int watch_fd_01() {
 /*
  * Change a file attribute
  */
-int watch_fd_02() {
+int watch_fd_exec_02() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 	static char fn[] = "/dev/null";
@@ -224,7 +230,7 @@ int watch_fd_02() {
 /*
  * Write to two files at once
  */
-int watch_fd_03() {
+int watch_fd_exec_03() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 	static char fn[] = "/dev/null";
@@ -247,7 +253,7 @@ int watch_fd_03() {
 	_assert(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
 	_assert(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
 	_assert(ctx.event.Set[0].data == 0);
-	_assert(strcmp(((WatchFile *)ctx.event.Set[0].udata)->fn, fn) == 0);
+	_assert(ctx.event.Set[0].udata == files[0]->fn);
 
 	_assert(ctx.exec.count == 1);
 	_assert(ctx.exec.filename != 0);
@@ -261,7 +267,7 @@ int watch_fd_03() {
 /*
  * Write to a file and then remove it
  */
-int watch_fd_04() {
+int watch_fd_exec_04() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 	static char fn[] = "/dev/null";
@@ -282,19 +288,19 @@ int watch_fd_04() {
 	_assert(ctx.event.Set[0].filter == EVFILT_VNODE);
 	_assert(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
 	_assert(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(strcmp(((WatchFile *)ctx.event.Set[0].udata)->fn, fn) == 0);
+	_assert(ctx.event.Set[0].udata == files[0]->fn);
 
 	_assert(ctx.event.Set[1].ident);
 	_assert(ctx.event.Set[1].filter == EVFILT_VNODE);
 	_assert(ctx.event.Set[1].flags == EV_DELETE); /* remove */
 	_assert(ctx.event.Set[1].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(strcmp(((WatchFile *)ctx.event.Set[1].udata)->fn, files[0]->fn) == 0);
+	_assert(ctx.event.Set[1].udata == files[0]->fn);
 
 	_assert(ctx.event.Set[2].ident);
 	_assert(ctx.event.Set[2].filter == EVFILT_VNODE);
 	_assert(ctx.event.Set[2].flags == (EV_CLEAR|EV_ADD)); /* reopen */
 	_assert(ctx.event.Set[2].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
-	_assert(strcmp(((WatchFile *)ctx.event.Set[2].udata)->fn, files[0]->fn) == 0);
+	_assert(ctx.event.Set[2].udata == files[0]->fn);
 
 	_assert(ctx.exec.count == 1);
 	_assert(ctx.exec.filename != 0);
@@ -347,10 +353,10 @@ int set_fifo_01() {
  */
 int set_options_01() {
 	int argv_offset;
-	char *exec_argv[] = { "entr", "ruby", "main.rb", NULL };
+	char *argv[] = { "entr", "ruby", "main.rb", NULL };
 	
 	zero_data();
-	argv_offset = set_options(exec_argv);
+	argv_offset = set_options(argv);
 
 	_assert(argv_offset == 1);
 	_assert(restart_mode == 0);
@@ -361,13 +367,44 @@ int set_options_01() {
  */
 int set_options_02() {
 	int argv_offset;
-	char *restart_argv[] = { "entr", "-r", "ruby", "main.rb", NULL };
+	char *argv[] = { "entr", "-r", "ruby", "main.rb", NULL };
 	
 	zero_data();
-	argv_offset = set_options(restart_argv);
+	argv_offset = set_options(argv);
 
 	_assert(argv_offset == 2);
 	_assert(restart_mode == 1);
+	return 0;
+}
+
+/*
+ * In restart mode the first action should be to start the server
+ */
+int watch_fd_restart_01() {
+	int kq = kqueue();
+	char *argv[] = { "ruby", "main.rb", NULL };
+	static char fn[] = "/dev/null";
+
+	zero_data();
+	restart_mode = 1;
+	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
+	watch_file(kq, files[0]);
+
+	ctx.event.nlist = 0;
+	watch_loop(kq, argv);
+
+	_assert(ctx.event.nset == 1);
+	_assert(ctx.event.Set[0].ident);
+	_assert(ctx.event.Set[0].filter == EVFILT_VNODE);
+	_assert(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
+	_assert(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	_assert(ctx.event.Set[0].udata == files[0]);
+
+	_assert(ctx.exec.count == 1);
+	_assert(ctx.exec.filename != 0);
+	_assert(strcmp(ctx.exec.filename, "ruby") == 0);
+	_assert(strcmp(ctx.exec.argv[0], "ruby") == 0);
+	_assert(strcmp(ctx.exec.argv[1], "main.rb") == 0);
 	return 0;
 }
 
@@ -376,13 +413,14 @@ int set_options_02() {
 int all_tests() {
 	_verify(process_input_01);
 	_verify(process_input_02);
-	_verify(watch_fd_01);
-	_verify(watch_fd_02);
-	_verify(watch_fd_03);
-	_verify(watch_fd_04);
+	_verify(watch_fd_exec_01);
+	_verify(watch_fd_exec_02);
+	_verify(watch_fd_exec_03);
+	_verify(watch_fd_exec_04);
 	_verify(set_fifo_01);
 	_verify(set_options_01);
 	_verify(set_options_02);
+	_verify(watch_fd_restart_01);
 
 	return 0;
 }
@@ -395,6 +433,7 @@ int test_main(int argc, char *argv[]) {
 	run_script = test_run_script_fork;
 	_stat = fake_stat;
 	_kevent = fake_kevent;
+	_kill = fake_kill;
 
 	/* initialize global structures */
 	files = malloc(sizeof(char *) * max_files);
@@ -402,7 +441,7 @@ int test_main(int argc, char *argv[]) {
 		files[i] = malloc(sizeof(WatchFile));
 
 	if (all_tests() == 0) {
-		printf("%d tests PASSED\n", tests_run);
+		printf("\n%d tests PASSED\n", tests_run);
 		return 0;
 	}
 	return 1;

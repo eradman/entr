@@ -49,8 +49,9 @@
 /* function pointers */
 
 int (*test_runner_main)(int, char**);
-void (*run_script)(char *, char *[]);
+void (*run_script)(char *[]);
 int (*_stat)(const char *, struct stat *);
+int (*_kill)(pid_t, int);
 int (*_kevent)(int, const struct kevent *, int, struct kevent *, int , const
     struct timespec *);
 
@@ -70,7 +71,7 @@ static void handle_exit(int sig);
 static int process_input(FILE *, WatchFile *[], int);
 static int set_fifo(char *[]);
 static int set_options(char *[]);
-static void run_script_fork(char *, char *[]);
+static void run_script_fork(char *[]);
 static void watch_file(int, WatchFile *);
 static void watch_loop(int, char *[]);
 
@@ -95,6 +96,7 @@ main(int argc, char *argv[]) {
 	run_script = run_script_fork;
 	_stat = stat;
 	_kevent = kevent;
+	_kill = kill;
 
 	/* call usage() if no command is supplied */
 	if (argc < 2) usage();
@@ -144,8 +146,6 @@ main(int argc, char *argv[]) {
 		}
 	}
 
-	if (restart_mode)
-		run_script(argv[argv_index], argv+argv_index);
 	watch_loop(kq, argv+argv_index);
 	return 1;
 }
@@ -260,14 +260,14 @@ set_options(char *argv[]) {
  * then send the child process SIGTERM and restart it.
  */
 void
-run_script_fork(char *filename, char *argv[]) {
+run_script_fork(char *argv[]) {
 	int pid;
 	int status;
 	int i;
 	struct timespec delay = { 0, 100 * MILLISECOND };
 
 	if ((restart_mode == 1) && (child_pid > 0)) {
-		kill(child_pid, SIGTERM);
+		_kill(child_pid, SIGTERM);
 		#ifdef DEBUG
 		fprintf(stderr, "signal %d sent to pid %d\n", SIGTERM, child_pid);
 		#endif
@@ -282,11 +282,11 @@ run_script_fork(char *filename, char *argv[]) {
 	if (pid == 0) {
 		/* wait up to 1 second for each file to become available */
 		for (i=0; i < 10; i++) {
-			execvp(filename, argv);
+			execvp(argv[0], argv);
 			if (errno == ETXTBSY) nanosleep(&delay, NULL);
 			else break;
 		}
-		err(1, "exec %s", filename);
+		err(1, "exec %s", argv[0]);
 	}
 	child_pid = pid;
 
@@ -336,6 +336,9 @@ watch_loop(int kq, char *argv[]) {
 	struct timespec evTimeout = { 0, MILLISECOND };
 	int reopen_only = 0;
 
+	if (restart_mode)
+		run_script(argv);
+
 main:
 	if (reopen_only == 1)
 		nev = _kevent(kq, NULL, 0, evList, 32, &evTimeout);
@@ -378,7 +381,7 @@ main:
 		    evList[i].fflags & NOTE_WRITE ||
 		    evList[i].fflags & NOTE_EXTEND) {
 			if (fifo.fd == 0) {
-				run_script(argv[0], argv);
+				run_script(argv);
 				/* don't process any more events */
 				i=nev;
 				reopen_only = 1;

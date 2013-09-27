@@ -27,7 +27,7 @@ function assert {
 }
 
 function pause { sleep 0.4; }
-function setup { rm -f $tmp/file?; touch $tmp/file{1,2}; sleep 0.2; }
+function setup { rm -f $tmp/*.out $tmp/file?; touch $tmp/file{1,2}; sleep 0.2; }
 tmp=$(mktemp -d /tmp/entr_regress.XXXXXXXXXX)
 
 
@@ -96,7 +96,7 @@ try "restart a server when a file is modified"
 try "exec single shell command when two files change simultaneously"
 	setup
 	ln $tmp/file1 $tmp/file3
-	ls $tmp/file* | ./entr sh -c 'echo ping; sleep 0.3' > $tmp/exec.out &
+	ls $tmp/file* | ./entr sh -c 'echo ping' > $tmp/exec.out &
 	bgpid=$!
 	pause
 
