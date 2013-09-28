@@ -44,11 +44,11 @@ struct {
 
 /* test runner */
 
-int tests_run = 0;
+int tests_run, failures;
 
-#define FAIL() printf("\nfailure in %s() line %d\n", __func__, __LINE__)
-#define ok(test) do { if (!(test)) { FAIL(); return 1; } } while(0)
-#define run(test) do { int r=test(); tests_run++; printf("."); if (r) return r; } while(0)
+#define FAIL() printf("test failure in %s() line %d\n", __func__, __LINE__)
+#define ok(test) do { if (!(test)) { FAIL(); failures++; return 1; } } while(0)
+#define run(test) do { tests_run++; test(); } while(0)
 
 /* stubs */
 
@@ -422,8 +422,24 @@ int watch_fd_restart_01() {
 }
 
 /* main */
+int test_main(int argc, char *argv[]) {
+	int max_files = 4;
+	int i;
 
-int all_tests() {
+	/* initialize global data */
+	files = malloc(sizeof(char *) * max_files);
+	for (i=0; i<max_files; i++)
+		files[i] = malloc(sizeof(WatchFile));
+
+	/* set up pointers to test doubles */
+	_stat = fake_stat;
+	_kevent = fake_kevent;
+	_kill = fake_kill;
+	_waitpid = fake_waitpid;
+	_execvp = fake_execvp;
+	_fork = fake_fork;
+
+	/* all tests */
 	run(process_input_01);
 	run(process_input_02);
 	run(watch_fd_exec_01);
@@ -435,31 +451,8 @@ int all_tests() {
 	run(set_options_02);
 	run(watch_fd_restart_01);
 
-	return 0;
-}
-
-int test_main(int argc, char *argv[]) {
-	int max_files = 4;
-	int i;
-
-	/* set up pointers to test doubles */
-	_stat = fake_stat;
-	_kevent = fake_kevent;
-	_kill = fake_kill;
-	_waitpid = fake_waitpid;
-	_execvp = fake_execvp;
-	_fork = fake_fork;
-
-	/* initialize global structures */
-	files = malloc(sizeof(char *) * max_files);
-	for (i=0; i<max_files; i++)
-		files[i] = malloc(sizeof(WatchFile));
-
-	if (all_tests() == 0) {
-		printf("\n%d tests PASSED\n", tests_run);
-		return 0;
-	}
-	return 1;
+	printf("%d of %d tests PASSED\n", tests_run, tests_run+failures);
+	return failures;
 }
 
 int (*test_runner_main)(int argc, char **argv) = test_main;
