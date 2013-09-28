@@ -45,10 +45,44 @@ struct {
 /* test runner */
 
 int tests_run, failures;
+const char* func;
+int line;
 
-#define FAIL() printf("test failure in %s() line %d\n", __func__, __LINE__)
-#define ok(test) do { if (!(test)) { FAIL(); failures++; return 1; } } while(0)
-#define run(test) do { tests_run++; test(); } while(0)
+static void reset_state();
+static void fail();
+#define _() func=__func__; line=__LINE__;
+#define ok(test) do { _(); if (!(test)) { fail(); return 1; } } while(0)
+#define run(test) do { reset_state(); tests_run++; test(); } while(0)
+
+void fail() {
+	failures++;
+	printf("test failure in %s() line %d\n", func, line);
+}
+
+void reset_state() {
+	int i;
+	int max_files = 4;
+
+	/* initialize external global data */
+	memset(&fifo, 0, sizeof(fifo));
+	restart_mode = 0;
+	files = malloc(sizeof(char *) * max_files);
+	for (i=0; i<max_files; i++)
+		files[i] = malloc(sizeof(WatchFile));
+
+	/* initialize test context */
+	for (i=0; i<max_files; i++)
+		memset(files[i], 0, sizeof(WatchFile));
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.event.decrement = 1;
+}
+
+void sighandler(int signum) {
+	fail();
+	/* generate core dump */
+	signal(signum, SIG_DFL);
+	kill(getpid(), signum);
+}
 
 /* stubs */
 
@@ -60,7 +94,6 @@ fake_stat(const char *path, struct stat *sb) {
 		sb->st_mode = S_IFREG;
 	return 0;
 }
-
 
 pid_t
 fake_waitpid(pid_t wpid, int *status, int options) {
@@ -95,7 +128,6 @@ fake_kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	return -2;
 }
 
-
 /* spies */
 
 int
@@ -112,19 +144,6 @@ fake_execvp(const char *file, char *const argv[]) {
 	ctx.exec.file = (char *)file;
 	ctx.exec.argv = (char **)argv;
 	return 0;
-}
-
-/* utility functions */
-
-void zero_data() {
-	int max_files = 4;
-	int i;
-
-	for (i=0; i<max_files; i++)
-		memset(files[i], 0, sizeof(WatchFile));
-	memset(&ctx, 0, sizeof(ctx));
-	ctx.event.decrement = 1;
-	restart_mode = 0;
 }
 
 /* tests */
@@ -147,6 +166,7 @@ int process_input_01() {
 	ok(strcmp(files[2]->fn, "file3") == 0);
 	return 0;
 }
+
 /*
  * Read a list of use supplied files and populate files array
  */
@@ -173,7 +193,6 @@ int watch_fd_exec_01() {
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 	static char fn[] = "/dev/null";
 
-	zero_data();
 	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 
@@ -219,7 +238,6 @@ int watch_fd_exec_02() {
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 	static char fn[] = "/dev/null";
 
-	zero_data();
 	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 
@@ -248,7 +266,6 @@ int watch_fd_exec_03() {
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 	static char fn[] = "/dev/null";
 
-	zero_data();
 	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 	strlcpy(files[1]->fn, fn, sizeof(files[1]->fn));
@@ -285,7 +302,6 @@ int watch_fd_exec_04() {
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 	static char fn[] = "/dev/null";
 
-	zero_data();
 	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 
@@ -368,7 +384,6 @@ int set_options_01() {
 	int argv_offset;
 	char *argv[] = { "entr", "ruby", "main.rb", NULL };
 	
-	zero_data();
 	argv_offset = set_options(argv);
 
 	ok(argv_offset == 1);
@@ -382,7 +397,6 @@ int set_options_02() {
 	int argv_offset;
 	char *argv[] = { "entr", "-r", "ruby", "main.rb", NULL };
 	
-	zero_data();
 	argv_offset = set_options(argv);
 
 	ok(argv_offset == 2);
@@ -398,7 +412,6 @@ int watch_fd_restart_01() {
 	char *argv[] = { "ruby", "main.rb", NULL };
 	static char fn[] = "/dev/null";
 
-	zero_data();
 	restart_mode = 1;
 	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
@@ -423,13 +436,7 @@ int watch_fd_restart_01() {
 
 /* main */
 int test_main(int argc, char *argv[]) {
-	int max_files = 4;
-	int i;
-
-	/* initialize global data */
-	files = malloc(sizeof(char *) * max_files);
-	for (i=0; i<max_files; i++)
-		files[i] = malloc(sizeof(WatchFile));
+	 signal(SIGSEGV, sighandler);
 
 	/* set up pointers to test doubles */
 	_stat = fake_stat;
