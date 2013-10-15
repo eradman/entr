@@ -32,13 +32,13 @@ distclean:
 	rm -f Makefile
 
 install: entr
-	@mkdir -p ${DESTDIR}${PREFIX}/bin
-	@mkdir -p ${DESTDIR}${MANPREFIX}/man1
-	install entr ${DESTDIR}${PREFIX}/bin
-	install entr.1 ${DESTDIR}${MANPREFIX}/man1
+	@mkdir -p ${PREFIX}/bin
+	@mkdir -p ${MANPREFIX}/man1
+	install entr ${PREFIX}/bin
+	install entr.1 ${MANPREFIX}/man1
 
 uninstall:
-	rm ${DESTDIR}${PREFIX}/bin/entr
-	rm ${DESTDIR}${MANPREFIX}/man1/entr.1
+	rm ${PREFIX}/bin/entr
+	rm ${MANPREFIX}/man1/entr.1
 
 .PHONY: clean install uninstall
