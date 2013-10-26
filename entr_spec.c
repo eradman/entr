@@ -66,6 +66,7 @@ void reset_state() {
 	/* initialize external global data */
 	memset(&fifo, 0, sizeof(fifo));
 	restart_mode = 0;
+	child_pid = 0;
 	files = malloc(sizeof(char *) * max_files);
 	for (i=0; i<max_files; i++)
 		files[i] = malloc(sizeof(WatchFile));
@@ -434,7 +435,56 @@ int watch_fd_restart_01() {
 	return 0;
 }
 
-/* main */
+/*
+ * Extending a file while in restart mode should result in start-kill-restart
+ */
+int watch_fd_restart_02() {
+	int kq = kqueue();
+	char *argv[] = { "ruby", "main.rb", NULL };
+	static char fn[] = "/dev/null";
+
+	restart_mode = 1;
+	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
+	watch_file(kq, files[0]);
+	child_pid = 222;
+
+	ctx.event.nlist = 0;
+	watch_loop(kq, argv);
+
+	ok(ctx.event.nset == 1);
+	ok(ctx.event.Set[0].ident);
+	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
+	ok(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[0].udata == files[0]);
+
+	ok(ctx.exec.count == 1);
+	ok(ctx.exec.file != 0);
+	ok(strcmp(ctx.exec.file, "ruby") == 0);
+	ok(strcmp(ctx.exec.argv[0], "ruby") == 0);
+	ok(strcmp(ctx.exec.argv[1], "main.rb") == 0);
+
+	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_EXTEND, 0, files[0]);
+	ctx.event.nlist = 0;
+	watch_loop(kq, argv);
+
+	printf("signal count: %d\n", ctx.signal.count);
+	ok(ctx.signal.count == 1);
+	ok(ctx.signal.pid == 222);
+	ok(ctx.signal.sig == 15);
+
+	ok(ctx.exec.count == 2);
+	ok(ctx.exec.file != 0);
+	ok(strcmp(ctx.exec.file, "ruby") == 0);
+	ok(strcmp(ctx.exec.argv[0], "ruby") == 0);
+	ok(strcmp(ctx.exec.argv[1], "main.rb") == 0);
+
+	return 0;
+}
+
+/*
+ * main
+ */
 int test_main(int argc, char *argv[]) {
 	 signal(SIGSEGV, sighandler);
 
@@ -457,6 +507,7 @@ int test_main(int argc, char *argv[]) {
 	run(set_options_01);
 	run(set_options_02);
 	run(watch_fd_restart_01);
+	run(watch_fd_restart_02);
 
 	printf("%d of %d tests PASSED\n", tests_run, tests_run+failures);
 	return failures;
