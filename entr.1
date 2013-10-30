@@ -64,13 +64,17 @@ as input.
 .Os
 .Sh EXAMPLES
 .Pp
-Recompile when source files change
+Rebuild project when source files change
 .Pp
-.Dl $ find . -name '*.c' | entr make
+.Dl $ find src | entr make
+.Pp
+Clear the screen and run tests
+.Pp
+.Dl $ ls *.py  | entr sh -c 'clear; ./test.py'
 .Pp
 Launch and auto-reload a node.js server
 .Pp
-.Dl $ echo *.js | entr -r node index.js
+.Dl $ ls *.js | entr -r node index.js
 .Pp
 Convert individual Markdown files to HTML if they're modified
 .Pp

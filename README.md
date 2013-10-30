@@ -37,13 +37,17 @@ Available in OpenBSD ports, FreeBSD ports, and pkgsrc under `sysutils/entr`.
 Examples
 --------
 
-Recompile if source files change
+Rebuild project when source files change
 
-    $ find. -name '*.c' | entr make
+      $ find src | entr make
+
+Clear the screen and run tests
+
+      $ ls *.py | entr sh -c 'clear; ./test.py'
 
 Launch and auto-reload a node.js server
 
-    $ ls *.js | entr -r node index.js
+      $ ls *.js | entr -r node index.js
 
 Convert Markdown files to HTML using a FIFO. Only files that change will be
 processed.
@@ -53,6 +57,7 @@ processed.
     > do
     >   markdown2html $F
     > done < notify
+
 
 Next Release: 2.3
 -----------------
