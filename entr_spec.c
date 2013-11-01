@@ -468,7 +468,6 @@ int watch_fd_restart_02() {
 	ctx.event.nlist = 0;
 	watch_loop(kq, argv);
 
-	printf("signal count: %d\n", ctx.signal.count);
 	ok(ctx.signal.count == 1);
 	ok(ctx.signal.pid == 222);
 	ok(ctx.signal.sig == 15);
