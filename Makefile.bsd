@@ -41,4 +41,12 @@ uninstall:
 	rm ${PREFIX}/bin/entr
 	rm ${MANPREFIX}/man1/entr.1
 
-.PHONY: clean install uninstall
+env:
+	@echo "CC         = ${CC}"
+	@echo "EXTRA_SRC  = ${EXTRA_SRC}"
+	@echo "LDFLAGS    = ${LDFLAGS}"
+	@echo "MANPREFIX  = ${MANPREFIX}"
+	@echo "PREFIX     = ${PREFIX}"
+	@echo "SRC        = ${SRC}"
+
+.PHONY: clean install uninstall env
