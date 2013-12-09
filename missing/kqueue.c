@@ -72,7 +72,7 @@ kqueue(void) {
 int
 kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	kevent *eventlist, int nevents, const struct timespec *timeout) {
-	int n, n_total;
+	int n;
 	int wd;
 	WatchFile *file;
 	char buf[EVENT_BUF_LEN];
@@ -114,7 +114,6 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 		return 0;
 
 	/* Consolidate events within 50ms */
-	n_total = 0;
 	n = 0;
 	do {
 		pos = 0;
@@ -141,10 +140,9 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			eventlist[n].udata = file_by_descriptor(iev->wd);
 			n++;
 		}
-		n_total += n;
 		nanosleep(&delay, NULL);
 	}
 	while ((poll(&pfd, 1, 30) > 0));
 
-	return n_total;
+	return n;
 }
