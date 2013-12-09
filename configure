@@ -15,7 +15,7 @@ esac
 [ $# = 0 ] && exit 0
 
 cat <<HELP
-Adjust build options using the environment variables:
+Adjust build options by setting the following environment variables:
 
 `make env`
 

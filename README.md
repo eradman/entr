@@ -26,7 +26,6 @@ build a static binary and install `entr` to your home directory
 Installation - Mac OS/Homebrew
 ------------------------------
 
-    brew tap mitchty/entr
     brew install entr
 
 Installation - Ports
