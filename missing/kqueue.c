@@ -115,9 +115,9 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 
 	/* Consolidate events within 50ms */
 	n_total = 0;
+	n = 0;
 	do {
 		pos = 0;
-		n = 0;
 		len = read(kq /* ifd */, &buf, EVENT_BUF_LEN);
 		while ((pos < len) && (n < nevents)) {
 			iev = (struct inotify_event *) &buf[pos];

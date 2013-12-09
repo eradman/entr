@@ -68,6 +68,9 @@ Next Release: 2.3
 * Reduce number of attempts to re-open files to 1 second (10 attempts)
 * Unit tests use mock kqueue() instead of tiggering events through the
   filesystem
+* Print out detailed instructions if the user provides configure arguments
+* Fixed a flaw in kqueue emulation that caused a segfault if multiple files were
+  saved simultaneously
 
 Releases History
 ----------------
