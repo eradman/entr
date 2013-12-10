@@ -3,7 +3,7 @@
 copy_mk()
 {
     cmd="cp Makefile.$1 Makefile"
-    echo "+ $cmd"; $cmd
+    echo "$cmd"; $cmd
 }
 
 case `uname` in
