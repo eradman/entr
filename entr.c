@@ -69,6 +69,7 @@ int child_pid;
 /* forwards */
 
 static void usage();
+static void kill_child();
 static void handle_exit(int sig);
 static int process_input(FILE *, WatchFile *[], int);
 static int set_fifo(char *[]);
@@ -157,8 +158,7 @@ main(int argc, char *argv[]) {
 /* Utility functions */
 
 void
-usage()
-{
+usage() {
 	extern char *__progname;
 	fprintf(stderr, "usage: %s [-r] utility [args, ...] < filenames\n",
 	    __progname);
@@ -167,23 +167,31 @@ usage()
 	exit(2);
 }
 
+void
+kill_child() {
+	int status;
+
+	if (child_pid > 0) {
+		setproctitle("waiting for child PID %d", child_pid);
+#ifdef DEBUG
+		fprintf(stderr, "signal %d sent to pid %d\n", SIGTERM, child_pid);
+#endif
+		_kill(child_pid, SIGTERM);
+		_waitpid(child_pid, &status, 0);
+		child_pid = 0;
+		setproctitle(NULL);
+	}
+}
+
 /* Callbacks */
 
 void
 handle_exit(int sig) {
-	int status;
-
-	if (child_pid > 0) {
-		_kill(child_pid, SIGTERM);
-		_waitpid(child_pid, &status, 0);
-		child_pid = 0;
-	}
-
 	if (fifo.fd) {
 		close(fifo.fd);
 		unlink(fifo.fn);
 	}
-
+	kill_child();
 	exit(0);
 }
 
@@ -275,19 +283,13 @@ set_options(char *argv[]) {
 void
 run_script(char *argv[]) {
 	int pid;
-	int status;
 	int i;
 	int ret;
 	struct timespec delay = { 0, 100 * MILLISECOND };
+	int status;
 
-	if ((restart_mode == 1) && (child_pid > 0)) {
-		_kill(child_pid, SIGTERM);
-		#ifdef DEBUG
-		fprintf(stderr, "signal %d sent to pid %d\n", SIGTERM, child_pid);
-		#endif
-		_waitpid(child_pid, &status, 0);
-		child_pid = 0;
-	}
+	if (restart_mode == 1)
+		kill_child();
 
 	pid = _fork();
 	if (pid == -1)

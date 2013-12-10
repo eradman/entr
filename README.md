@@ -63,8 +63,9 @@ Next Release: 2.3
 * Print out detailed instructions if the user provides configure arguments
 * Fixed a flaw in kqueue emulation that caused a segfault if multiple files were
   saved simultaneously
-* Signal handler sends SIGTERM and waits for child processes to terminate
-* Regression begin by rebuilding `entr`
+* Signal handler sends SIGTERM and sets process title while waiting for child
+  processes to terminate
+* Regression tests begin by rebuilding
 
 Releases History
 ----------------

@@ -1,5 +1,5 @@
-CFLAGS += -D_GNU_SOURCE -D_LINUX_PORT -Imissing
+CFLAGS += -D_GNU_SOURCE -D_LINUX_PORT -Imissing -Wno-attributes
 MANPREFIX ?= ${PREFIX}/share/man
-EXTRA_SRC = missing/strlcpy.c missing/kqueue.c
+EXTRA_SRC = missing/strlcpy.c missing/kqueue.c missing/setproctitle.c
 
 include Makefile.bsd
