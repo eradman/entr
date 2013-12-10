@@ -19,7 +19,7 @@ Adjust build options by setting the following environment variables:
 
 `make env`
 
-Examples:
+Example: build a static binary and install to your home directory
 
 ./configure
 CFLAGS="-static" make test

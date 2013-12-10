@@ -13,13 +13,15 @@
 # WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-#
+
+# test runner
 
 typeset -i tests=0
 typeset -i assertions=0
 
 function try { let tests+=1; this="$1"; }
 trap 'printf "$0: exit code $? on line $LINENO\nFAIL: $this\n"; exit 1' ERR
+
 function assert {
 	let assertions+=1
 	[[ "$1" == "$2" ]] && { printf "."; return; }
@@ -30,6 +32,13 @@ function pause { sleep 0.4; }
 function setup { rm -f $tmp/*.out $tmp/file?; touch $tmp/file{1,2}; sleep 0.2; }
 tmp=$(mktemp -d /tmp/entr_regress.XXXXXXXXXX)
 
+# rebuild
+
+./configure
+make clean
+make
+
+# tests
 
 try "no arguments"
 	./entr 2> /dev/null || code=$?
@@ -46,6 +55,7 @@ try "empty input"
 try "no regular files provided as input"
 	mkdir $tmp/dir1
 	ls $tmp | ./entr echo 2> /dev/null || code=$?
+	rmdir $tmp/dir1
 	assert $code 1
 
 try "watch and exec a program that is overwritten"

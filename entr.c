@@ -171,10 +171,19 @@ usage()
 
 void
 handle_exit(int sig) {
+	int status;
+
+	if (child_pid > 0) {
+		_kill(child_pid, SIGTERM);
+		_waitpid(child_pid, &status, 0);
+		child_pid = 0;
+	}
+
 	if (fifo.fd) {
 		close(fifo.fd);
 		unlink(fifo.fn);
 	}
+
 	exit(0);
 }
 

@@ -16,13 +16,6 @@ Installation - BSD, Mac OS, and Linux
     make test
     make install
 
-If you're work environment spans many machines, you may find it useful to
-build a static binary and install `entr` to your home directory
-
-    ./configure
-    CFLAGS="-static" make test
-    PREFIX=$HOME/local make install
-
 Installation - Mac OS/Homebrew
 ------------------------------
 
@@ -70,6 +63,8 @@ Next Release: 2.3
 * Print out detailed instructions if the user provides configure arguments
 * Fixed a flaw in kqueue emulation that caused a segfault if multiple files were
   saved simultaneously
+* Signal handler sends SIGTERM and waits for child processes to terminate
+* Regression begin by rebuilding `entr`
 
 Releases History
 ----------------
