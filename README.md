@@ -16,6 +16,8 @@ Installation - BSD, Mac OS, and Linux
     make test
     make install
 
+To see available build options run `./configure -h`
+
 Installation - Mac OS/Homebrew
 ------------------------------
 
@@ -58,14 +60,13 @@ Next Release: 2.3
 * Move platform-specific includes to compat.h
 * Replace the now deprecated usleep(3) with nanosleep(2)
 * Reduce number of attempts to re-open files to 1 second (10 attempts)
-* Unit tests use mock kqueue() instead of tiggering events through the
+* Unit tests use mock kqueue() instead of triggering events through the
   filesystem
 * Print out detailed instructions if the user provides configure arguments
 * Fixed a flaw in kqueue emulation that caused a segfault if multiple files were
   saved simultaneously
-* Signal handler sends SIGTERM and sets process title while waiting for child
-  processes to terminate
-* Regression tests begin by rebuilding
+* Change process title for blocking events (visible in ps(1))
+* Wait for processes to terminate in restart mode
 
 Releases History
 ----------------

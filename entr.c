@@ -173,9 +173,9 @@ kill_child() {
 
 	if (child_pid > 0) {
 		setproctitle("waiting for child PID %d", child_pid);
-#ifdef DEBUG
+		#ifdef DEBUG
 		fprintf(stderr, "signal %d sent to pid %d\n", SIGTERM, child_pid);
-#endif
+		#endif
 		_kill(child_pid, SIGTERM);
 		_waitpid(child_pid, &status, 0);
 		child_pid = 0;
@@ -208,6 +208,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 	struct stat sb;
 	int ret;
 
+	setproctitle("reading file list from STDIN");
 	while (fgets(buf, sizeof(buf), file) != NULL) {
 		buf[PATH_MAX-1] = '\0';
 		if ((p = strchr(buf, '\n')) != NULL)
@@ -226,6 +227,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 		if (n_files+1 > max_files)
 			return -1;
 	}
+	setproctitle(NULL);
 	return n_files;
 }
 
@@ -239,8 +241,10 @@ set_fifo(char *argv[]) {
 		strlcpy(fifo.fn, argv[0]+1, MEMBER_SIZE(WatchFile, fn));
 		if (mkfifo(fifo.fn, S_IRUSR| S_IWUSR) == -1)
 			err(1, "mkfifo '%s' failed", fifo.fn);
+		setproctitle("waiting for connection to fifo");
 		if ((fifo.fd = open(fifo.fn, O_WRONLY, 0)) == -1)
 			err(1, "open fifo '%s' failed", fifo.fn);
+		setproctitle(NULL);
 		return 1;
 	}
 
