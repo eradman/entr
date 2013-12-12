@@ -34,9 +34,11 @@ tmp=$(mktemp -d /tmp/entr_regress.XXXXXXXXXX)
 
 # rebuild
 
-./configure
-make clean
-make
+[ -f entr ] || {
+	./configure
+	make clean
+	make
+}
 
 # tests
 

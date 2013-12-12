@@ -56,6 +56,8 @@ pid_t (*_waitpid)(pid_t, int *, int);
 pid_t (*_fork)();
 int (*_kevent)(int, const struct kevent *, int, struct kevent *, int , const
     struct timespec *);
+int (*_mkfifo)(const char *path, mode_t mode);
+int (*_open)(const char *path, int flags, ...);
 
 
 /* globals */
@@ -102,6 +104,8 @@ main(int argc, char *argv[]) {
 	_execvp = execvp;
 	_waitpid = waitpid;
 	_fork = fork;
+	_mkfifo = mkfifo;
+	_open = open;
 
 	/* call usage() if no command is supplied */
 	if (argc < 2) usage();
@@ -142,7 +146,7 @@ main(int argc, char *argv[]) {
 	if (set_fifo(argv+argv_index));
 	else {
 		/* Attempt to open a tty so that editors such as ViM don't complain */
-		if ((ttyfd = open(_PATH_TTY, O_RDONLY)) == -1)
+		if ((ttyfd = _open(_PATH_TTY, O_RDONLY)) == -1)
 			warn("can't open %s", _PATH_TTY);
 		if (ttyfd > STDIN_FILENO) {
 			if (dup2(ttyfd, STDIN_FILENO) != 0)
@@ -239,10 +243,10 @@ int
 set_fifo(char *argv[]) {
 	if (argv[0][0] == (int)'+') {
 		strlcpy(fifo.fn, argv[0]+1, MEMBER_SIZE(WatchFile, fn));
-		if (mkfifo(fifo.fn, S_IRUSR| S_IWUSR) == -1)
+		if (_mkfifo(fifo.fn, S_IRUSR| S_IWUSR) == -1)
 			err(1, "mkfifo '%s' failed", fifo.fn);
 		setproctitle("waiting for connection to fifo");
-		if ((fifo.fd = open(fifo.fn, O_WRONLY, 0)) == -1)
+		if ((fifo.fd = _open(fifo.fn, O_WRONLY, 0)) == -1)
 			err(1, "open fifo '%s' failed", fifo.fn);
 		setproctitle(NULL);
 		return 1;
@@ -327,9 +331,9 @@ watch_file(int kq, WatchFile *file) {
 	/* wait up to 1 second for file to become available */
 	for (i=0; i < 10; i++) {
 		#ifdef O_EVTONLY
-		file->fd = open(file->fn, O_RDONLY|O_EVTONLY);
+		file->fd = _open(file->fn, O_RDONLY|O_EVTONLY);
 		#else
-		file->fd = open(file->fn, O_RDONLY);
+		file->fd = _open(file->fn, O_RDONLY);
 		#endif
 		if (file->fd == -1) nanosleep(&delay, NULL);
 		else break;

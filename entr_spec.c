@@ -40,6 +40,10 @@ struct {
 		int sig;
 		int count;
 	} signal;
+	struct {
+		int fd;
+		const char *path;
+	} open;
 } ctx;
 
 /* test runner */
@@ -56,7 +60,7 @@ static void fail();
 
 void fail() {
 	failures++;
-	printf("test failure in %s() line %d\n", func, line);
+	fprintf(stderr, "test failure in %s() line %d\n", func, line);
 }
 
 void reset_state() {
@@ -67,7 +71,7 @@ void reset_state() {
 	memset(&fifo, 0, sizeof(fifo));
 	restart_mode = 0;
 	child_pid = 0;
-	files = malloc(sizeof(char *) * max_files);
+	files = malloc(sizeof(WatchFile *) * max_files);
 	for (i=0; i<max_files; i++)
 		files[i] = malloc(sizeof(WatchFile));
 
@@ -106,7 +110,10 @@ fake_fork() {
 	return 0; /* pretend to be the child */
 }
 
-
+int
+fake_mkfifo(const char *path, mode_t mode) {
+	return 0; /* success */
+}
 
 /* mock objects */
 
@@ -115,13 +122,15 @@ fake_kevent(int kq, const struct kevent *changelist, int nchanges, struct
     kevent *eventlist, int nevents, const struct timespec *timeout) {
 	/* record each event that the application sets */
 	if (nchanges > 0) {
-		memcpy(&ctx.event.Set[ctx.event.nset], changelist, sizeof(struct kevent) * nchanges);
+		memcpy(&ctx.event.Set[ctx.event.nset], changelist,
+		    sizeof(struct kevent) * nchanges);
 		ctx.event.nset += nchanges;
 		return nchanges;
 	}
 	/* return list of events that each test sets up */
 	if ((nevents > 0) && (ctx.event.nlist > 0)) {
-		memcpy(eventlist, &ctx.event.List, sizeof(struct kevent) * ctx.event.nlist);
+		memcpy(eventlist, &ctx.event.List,
+		    sizeof(struct kevent) * ctx.event.nlist);
 		ctx.event.nlist -= ctx.event.decrement;
 		return ctx.event.decrement;
 	}
@@ -146,6 +155,14 @@ fake_execvp(const char *file, char *const argv[]) {
 	ctx.exec.argv = (char **)argv;
 	return 0;
 }
+
+int
+fake_open(const char *path, int flags, ...) {
+	ctx.open.path = path;
+	ctx.open.fd++;
+	return ctx.open.fd;
+}
+
 
 /* tests */
 
@@ -342,39 +359,16 @@ int watch_fd_exec_04() {
 }
 
 /*
- * Ensure that FIFO mode crates the named pipe. Read and write data to ensure
- * that it works.
+ * FIFO mode; triggerd by a leading '+' on the filename
  */
 int set_fifo_01() {
-	char fn[PATH_MAX];
-	char buf[1024];
-	int pid;
-	int fd;
-	int status;
-	static char *argv[] = { "entr", "+fifo", NULL };
-	struct timespec delay = { 0, 100 * MILLISECOND };
+	static char *argv[] = { "entr", "+notify", NULL };
 
-	strlcpy(fn, "+/tmp/entr_spec.XXXXXXXXXX", PATH_MAX);
-	mkstemp(fn);
-	argv[1] = fn;
+	ok(set_fifo(argv+1));
+	ok(ctx.open.fd > 0);
+	ok(strcmp(fifo.fn, "notify") == 0);
+	ok(fifo.fd == ctx.open.fd);
 
-	if ((pid = fork()) > 0) {
-		ok(set_fifo(argv+1));
-		ok(fifo.fd > 0);
-		write(fifo.fd, "ping", 4);
-		waitpid(pid, &status, 0);
-		ok(status == 0);
-	}
-	else {
-		while ((fd = open(fn+1, O_RDONLY)) == -1)
-			nanosleep(&delay, NULL);
-		ok(read(fd, buf, 4) > 0);
-		buf[4] = 0;
-		ok(strcmp(buf, "ping") == 0);
-		exit(0);
-	}
-	ok(close(fifo.fd) == 0);
-	ok(unlink(fn+1) == 0);
 	return 0;
 }
 
@@ -494,6 +488,8 @@ int test_main(int argc, char *argv[]) {
 	_waitpid = fake_waitpid;
 	_execvp = fake_execvp;
 	_fork = fake_fork;
+	_mkfifo = fake_mkfifo;
+	_open = fake_open;
 
 	/* all tests */
 	run(process_input_01);
@@ -508,7 +504,8 @@ int test_main(int argc, char *argv[]) {
 	run(watch_fd_restart_01);
 	run(watch_fd_restart_02);
 
-	printf("%d of %d tests PASSED\n", tests_run, tests_run+failures);
+	/* TODO: find out how we broke stdout */
+	fprintf(stderr, "%d of %d tests PASSED\n", tests_run-failures, tests_run);
 	return failures;
 }
 
