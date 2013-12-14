@@ -71,7 +71,7 @@ int child_pid;
 /* forwards */
 
 static void usage();
-static void kill_child();
+static void terminate_utility();
 static void handle_exit(int sig);
 static int process_input(FILE *, WatchFile *[], int);
 static int set_fifo(char *[]);
@@ -172,7 +172,7 @@ usage() {
 }
 
 void
-kill_child() {
+terminate_utility() {
 	int status;
 
 	if (child_pid > 0) {
@@ -195,7 +195,7 @@ handle_exit(int sig) {
 		close(fifo.fd);
 		unlink(fifo.fn);
 	}
-	kill_child();
+	terminate_utility();
 	exit(0);
 }
 
@@ -297,7 +297,7 @@ run_script(char *argv[]) {
 	int status;
 
 	if (restart_mode == 1)
-		kill_child();
+		terminate_utility();
 
 	pid = _fork();
 	if (pid == -1)

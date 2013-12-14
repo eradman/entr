@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: July 06 2013 $
+.Dd $Mdocdate: December 12 2013 $
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -41,9 +41,12 @@ support the invocation of interactive utilities.
 .Pp
 .Ar -r
 modifies the exec mode by launching the
-.Ar utility
+.Ar utility at startup
 and reloading it if one of the source files change. This features requires the
 application to exit if it receives SIGTERM.
+.Nm
+always waits for the
+.Ar utility to exit to ensure that resources such as sockets have been closed.
 .Pp
 The second mode also reads a list of filenames provided on STDIN and is enabled
 by specifying '+' and the name of a fifo. In this mode
