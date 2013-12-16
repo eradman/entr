@@ -52,31 +52,16 @@ processed.
     >   markdown2html $F
     > done < notify
 
-
-Next Release: 2.3
------------------
-
-* Only emulate fmemopen(3) on MacOS since it's available everywhere else
-* Move platform-specific includes to compat.h
-* Replace the now deprecated usleep(3) with nanosleep(2)
-* Reduce number of attempts to re-open files to 1 second (10 attempts)
-* Unit tests use mock kqueue() instead of triggering events through the
-  filesystem
-* Print out detailed instructions if the user provides configure arguments
-* Fixed a flaw in kqueue emulation that caused a segfault if multiple files were
-  saved simultaneously
-* Change process title for blocking events (visible in ps(1))
-* Wait for processes to terminate in restart mode
-
 Releases History
 ----------------
+
+2.3 Wait for processes to terminate in restart mode _2013-12-16_
 
 2.2 Process every delete or rename event to ensure files remain tracked _2013-08-07_
 
 2.1 Zero-dependency build on Linux using built-in compatibility layer _2013-07-01_
 
-2.0 More portable build; runs on old architectures without C99 support
-_2013-06-17_
+2.0 More portable build; runs on old architectures without C99 support _2013-06-17_
 
 1.9 New auto-reload option _2013-04-13_
 
