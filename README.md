@@ -52,6 +52,11 @@ processed.
     >   markdown2html $F
     > done < notify
 
+Next Release: 2.4
+-----------------
+
+* LICENCE file describes the copyright holders for the compatibility libraries
+
 Releases History
 ----------------
 
