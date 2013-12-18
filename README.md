@@ -52,14 +52,10 @@ processed.
     >   markdown2html $F
     > done < notify
 
-Next Release: 2.4
------------------
-
-* LICENCE file describes the copyright holders for the compatibility libraries
-* Reintroduce ${DESTDIR} for STAGEDIR installation on FreeBSD
-
 Releases History
 ----------------
+
+2.4 LICENCE file describes the copyright for the compatibility libraries _2013­12-18_
 
 2.3 Wait for processes to terminate in restart mode _2013-12-16_
 
