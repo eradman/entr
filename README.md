@@ -56,6 +56,7 @@ Next Release: 2.4
 -----------------
 
 * LICENCE file describes the copyright holders for the compatibility libraries
+* Reintroduce ${DESTDIR} for STAGEDIR installation on FreeBSD
 
 Releases History
 ----------------
