@@ -52,6 +52,11 @@ processed.
     >   markdown2html $F
     > done < notify
 
+Next Release: 2.5
+-----------------
+
+* Removed compatibility code that had the 3-term BSD license
+
 Releases History
 ----------------
 
