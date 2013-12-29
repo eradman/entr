@@ -125,6 +125,9 @@ main(int argc, char *argv[]) {
 	if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
 		err(1, "setrlimit cannot set rlim_cur to %d", (int)rl.rlim_cur);
 
+	/* prevent interactive utilities from paging output */
+	setenv("PAGER", "cat", 0);
+
 	/* sequential scan may depend on a 0 at the end */
 	files = malloc(sizeof(char *) * rl.rlim_cur+1);
 	memset(files, 0, sizeof(char *) * rl.rlim_cur+1);

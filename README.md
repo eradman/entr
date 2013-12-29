@@ -56,6 +56,8 @@ Next Release: 2.5
 -----------------
 
 * Removed compatibility code using the 3-term BSD license
+* Prevent interactive utilities from waiting for keyboard input if output does
+  not fit on the screen 
 
 Releases History
 ----------------
