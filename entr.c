@@ -126,7 +126,7 @@ main(int argc, char *argv[]) {
 		err(1, "setrlimit cannot set rlim_cur to %d", (int)rl.rlim_cur);
 
 	/* prevent interactive utilities from paging output */
-	setenv("PAGER", "cat", 0);
+	setenv("PAGER", "/bin/cat", 0);
 
 	/* sequential scan may depend on a 0 at the end */
 	files = malloc(sizeof(char *) * rl.rlim_cur+1);

@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: December 12 2013 $
+.Dd $Mdocdate: December 30 2013 $
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -24,10 +24,8 @@
 .Op Ar -r
 .Ar utility
 .Op Ar arguments ...
-.Os
 .Nm entr
 .Ar +fifo
-.Os
 .Sh DESCRIPTION
 .Nm entr
 has two modes of operation; the first use reads a list of files provided on STDIN
@@ -53,7 +51,15 @@ by specifying '+' and the name of a fifo. In this mode
 .Nm
 enables more sophisticated scripting by writing filenames to a named pipe when
 they are modified.
-.Os
+.Sh ENVIRONMENT
+If
+.Ev PAGER
+is undefined,
+.Nm entr
+will assign
+.Pa /bin/cat
+to prevent interactive utilities from waiting for
+keyboard input if output does not fit on the screen.
 .Sh EXIT STATUS
 The
 .Nm entr
@@ -64,9 +70,7 @@ or
 .Dv SIGTERM
 was received. An exit status of 1 indicates that no regular files were provided
 as input.
-.Os
 .Sh EXAMPLES
-.Pp
 Rebuild project when source files change
 .Pp
 .Dl $ find src | entr make
@@ -85,6 +89,5 @@ Convert individual Markdown files to HTML if they're modified
 .Dl $ while read F; do
 .Dl >   markdown2html $F
 .Dl > done < notify
-.Os
 .Sh CAVEATS
 Only regular files are monitored, directories and special files are ignored.

@@ -52,15 +52,10 @@ processed.
     >   markdown2html $F
     > done < notify
 
-Next Release: 2.5
------------------
-
-* Removed compatibility code using the 3-term BSD license
-* Prevent interactive utilities from waiting for keyboard input if output does
-  not fit on the screen 
-
 Releases History
 ----------------
+
+2.5 prevent interactive utilities from paging output _2013-12-30_
 
 2.4 License file describes the copyright for the compatibility libraries _2013-12-18_
 
