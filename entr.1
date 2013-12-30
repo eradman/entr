@@ -20,7 +20,7 @@
 .Nm entr
 .Nd run arbitrary commands when files change
 .Sh SYNOPSIS
-.Nm entr
+.Nm
 .Op Ar -r
 .Ar utility
 .Op Ar arguments ...
@@ -29,7 +29,7 @@
 .Ar +fifo
 .Os
 .Sh DESCRIPTION
-.Nm
+.Nm entr
 has two modes of operation; the first use reads a list of files provided on STDIN
 and executes the supplied
 .Ar utility
@@ -56,7 +56,7 @@ they are modified.
 .Os
 .Sh EXIT STATUS
 The
-.Nm
+.Nm entr
 utility does not normally return, but it will exit with a value of 0 if the
 signal
 .Dv SIGINT
@@ -88,4 +88,3 @@ Convert individual Markdown files to HTML if they're modified
 .Os
 .Sh CAVEATS
 Only regular files are monitored, directories and special files are ignored.
-
