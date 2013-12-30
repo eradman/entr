@@ -62,7 +62,7 @@ Next Release: 2.5
 Releases History
 ----------------
 
-2.4 License file describes the copyright for the compatibility libraries _2013­12-18_
+2.4 License file describes the copyright for the compatibility libraries _2013-12-18_
 
 2.3 Wait for processes to terminate in restart mode _2013-12-16_
 

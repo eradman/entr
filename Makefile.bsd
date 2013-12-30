@@ -28,7 +28,7 @@ entr_spec: entr_spec.c entr.c ${EXTRA_SRC}
 clean:
 	rm -f entr entr_spec *.o
 
-distclean:
+distclean: clean
 	rm -f Makefile
 
 install: entr
@@ -50,4 +50,4 @@ env:
 	@echo "PREFIX     = ${PREFIX}"
 	@echo "SRC        = ${SRC}"
 
-.PHONY: clean install uninstall env
+.PHONY: clean distclean install uninstall env
