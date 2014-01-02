@@ -52,6 +52,11 @@ processed.
     >   markdown2html $F
     > done < notify
 
+Next Release: 2.6
+-----------------
+
+* Stop distributing .hgtags (lintian warning)
+
 Releases History
 ----------------
 
