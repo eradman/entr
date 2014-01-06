@@ -90,6 +90,21 @@ try "exec single shell command when a file is removed and replaced"
 	wait $bgpid
 	assert "$(cat $tmp/exec.out)" "$tmp/file2: empty"
 
+try "exec single shell command using command substitution"
+	setup
+	ls $tmp/file2 | ./entr file {} > $tmp/exec.out &
+	bgpid=$!
+	pause
+
+	rm $tmp/file2
+	pause
+	touch $tmp/file2
+	pause
+	kill -INT $bgpid
+
+	wait $bgpid
+	assert "$(cat $tmp/exec.out)" "$tmp/file2: empty"
+
 try "restart a server when a file is modified"
 	setup
 	echo "started." > $tmp/file1

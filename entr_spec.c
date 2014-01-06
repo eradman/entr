@@ -105,6 +105,12 @@ fake_waitpid(pid_t wpid, int *status, int options) {
 	return wpid;
 }
 
+char *
+fake_realpath(const char *pathname, char *resolved) {
+	snprintf(resolved, PATH_MAX, "/home/user/%s", pathname);
+        return resolved;
+}
+
 pid_t
 fake_fork() {
 	return 0; /* pretend to be the child */
@@ -474,6 +480,46 @@ int watch_fd_restart_02() {
 
 	return 0;
 }
+/*
+ * Substitue '{}' with the first entry supplied via STDIN
+ */
+int run_script_01() {
+	static char *argv[] = { "psql", "-f", "{}", NULL };
+	char input[] = "my.sql\ntest.sql";
+	FILE *fake;
+
+	fake = fmemopen(input, strlen(input), "r");
+	(void) process_input(fake, files, 3);
+	run_script(argv);
+
+	ok(ctx.exec.count == 1);
+	ok(ctx.exec.file != 0);
+	ok(strcmp(ctx.exec.file, "psql") == 0);
+	ok(strcmp(ctx.exec.argv[0], "psql") == 0);
+	ok(strcmp(ctx.exec.argv[1], "-f") == 0);
+	ok(strcmp(ctx.exec.argv[2], "/home/user/my.sql") == 0);
+	return 0;
+}
+
+/*
+ * Substitue only the first occurance of '{}'
+ */
+int run_script_02() {
+	static char *argv[] = { "{}", "{}", NULL };
+	char input[] = "one.sh\ntwo.sh";
+	FILE *fake;
+
+	fake = fmemopen(input, strlen(input), "r");
+	(void) process_input(fake, files, 3);
+	run_script(argv);
+
+	ok(ctx.exec.count == 1);
+	ok(ctx.exec.file != 0);
+	ok(strcmp(ctx.exec.file, "/home/user/one.sh") == 0);
+	ok(strcmp(ctx.exec.argv[0], "/home/user/one.sh") == 0);
+	ok(strcmp(ctx.exec.argv[1], "{}") == 0);
+	return 0;
+}
 
 /*
  * main
@@ -490,6 +536,7 @@ int test_main(int argc, char *argv[]) {
 	_fork = fake_fork;
 	_mkfifo = fake_mkfifo;
 	_open = fake_open;
+	_realpath = fake_realpath;
 
 	/* all tests */
 	run(process_input_01);
@@ -503,6 +550,8 @@ int test_main(int argc, char *argv[]) {
 	run(set_options_02);
 	run(watch_fd_restart_01);
 	run(watch_fd_restart_02);
+	run(run_script_01);
+	run(run_script_02);
 
 	/* TODO: find out how we broke stdout */
 	fprintf(stderr, "%d of %d tests PASSED\n", tests_run-failures, tests_run);

@@ -58,7 +58,7 @@ int (*_kevent)(int, const struct kevent *, int, struct kevent *, int , const
     struct timespec *);
 int (*_mkfifo)(const char *path, mode_t mode);
 int (*_open)(const char *path, int flags, ...);
-
+char * (*_realpath)(const char *, char *);
 
 /* globals */
 
@@ -106,6 +106,7 @@ main(int argc, char *argv[]) {
 	_fork = fork;
 	_mkfifo = mkfifo;
 	_open = open;
+	_realpath = realpath;
 
 	/* call usage() if no command is supplied */
 	if (argc < 2) usage();
@@ -294,32 +295,60 @@ set_options(char *argv[]) {
 void
 run_script(char *argv[]) {
 	int pid;
-	int i;
+	int i, pos;
 	int ret;
 	struct timespec delay = { 0, 100 * MILLISECOND };
 	int status;
+	char **tmp, **new_argv;
+	int argc;
+	int matches;
+	char realpath[PATH_MAX];
 
 	if (restart_mode == 1)
 		terminate_utility();
+
+	argc = 0;
+	while (argv[argc] != '\0')
+		argc++;
+
+	/* clone argv */
+	tmp = calloc(argc + 1, sizeof(char**));
+	new_argv = tmp = argv;
+	matches = 0;
+	while (--argc >= 0) {
+		if ((matches < 1) && (strcmp(*tmp, "{}")) == 0) {
+			_realpath(files[0]->fn, realpath);
+			*tmp = realpath;
+			matches++;
+		}
+		else
+			if ((*tmp = strdup(*tmp)) == NULL)
+				err(1, NULL);
+		tmp++;
+	}
 
 	pid = _fork();
 	if (pid == -1)
 		err(errno, "can't fork");
 
 	if (pid == 0) {
+		pos = 0;
 		/* wait up to 1 second for each file to become available */
 		for (i=0; i < 10; i++) {
-			ret = _execvp(argv[0], argv);
+			ret = _execvp(argv[0], new_argv);
 			if (errno == ETXTBSY) nanosleep(&delay, NULL);
 			else break;
 		}
 		if (ret != 0)
-			err(1, "exec %s", argv[0]);
+			err(1, "exec %s", new_argv[0]);
 	}
 	child_pid = pid;
 
 	if (restart_mode == 0)
 		_waitpid(pid, &status, 0);
+
+	for (i=0; i<=argc; i++)
+		free(new_argv[i]);
 }
 
 /*

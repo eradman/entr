@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: December 30 2013 $
+.Dd $Mdocdate: January 06 2014 $
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -23,7 +23,8 @@
 .Nm
 .Op Ar -r
 .Ar utility
-.Op Ar arguments ...
+.Op Ar argument ...
+.Ar {}
 .Nm entr
 .Ar +fifo
 .Sh DESCRIPTION
@@ -45,6 +46,11 @@ application to exit if it receives SIGTERM.
 .Nm
 always waits for the
 .Ar utility to exit to ensure that resources such as sockets have been closed.
+.Pp
+The first occurrence of
+.Ar {}
+on the command line will be replaced with the absolute path of the first file
+under watch. This is most useful for running or processing a single file.
 .Pp
 The second mode also reads a list of filenames provided on STDIN and is enabled
 by specifying '+' and the name of a fifo. In this mode
@@ -82,6 +88,10 @@ Clear the screen and run tests
 Launch and auto-reload a node.js server
 .Pp
 .Dl $ ls *.js | entr -r node index.js
+.Pp
+Run an SQL query
+.Pp
+.Dl $ echo my.sql | entr psql -f {}
 .Pp
 Convert individual Markdown files to HTML if they're modified
 .Pp
