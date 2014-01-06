@@ -30,7 +30,8 @@ function assert {
 
 function pause { sleep 0.4; }
 function setup { rm -f $tmp/*.out $tmp/file?; touch $tmp/file{1,2}; sleep 0.2; }
-tmp=$(mktemp -d /tmp/entr_regress.XXXXXXXXXX)
+system_tmp=$(cd /tmp; pwd -P)
+tmp=$(cd $(mktemp -d $system_tmp/entr_regress.XXXXXXXXXX); pwd -P)
 
 # rebuild
 
