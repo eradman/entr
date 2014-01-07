@@ -302,23 +302,19 @@ run_script(char *argv[]) {
 	char **tmp, **new_argv;
 	int argc;
 	int matches;
-	char realpath[PATH_MAX];
 
 	if (restart_mode == 1)
 		terminate_utility();
 
-	argc = 0;
-	while (argv[argc] != '\0')
-		argc++;
-
 	/* clone argv */
-	tmp = calloc(argc + 1, sizeof(char**));
-	new_argv = tmp = argv;
+	for (argc=1; argv[argc] != '\0'; argc++);
+	new_argv = tmp = calloc(argc + 1, sizeof(char**));
 	matches = 0;
-	while (--argc >= 0) {
+	while (*argv != 0) {
+		*tmp = *argv++;
 		if ((matches < 1) && (strcmp(*tmp, "{}")) == 0) {
-			_realpath(files[0]->fn, realpath);
-			*tmp = realpath;
+			*tmp = malloc(PATH_MAX);
+			_realpath(files[0]->fn, *tmp);
 			matches++;
 		}
 		else
@@ -335,7 +331,7 @@ run_script(char *argv[]) {
 		pos = 0;
 		/* wait up to 1 second for each file to become available */
 		for (i=0; i < 10; i++) {
-			ret = _execvp(argv[0], new_argv);
+			ret = _execvp(new_argv[0], new_argv);
 			if (errno == ETXTBSY) nanosleep(&delay, NULL);
 			else break;
 		}
