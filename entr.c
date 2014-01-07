@@ -310,7 +310,7 @@ run_script(char *argv[]) {
 
 	/* clone argv */
 	for (argc=0; argv[argc] != '\0'; argc++);
-	new_argv = tmp = calloc(argc + 1, sizeof(char**));
+	new_argv = tmp = malloc((argc + 1) * sizeof(char**));
 	matches = 0;
 	while (*argv != 0) {
 		*tmp = *argv++;
@@ -320,8 +320,7 @@ run_script(char *argv[]) {
 			matches++;
 		}
 		else
-			if ((*tmp = strdup(*tmp)) == NULL)
-				err(1, NULL);
+			*tmp = strdup(*tmp);
 		tmp++;
 	}
 
@@ -347,6 +346,7 @@ run_script(char *argv[]) {
 
 	for (i=0; i<=argc; i++)
 		_free(new_argv[i]);
+        _free(new_argv);
 }
 
 /*
