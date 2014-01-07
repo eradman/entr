@@ -304,7 +304,8 @@ run_script(char *argv[]) {
 	 * complex subsitution rules possible and easy
 	 */
 	for (argc=0; argv[argc] != 0; argc++);
-	new_argv = malloc((argc + 1) * sizeof(char**));
+	new_argv = malloc((argc + 1) * sizeof(char *));
+	bzero(new_argv, argc + 1);
 	for (m=0, tmp=new_argv; *argv != 0; tmp++) {
 		*tmp = *argv++;
 		if ((m < 1) && (strcmp(*tmp, "{}")) == 0) {
