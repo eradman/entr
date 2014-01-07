@@ -1,6 +1,6 @@
 CFLAGS += -D_MACOS_PORT
 MANPREFIX ?= ${PREFIX}/share/man
-EXTRA_SRC = missing/fmemopen.c missing/setproctitle.c
+EXTRA_SRC = missing/fmemopen.c
 
 include Makefile.bsd
 
