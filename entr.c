@@ -59,6 +59,7 @@ int (*_kevent)(int, const struct kevent *, int, struct kevent *, int , const
 int (*_mkfifo)(const char *path, mode_t mode);
 int (*_open)(const char *path, int flags, ...);
 char * (*_realpath)(const char *, char *);
+void (*_free)(void *);
 
 /* globals */
 
@@ -107,6 +108,7 @@ main(int argc, char *argv[]) {
 	_mkfifo = mkfifo;
 	_open = open;
 	_realpath = realpath;
+	_free = free;
 
 	/* call usage() if no command is supplied */
 	if (argc < 2) usage();
@@ -307,7 +309,7 @@ run_script(char *argv[]) {
 		terminate_utility();
 
 	/* clone argv */
-	for (argc=1; argv[argc] != '\0'; argc++);
+	for (argc=0; argv[argc] != '\0'; argc++);
 	new_argv = tmp = calloc(argc + 1, sizeof(char**));
 	matches = 0;
 	while (*argv != 0) {
@@ -344,7 +346,7 @@ run_script(char *argv[]) {
 		_waitpid(pid, &status, 0);
 
 	for (i=0; i<=argc; i++)
-		free(new_argv[i]);
+		_free(new_argv[i]);
 }
 
 /*

@@ -108,7 +108,7 @@ fake_waitpid(pid_t wpid, int *status, int options) {
 char *
 fake_realpath(const char *pathname, char *resolved) {
 	snprintf(resolved, PATH_MAX, "/home/user/%s", pathname);
-        return resolved;
+	return resolved;
 }
 
 pid_t
@@ -119,6 +119,10 @@ fake_fork() {
 int
 fake_mkfifo(const char *path, mode_t mode) {
 	return 0; /* success */
+}
+
+void
+fake_free(void *ptr) {
 }
 
 /* mock objects */
@@ -537,6 +541,7 @@ int test_main(int argc, char *argv[]) {
 	_mkfifo = fake_mkfifo;
 	_open = fake_open;
 	_realpath = fake_realpath;
+	_free = fake_free;
 
 	/* all tests */
 	run(process_input_01);
