@@ -297,31 +297,29 @@ set_options(char *argv[]) {
 void
 run_script(char *argv[]) {
 	int pid;
-	int i, pos;
-	int ret;
+	int i, m;
+	int ret, status;
 	struct timespec delay = { 0, 100 * MILLISECOND };
-	int status;
 	char **tmp, **new_argv;
 	int argc;
-	int matches;
 
 	if (restart_mode == 1)
 		terminate_utility();
 
-	/* clone argv */
-	for (argc=0; argv[argc] != '\0'; argc++);
-	new_argv = tmp = malloc((argc + 1) * sizeof(char**));
-	matches = 0;
-	while (*argv != 0) {
+	/* clone argv on each invocation to make the implementation of more
+	 * complex subsitution rules possible and easy
+	 */
+	for (argc=0; argv[argc] != 0; argc++);
+	new_argv = malloc((argc + 1) * sizeof(char**));
+	for (m=0, tmp=new_argv; *argv != 0; tmp++) {
 		*tmp = *argv++;
-		if ((matches < 1) && (strcmp(*tmp, "{}")) == 0) {
+		if ((m < 1) && (strcmp(*tmp, "{}")) == 0) {
 			*tmp = malloc(PATH_MAX);
 			_realpath(files[0]->fn, *tmp);
-			matches++;
+			m++;
 		}
 		else
 			*tmp = strdup(*tmp);
-		tmp++;
 	}
 
 	pid = _fork();
@@ -329,7 +327,6 @@ run_script(char *argv[]) {
 		err(errno, "can't fork");
 
 	if (pid == 0) {
-		pos = 0;
 		/* wait up to 1 second for each file to become available */
 		for (i=0; i < 10; i++) {
 			ret = _execvp(new_argv[0], new_argv);
