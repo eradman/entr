@@ -110,7 +110,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 
 	pfd.fd = kq;
 	pfd.events = POLLIN;
-	if ((timeout != 0 && (poll(&pfd, 1, timeout->tv_nsec/1000) == 0)))
+	if ((timeout != 0 && (poll(&pfd, 1, timeout->tv_nsec/1000000) == 0)))
 		return 0;
 
 	/* Consolidate events within 50ms */

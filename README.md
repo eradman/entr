@@ -58,6 +58,7 @@ Next Release: 2.6
 * Stop distributing .hgtags (lintian warning)
 * First match of '{}' provides a shortcut for specifying the first file under
   watch
+* Correct a timeout on Linux
 
 Releases History
 ----------------
