@@ -108,12 +108,14 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 		return nchanges - ignored;
 	}
 
+	/* Consolidate events over 50ms since some Linux apps write to a
+	   file before deleting it */
 	pfd.fd = kq;
 	pfd.events = POLLIN;
-	if ((timeout != 0 && (poll(&pfd, 1, timeout->tv_nsec/1000000) == 0)))
+	if ((timeout != 0 && (poll(&pfd, 1,
+		(20 * timeout->tv_nsec)/MILLISECOND) == 0)))
 		return 0;
 
-	/* Consolidate events within 50ms */
 	n = 0;
 	do {
 		pos = 0;
