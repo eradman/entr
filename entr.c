@@ -293,7 +293,8 @@ run_script(char *argv[]) {
 	int i, m;
 	int ret, status;
 	struct timespec delay = { 0, 100 * 1000000 };
-	char **tmp, **new_argv;
+	char **new_argv;
+	char *p, *arg_buf;
 	int argc;
 
 	if (restart_mode == 1)
@@ -303,17 +304,18 @@ run_script(char *argv[]) {
 	 * complex subsitution rules possible and easy
 	 */
 	for (argc=0; argv[argc] != 0; argc++);
+	arg_buf = malloc(ARG_MAX);
 	new_argv = malloc((argc + 1) * sizeof(char *));
-	bzero(new_argv, argc + 1);
-	for (m=0, tmp=new_argv; *argv != 0; tmp++) {
-		*tmp = *argv++;
-		if ((m < 1) && (strcmp(*tmp, "{}")) == 0) {
-			*tmp = malloc(PATH_MAX);
-			_realpath(files[0]->fn, *tmp);
+	*new_argv = *argv;
+	for (m=0, i=0, p=arg_buf; i<argc; i++) {
+		new_argv[i] = p;
+		if ((m < 1) && (strcmp(argv[i], "{}")) == 0) {
+			p += strlen(_realpath(files[0]->fn, p));
 			m++;
 		}
 		else
-			*tmp = strdup(*tmp);
+			p += strlcpy(p, argv[i], ARG_MAX - (p - arg_buf));
+		p++;
 	}
 
 	pid = _fork();
@@ -335,8 +337,7 @@ run_script(char *argv[]) {
 	if (restart_mode == 0)
 		_waitpid(pid, &status, 0);
 
-	for (i=0; i<=argc; i++)
-		_free(new_argv[i]);
+        _free(arg_buf);
         _free(new_argv);
 }
 
