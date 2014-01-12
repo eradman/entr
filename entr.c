@@ -44,7 +44,6 @@
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #define MEMBER_SIZE(S, M) sizeof(((S *)0)->M)
-#define MILLISECOND 1000000
 
 /* function pointers */
 
@@ -293,7 +292,7 @@ run_script(char *argv[]) {
 	int pid;
 	int i, m;
 	int ret, status;
-	struct timespec delay = { 0, 100 * MILLISECOND };
+	struct timespec delay = { 0, 100 * 1000000 };
 	char **tmp, **new_argv;
 	int argc;
 
@@ -348,7 +347,7 @@ void
 watch_file(int kq, WatchFile *file) {
 	struct kevent evSet;
 	int i;
-	struct timespec delay = { 0, 100 * MILLISECOND };
+	struct timespec delay = { 0, 100 * 1000000 };
 
 	/* wait up to 1 second for file to become available */
 	for (i=0; i < 10; i++) {
@@ -380,7 +379,7 @@ watch_loop(int kq, char *argv[]) {
 	int nev;
 	WatchFile *file;
 	int i;
-	struct timespec evTimeout = { 0, MILLISECOND };
+	struct timespec evTimeout = { 0, 1000000 };
 	int reopen_only = 0;
 
 	if (restart_mode)

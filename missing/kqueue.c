@@ -48,10 +48,6 @@ file_by_descriptor(int wd) {
 	return NULL; /* lookup failed */
 }
 
-/* shortcuts */
-
-#define MILLISECOND 1000000
-
 /* interface */
 
 #define EVENT_SIZE (sizeof (struct inotify_event))
@@ -83,7 +79,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	const struct kevent *kev;
 	int ignored;
 	struct pollfd pfd;
-	struct timespec delay = { 0, 30 * MILLISECOND };
+	struct timespec delay = { 0, 30 * 1000000 };
 
 	if (nchanges > 0) {
 		ignored = 0;
@@ -113,7 +109,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	pfd.fd = kq;
 	pfd.events = POLLIN;
 	if ((timeout != 0 && (poll(&pfd, 1,
-		(20 * timeout->tv_nsec)/MILLISECOND) == 0)))
+		(20 * timeout->tv_nsec) / 1000000) == 0)))
 		return 0;
 
 	n = 0;
