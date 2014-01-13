@@ -303,10 +303,10 @@ run_script(char *argv[]) {
 	/* clone argv on each invocation to make the implementation of more
 	 * complex subsitution rules possible and easy
 	 */
-	for (argc=0; argv[argc] != 0; argc++);
+	for (argc=0; argv[argc]; argc++);
 	arg_buf = malloc(ARG_MAX);
 	new_argv = malloc((argc + 1) * sizeof(char *));
-	*new_argv = *argv;
+	memset(new_argv, 0, (argc + 1) * sizeof(char *));
 	for (m=0, i=0, p=arg_buf; i<argc; i++) {
 		new_argv[i] = p;
 		if ((m < 1) && (strcmp(argv[i], "{}")) == 0) {
