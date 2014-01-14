@@ -55,15 +55,14 @@ processed.
 Next Release: 2.6
 -----------------
 
-* Stop distributing .hgtags (lintian warning)
+* Correct the timeout on Linux while consolidating inotify events
 * First match of '{}' provides a shortcut for specifying the first file under
   watch
-* Correct a timeout on Linux
 
 Releases History
 ----------------
 
-2.5 prevent interactive utilities from paging output _2013-12-30_
+2.5 Prevent interactive utilities from paging output _2013-12-30_
 
 2.4 License file describes the copyright for the compatibility libraries _2013-12-18_
 
