@@ -7,9 +7,10 @@ copy_mk()
 }
 
 case `uname` in
-    Darwin) copy_mk macos ;;
-    Linux)  copy_mk linux ;;
-    *)      copy_mk bsd ;;
+    Darwin)       copy_mk macos ;;
+    Linux)        copy_mk linux ;;
+    GNU/kFreeBSD) copy_mk kfreebsd ;;
+    *)            copy_mk bsd ;;
 esac
 
 [ $# = 0 ] && exit 0

@@ -58,6 +58,7 @@ Next Release: 2.6
 * Correct the timeout on Linux while consolidating inotify events
 * First match of '{}' provides a shortcut for specifying the first file under
   watch
+* Build supports Debian with FreeBSD kernel
 
 Releases History
 ----------------
