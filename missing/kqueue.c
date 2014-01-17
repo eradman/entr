@@ -79,7 +79,6 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	const struct kevent *kev;
 	int ignored;
 	struct pollfd pfd;
-	struct timespec delay = { 0, 30 * 1000000 };
 
 	if (nchanges > 0) {
 		ignored = 0;
@@ -104,14 +103,13 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 		return nchanges - ignored;
 	}
 
-	/* Consolidate events over 50ms since some Linux apps write to a
-	   file before deleting it */
 	pfd.fd = kq;
 	pfd.events = POLLIN;
-	if ((timeout != 0 && (poll(&pfd, 1,
-		(20 * timeout->tv_nsec) / 1000000) == 0)))
+	if (timeout != 0 && (poll(&pfd, 1, timeout->tv_nsec/1000000) == 0))
 		return 0;
 
+	/* Consolidate events over 50ms since some Linux apps write to a
+	   file before deleting it */
 	n = 0;
 	do {
 		pos = 0;
@@ -138,9 +136,8 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			eventlist[n].udata = file_by_descriptor(iev->wd);
 			n++;
 		}
-		nanosleep(&delay, NULL);
 	}
-	while ((poll(&pfd, 1, 30) > 0));
+	while ((poll(&pfd, 1, 50) > 0));
 
 	return n;
 }
