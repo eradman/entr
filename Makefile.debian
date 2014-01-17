@@ -1,0 +1,12 @@
+# `entr` provides a built-in compability layer for Linux. To use compatibility
+# libraries instead insteall libkqueue and libbsd
+#
+# sudo apt-get install libkqueue-dev libbsd-dev pkg-config
+# make test -f Makefile.linux-lbsd
+# sudo make install
+
+CFLAGS += -D_GNU_SOURCE -I/usr/include/kqueue $(shell pkg-config --cflags libbsd-overlay)
+LDFLAGS += -lpthread -lkqueue $(shell pkg-config --libs libbsd-ctor)
+MANPREFIX ?= ${PREFIX}/share/man
+
+include Makefile.bsd

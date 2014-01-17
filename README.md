@@ -58,8 +58,8 @@ Next Release: 2.6
 * Correct the timeout on Linux while consolidating inotify events
 * First match of '{}' provides a shortcut for specifying the first file under
   watch
-* Removed optional Makefile using libkqueue and libbsd on Debian
 * Build supports Debian with FreeBSD kernel
+* Renamed Makefile.linux-lbsd to Makefile.debian
 
 Releases History
 ----------------
