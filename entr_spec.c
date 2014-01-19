@@ -485,10 +485,10 @@ int watch_fd_restart_02() {
 	return 0;
 }
 /*
- * Substitue '{}' with the first entry supplied via STDIN
+ * Substitue '/_' with the first entry supplied via STDIN
  */
 int run_script_01() {
-	static char *argv[] = { "psql", "-f", "{}", NULL };
+	static char *argv[] = { "psql", "-f", "/_", NULL };
 	char input[] = "my.sql\ntest.sql";
 	FILE *fake;
 
@@ -506,10 +506,10 @@ int run_script_01() {
 }
 
 /*
- * Substitue only the first occurance of '{}'
+ * Substitue only the first occurance of '/_'
  */
 int run_script_02() {
-	static char *argv[] = { "{}", "{}", NULL };
+	static char *argv[] = { "/_", "/_", NULL };
 	char input[] = "one.sh\ntwo.sh";
 	FILE *fake;
 
@@ -521,7 +521,7 @@ int run_script_02() {
 	ok(ctx.exec.file != 0);
 	ok(strcmp(ctx.exec.file, "/home/user/one.sh") == 0);
 	ok(strcmp(ctx.exec.argv[0], "/home/user/one.sh") == 0);
-	ok(strcmp(ctx.exec.argv[1], "{}") == 0);
+	ok(strcmp(ctx.exec.argv[1], "/_") == 0);
 	return 0;
 }
 

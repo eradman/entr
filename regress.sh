@@ -93,7 +93,7 @@ try "exec single shell command when a file is removed and replaced"
 
 try "exec single shell command using command substitution"
 	setup
-	ls $tmp/file2 | ./entr file {} > $tmp/exec.out &
+	ls $tmp/file2 | ./entr file /_ > $tmp/exec.out &
 	bgpid=$!
 	pause
 

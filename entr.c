@@ -309,7 +309,7 @@ run_script(char *argv[]) {
 	memset(new_argv, 0, (argc + 1) * sizeof(char *));
 	for (m=0, i=0, p=arg_buf; i<argc; i++) {
 		new_argv[i] = p;
-		if ((m < 1) && (strcmp(argv[i], "{}")) == 0) {
+		if ((m < 1) && (strcmp(argv[i], "/_")) == 0) {
 			p += strlen(_realpath(files[0]->fn, p));
 			m++;
 		}

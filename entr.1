@@ -24,7 +24,7 @@
 .Op Ar -r
 .Ar utility
 .Op Ar argument ...
-.Ar {}
+.Ar /_
 .Nm entr
 .Ar +fifo
 .Sh DESCRIPTION
@@ -48,7 +48,7 @@ always waits for the
 .Ar utility to exit to ensure that resources such as sockets have been closed.
 .Pp
 The first occurrence of
-.Ar {}
+.Ar /_
 on the command line will be replaced with the absolute path of the first file
 under watch. This is most useful for running or processing a single file.
 .Pp
@@ -91,7 +91,7 @@ Launch and auto-reload a node.js server
 .Pp
 Run an SQL query
 .Pp
-.Dl $ echo my.sql | entr psql -f {}
+.Dl $ echo my.sql | entr psql -f /_
 .Pp
 Convert individual Markdown files to HTML if they're modified
 .Pp
