@@ -86,7 +86,6 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			kev = changelist + (sizeof(struct kevent)*n);
 			file = (WatchFile *)kev->udata;
 			if (kev->flags & EV_DELETE) {
-				inotify_rm_watch(kq /* ifd */, kev->ident);
 				file->fd = -1; /* invalidate */
 			}
 			else if (kev->flags & EV_ADD) {
