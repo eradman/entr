@@ -266,9 +266,8 @@ set_options(char *argv[]) {
 	int ch;
 	int argc;
 
-	for (argc=0; argv[argc]; argc++);
-
-	
+	/* read arguments until we reach a command */
+	for (argc=1; argv[argc][0] == '-'; argc++);
 	while ((ch = getopt(argc, argv, "rc")) != -1) {
 		switch (ch) {
 		case 'r':
