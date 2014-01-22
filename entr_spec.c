@@ -68,7 +68,7 @@ void reset_state() {
 	int max_files = 4;
 
 	/* getopt(3) keeps an external reference */
-	optind = 0;
+	optind = 1;
 
 	/* initialize global data */
 	memset(&fifo, 0, sizeof(fifo));
