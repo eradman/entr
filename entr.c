@@ -170,7 +170,7 @@ main(int argc, char *argv[]) {
 void
 usage() {
 	extern char *__progname;
-	fprintf(stderr, "usage: %s [-r] utility [args, ...] < filenames\n",
+	fprintf(stderr, "usage: %s [-cr] utility [args, [/_], ...] < filenames\n",
 	    __progname);
 	fprintf(stderr, "       %s +fifo < filenames\n",
 	    __progname);
@@ -267,7 +267,7 @@ set_options(char *argv[]) {
 	int argc;
 
 	/* read arguments until we reach a command */
-	for (argc=1; argv[argc][0] == '-'; argc++);
+	for (argc=1; argv[argc] != 0 && argv[argc][0] == '-'; argc++);
 	while ((ch = getopt(argc, argv, "rc")) != -1) {
 		switch (ch) {
 		case 'r':
