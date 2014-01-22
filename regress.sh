@@ -47,8 +47,8 @@ try "no arguments"
 	./entr 2> /dev/null || code=$?
 	assert $code 2
 
-try "reload option with no command to run"
-	./entr -r 2> /dev/null || code=$?
+try "reload and clear options with no command to run"
+	./entr -r -c 2> /dev/null || code=$?
 	assert $code 2
 
 try "empty input"

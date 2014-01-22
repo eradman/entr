@@ -67,10 +67,13 @@ void reset_state() {
 	int i;
 	int max_files = 4;
 
-	/* initialize external global data */
+	/* getopt(3) keeps an external reference */
+	optind = 0;
+
+	/* initialize global data */
 	memset(&fifo, 0, sizeof(fifo));
 	restart_mode = 0;
-	child_pid = 0;
+	clear_mode = 0;
 	files = malloc(sizeof(WatchFile *) * max_files);
 	for (i=0; i<max_files; i++)
 		files[i] = malloc(sizeof(WatchFile));
@@ -387,25 +390,57 @@ int set_fifo_01() {
  */
 int set_options_01() {
 	int argv_offset;
-	char *argv[] = { "entr", "ruby", "main.rb", NULL };
+	char *argv[] = { "entr", "ruby", "test1.rb", NULL };
 	
 	argv_offset = set_options(argv);
 
 	ok(argv_offset == 1);
 	ok(restart_mode == 0);
+	ok(clear_mode == 0);
 	return 0;
 }
+
 /*
  * Parse command line arguments for restart mode
  */
 int set_options_02() {
 	int argv_offset;
-	char *argv[] = { "entr", "-r", "ruby", "main.rb", NULL };
+	char *argv[] = { "entr", "-r", "ruby", "test2.rb", NULL };
 	
 	argv_offset = set_options(argv);
 
 	ok(argv_offset == 2);
 	ok(restart_mode == 1);
+	return 0;
+}
+
+/*
+ * Parse command line arguments with the clear option
+ */
+int set_options_03() {
+	int argv_offset;
+	char *argv[] = { "entr", "-c", "ruby", "test3.rb", NULL };
+	
+	argv_offset = set_options(argv);
+
+	ok(argv_offset == 2);
+	ok(restart_mode == 0);
+	ok(clear_mode == 1);
+	return 0;
+}
+
+/*
+ * Ensure that command line arguments are not confused with utility arguments
+ */
+int set_options_04() {
+	int argv_offset;
+	char *argv[] = { "entr", "ls", "-r", "-c", NULL };
+	
+	argv_offset = set_options(argv);
+
+	ok(argv_offset == 1);
+	ok(restart_mode == 0);
+	ok(clear_mode == 0);
 	return 0;
 }
 
@@ -553,6 +588,8 @@ int test_main(int argc, char *argv[]) {
 	run(set_fifo_01);
 	run(set_options_01);
 	run(set_options_02);
+	run(set_options_03);
+	run(set_options_04);
 	run(watch_fd_restart_01);
 	run(watch_fd_restart_02);
 	run(run_script_01);

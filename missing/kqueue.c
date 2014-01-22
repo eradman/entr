@@ -16,6 +16,7 @@
 #include <sys/inotify.h>
 #include <sys/event.h>
 
+#include <errno.h>
 #include <limits.h>
 #include <poll.h>
 #include <stdio.h>
@@ -113,6 +114,13 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	do {
 		pos = 0;
 		len = read(kq /* ifd */, &buf, EVENT_BUF_LEN);
+		if (len < 0) {
+			/* SA_RESTART doesn't work for inotify fds */
+			if (errno == EINTR)
+				continue;
+			else
+				perror("read");
+		}
 		while ((pos < len) && (n < nevents)) {
 			iev = (struct inotify_event *) &buf[pos];
 			pos += EVENT_SIZE + iev->len;

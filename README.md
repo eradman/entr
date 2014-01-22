@@ -56,10 +56,12 @@ Next Release: 2.6
 -----------------
 
 * Correct the timeout on Linux while consolidating inotify events
-* First match of '{}' provides a shortcut for specifying the first file under
+* First match of `/_` provides a shortcut for specifying the first file under
   watch
 * Build supports Debian with FreeBSD kernel
 * Renamed Makefile.linux-lbsd to Makefile.debian
+* New `-c` option invokes `clear` before running the utility
+* `gcc-lint` make target removed; clang's `scan-build` is much better
 
 Releases History
 ----------------

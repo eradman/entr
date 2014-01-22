@@ -66,6 +66,7 @@ extern int optind;
 extern WatchFile **files;
 WatchFile fifo;
 int restart_mode;
+int clear_mode;
 int child_pid;
 
 /* forwards */
@@ -182,7 +183,8 @@ terminate_utility() {
 
 	if (child_pid > 0) {
 		#ifdef DEBUG
-		fprintf(stderr, "signal %d sent to pid %d\n", SIGTERM, child_pid);
+		fprintf(stderr, "signal %d sent to pid %d\n", SIGTERM,
+		    child_pid);
 		#endif
 		_kill(child_pid, SIGTERM);
 		_waitpid(child_pid, &status, 0);
@@ -264,27 +266,29 @@ set_options(char *argv[]) {
 	int ch;
 	int argc;
 
-	argc = 1;
-	while (argv[argc] != '\0') {
-		if (argv[argc][0] == '-') argc++;
-		else break;
-	}
-	/* no command to run */
-	if (argv[argc] == '\0')
-		usage();
+	for (argc=0; argv[argc]; argc++);
 
-	while ((ch = getopt(argc, argv, "r")) != -1) {
+	
+	while ((ch = getopt(argc, argv, "rc")) != -1) {
 		switch (ch) {
 		case 'r':
 			restart_mode = 1;
 			break;
+		case 'c':
+			clear_mode = 1;
+			break;
+		default:
+		    usage();
 		}
 	}
+	/* no command to run */
+	if (argv[optind] == '\0')
+		usage();
 	return optind;
 }
 
 /*
- * Execute the program supplied on the command line. If restart_mode was set
+ * Execute the program supplied on the command line. If restart was set
  * then send the child process SIGTERM and restart it.
  */
 void
@@ -323,6 +327,9 @@ run_script(char *argv[]) {
 		err(errno, "can't fork");
 
 	if (pid == 0) {
+		if (clear_mode == 1)
+			system("clear");
+
 		/* wait up to 1 second for each file to become available */
 		for (i=0; i < 10; i++) {
 			ret = _execvp(new_argv[0], new_argv);
