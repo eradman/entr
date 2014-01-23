@@ -91,7 +91,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			}
 			else if (kev->flags & EV_ADD) {
 				wd = inotify_add_watch(kq /* ifd */, file->fn,
-				    IN_CLOSE_WRITE|IN_DELETE_SELF|IN_MODIFY|IN_MOVE_SELF));
+				    IN_CLOSE_WRITE|IN_DELETE_SELF|IN_MODIFY|IN_MOVE_SELF);
 				if (wd < 0)
 					return -1;
 				close(file->fd);
