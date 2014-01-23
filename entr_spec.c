@@ -237,19 +237,19 @@ int watch_fd_exec_01() {
 	ok(ctx.event.Set[0].ident);
 	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
 	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
-	ok(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[0].fflags == (NOTE_ALL));
 	ok(ctx.event.Set[0].udata == files[0]);
 
 	ok(ctx.event.Set[1].ident);
 	ok(ctx.event.Set[1].filter == EVFILT_VNODE);
 	ok(ctx.event.Set[1].flags == EV_DELETE); /* remove */
-	ok(ctx.event.Set[1].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[1].fflags == (NOTE_ALL));
 	ok(ctx.event.Set[1].udata == files[0]);
 
 	ok(ctx.event.Set[2].ident);
 	ok(ctx.event.Set[2].filter == EVFILT_VNODE);
 	ok(ctx.event.Set[2].flags == (EV_CLEAR|EV_ADD)); /* reopen */
-	ok(ctx.event.Set[2].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[2].fflags == (NOTE_ALL));
 	ok(ctx.event.Set[2].udata == files[0]);
 
 	ok(ctx.exec.count == 1);
@@ -281,7 +281,7 @@ int watch_fd_exec_02() {
 	ok(ctx.event.Set[0].ident);
 	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
 	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD));
-	ok(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[0].fflags == (NOTE_ALL));
 	ok(ctx.event.Set[0].udata == files[0]);
 
 	ok(ctx.exec.count == 0);
@@ -312,7 +312,7 @@ int watch_fd_exec_03() {
 	ok(ctx.event.Set[0].ident);
 	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
 	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
-	ok(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[0].fflags == (NOTE_ALL));
 	ok(ctx.event.Set[0].data == 0);
 	ok(ctx.event.Set[0].udata == files[0]->fn);
 
@@ -347,19 +347,64 @@ int watch_fd_exec_04() {
 	ok(ctx.event.Set[0].ident);
 	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
 	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
-	ok(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[0].fflags == (NOTE_ALL));
 	ok(ctx.event.Set[0].udata == files[0]->fn);
 
 	ok(ctx.event.Set[1].ident);
 	ok(ctx.event.Set[1].filter == EVFILT_VNODE);
 	ok(ctx.event.Set[1].flags == EV_DELETE); /* remove */
-	ok(ctx.event.Set[1].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[1].fflags == (NOTE_ALL));
 	ok(ctx.event.Set[1].udata == files[0]->fn);
 
 	ok(ctx.event.Set[2].ident);
 	ok(ctx.event.Set[2].filter == EVFILT_VNODE);
 	ok(ctx.event.Set[2].flags == (EV_CLEAR|EV_ADD)); /* reopen */
-	ok(ctx.event.Set[2].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[2].fflags == (NOTE_ALL));
+	ok(ctx.event.Set[2].udata == files[0]->fn);
+
+	ok(ctx.exec.count == 1);
+	ok(ctx.exec.file != 0);
+	ok(strcmp(ctx.exec.file, "prog") == 0);
+	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
+	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
+	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
+	return 0;
+}
+
+/*
+ * Rename a file without removing it (e.g. Vim's backup option)
+ */
+int watch_fd_exec_05() {
+	int kq = kqueue();
+	static char *argv[] = { "prog", "arg1", "arg2", NULL };
+	static char fn[] = "/dev/null";
+
+	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
+	watch_file(kq, files[0]);
+
+	ctx.event.nlist = 1;
+	ctx.event.decrement = 1;
+	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_RENAME, 0, files[0]);
+
+	watch_loop(kq, argv);
+
+	ok(ctx.event.nset == 3);
+	ok(ctx.event.Set[0].ident);
+	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
+	ok(ctx.event.Set[0].fflags == (NOTE_ALL));
+	ok(ctx.event.Set[0].udata == files[0]->fn);
+
+	ok(ctx.event.Set[1].ident);
+	ok(ctx.event.Set[1].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[1].flags == EV_DELETE); /* remove */
+	ok(ctx.event.Set[1].fflags == (NOTE_ALL));
+	ok(ctx.event.Set[1].udata == files[0]->fn);
+
+	ok(ctx.event.Set[2].ident);
+	ok(ctx.event.Set[2].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[2].flags == (EV_CLEAR|EV_ADD)); /* reopen */
+	ok(ctx.event.Set[2].fflags == (NOTE_ALL));
 	ok(ctx.event.Set[2].udata == files[0]->fn);
 
 	ok(ctx.exec.count == 1);
@@ -463,7 +508,7 @@ int watch_fd_restart_01() {
 	ok(ctx.event.Set[0].ident);
 	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
 	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
-	ok(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[0].fflags == (NOTE_ALL));
 	ok(ctx.event.Set[0].udata == files[0]);
 
 	ok(ctx.exec.count == 1);
@@ -494,7 +539,7 @@ int watch_fd_restart_02() {
 	ok(ctx.event.Set[0].ident);
 	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
 	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
-	ok(ctx.event.Set[0].fflags == (NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND));
+	ok(ctx.event.Set[0].fflags == (NOTE_ALL));
 	ok(ctx.event.Set[0].udata == files[0]);
 
 	ok(ctx.exec.count == 1);
@@ -585,6 +630,7 @@ int test_main(int argc, char *argv[]) {
 	run(watch_fd_exec_02);
 	run(watch_fd_exec_03);
 	run(watch_fd_exec_04);
+	run(watch_fd_exec_05);
 	run(set_fifo_01);
 	run(set_options_01);
 	run(set_options_02);

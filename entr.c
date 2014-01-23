@@ -38,7 +38,7 @@
 
 /* events to watch for */
 
-#define NOTE_ALL NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND
+#define NOTE_ALL NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND|NOTE_RENAME
 
 /* shortcuts */
 
@@ -400,7 +400,6 @@ main:
 	if (nev == -2) /* test runner */
 		return;
 
-	/* reopen all files that were removed */
 	for (i=0; i<nev; i++) {
 		#ifdef DEBUG
 		fprintf(stderr, "event %d/%d: %d (%d) 0x%x 0x%x %d %p\n", i+1,
@@ -412,8 +411,15 @@ main:
 		    evList[i].data,
 		    evList[i].udata);
 		#endif
+		if (evList[i].filter != EVFILT_VNODE)
+			continue;
+	}
+
+	/* reopen all files that were removed */
+	for (i=0; i<nev; i++) {
 		file = (WatchFile *)evList[i].udata;
-		if (evList[i].fflags & NOTE_DELETE) {
+		if (evList[i].fflags & NOTE_DELETE ||
+		    evList[i].fflags & NOTE_RENAME) {
 			EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_DELETE,
 			    NOTE_ALL, 0, file);
 			if (_kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
@@ -431,8 +437,9 @@ main:
 	for (i=0; i<nev && reopen_only == 0; i++) {
 		file = (WatchFile *)evList[i].udata;
 		if (evList[i].fflags & NOTE_DELETE ||
-		    evList[i].fflags & NOTE_WRITE ||
-		    evList[i].fflags & NOTE_EXTEND) {
+		    evList[i].fflags & NOTE_WRITE  ||
+		    evList[i].fflags & NOTE_EXTEND ||
+		    evList[i].fflags & NOTE_RENAME) {
 			if (fifo.fd == 0) {
 				run_script(argv);
 				/* don't process any more events */

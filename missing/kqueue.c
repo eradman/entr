@@ -91,7 +91,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			}
 			else if (kev->flags & EV_ADD) {
 				wd = inotify_add_watch(kq /* ifd */, file->fn,
-				    IN_CLOSE_WRITE|IN_DELETE_SELF|IN_MODIFY);
+				    IN_CLOSE_WRITE|IN_DELETE_SELF|IN_MODIFY|IN_MOVE_SELF));
 				if (wd < 0)
 					return -1;
 				close(file->fd);
@@ -133,6 +133,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			fflags = 0;
 			if (iev->mask & IN_DELETE_SELF) fflags |= NOTE_DELETE;
 			if (iev->mask & IN_CLOSE_WRITE) fflags |= NOTE_WRITE;
+			if (iev->mask & IN_MOVE_SELF)   fflags |= NOTE_RENAME;
 			if (fflags == 0) continue;
 
 			eventlist[n].ident = iev->wd;

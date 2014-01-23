@@ -62,6 +62,7 @@ Next Release: 2.6
 * Renamed Makefile.linux-lbsd to Makefile.debian
 * New `-c` option invokes `clear` before running the utility
 * `gcc-lint` make target removed; clang's `scan-build` is much better
+* Support Vim's `backup` option by responding to `NOTE_RENAME`
 
 Releases History
 ----------------

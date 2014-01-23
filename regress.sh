@@ -76,6 +76,21 @@ try "watch and exec a program that is overwritten"
 	wait $bgpid
 	assert "$(cat $tmp/exec.out)" "$(ls $tmp/file1)"
 
+try "exec single shell command when a file is renamed and replaced"
+	setup
+	ls $tmp/file* | ./entr file $tmp/file2 > $tmp/exec.out &
+	bgpid=$!
+	pause
+
+	mv $tmp/file2 $tmp/file~
+	pause
+	touch $tmp/file2
+	pause
+	kill -INT $bgpid
+
+	wait $bgpid
+	assert "$(cat $tmp/exec.out)" "$tmp/file2: empty"
+
 try "exec single shell command when a file is removed and replaced"
 	setup
 	ls $tmp/file* | ./entr file $tmp/file2 > $tmp/exec.out &
