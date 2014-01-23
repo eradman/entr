@@ -52,20 +52,10 @@ processed.
     >   markdown2html $F
     > done < notify
 
-Next Release: 2.6
------------------
-
-* Correct the timeout on Linux while consolidating inotify events
-* First match of `/_` provides a shortcut for specifying the first file under
-  watch
-* Build supports Debian with FreeBSD kernel
-* Renamed Makefile.linux-lbsd to Makefile.debian
-* New `-c` option invokes `clear` before running the utility
-* `gcc-lint` make target removed; clang's `scan-build` is much better
-* Support Vim's `backup` option by responding to `NOTE_RENAME`
-
 Releases History
 ----------------
+
+2.6 New command line short cuts `-c` and `/_` _2014-01-23_
 
 2.5 Prevent interactive utilities from paging output _2013-12-30_
 
