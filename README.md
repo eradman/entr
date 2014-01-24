@@ -37,7 +37,7 @@ Rebuild project when source files change
 
 Clear the screen and run tests
 
-      $ ls *.py | entr sh -c 'clear; ./test.py'
+      $ ls *.py | entr -c ./test.py
 
 Launch and auto-reload a node.js server
 
