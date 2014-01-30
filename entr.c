@@ -48,17 +48,17 @@
 /* function pointers */
 
 int (*test_runner_main)(int, char**);
-int (*_stat)(const char *, struct stat *);
-int (*_kill)(pid_t, int);
-int (*_execvp)(const char *, char *const []);
-pid_t (*_waitpid)(pid_t, int *, int);
-pid_t (*_fork)();
-int (*_kevent)(int, const struct kevent *, int, struct kevent *, int , const
+int (*xstat)(const char *, struct stat *);
+int (*xkill)(pid_t, int);
+int (*xexecvp)(const char *, char *const []);
+pid_t (*xwaitpid)(pid_t, int *, int);
+pid_t (*xfork)();
+int (*xkevent)(int, const struct kevent *, int, struct kevent *, int , const
     struct timespec *);
-int (*_mkfifo)(const char *path, mode_t mode);
-int (*_open)(const char *path, int flags, ...);
-char * (*_realpath)(const char *, char *);
-void (*_free)(void *);
+int (*xmkfifo)(const char *path, mode_t mode);
+int (*xopen)(const char *path, int flags, ...);
+char * (*xrealpath)(const char *, char *);
+void (*xfree)(void *);
 
 /* globals */
 
@@ -99,16 +99,16 @@ main(int argc, char *argv[]) {
 		return(test_runner_main(argc, argv));
 
 	/* set up pointers to real functions */
-	_stat = stat;
-	_kevent = kevent;
-	_kill = kill;
-	_execvp = execvp;
-	_waitpid = waitpid;
-	_fork = fork;
-	_mkfifo = mkfifo;
-	_open = open;
-	_realpath = realpath;
-	_free = free;
+	xstat = stat;
+	xkevent = kevent;
+	xkill = kill;
+	xexecvp = execvp;
+	xwaitpid = waitpid;
+	xfork = fork;
+	xmkfifo = mkfifo;
+	xopen = open;
+	xrealpath = realpath;
+	xfree = free;
 
 	/* call usage() if no command is supplied */
 	if (argc < 2) usage();
@@ -152,7 +152,7 @@ main(int argc, char *argv[]) {
 	if (set_fifo(argv+argv_index));
 	else {
 		/* Attempt to open a tty so that editors such as ViM don't complain */
-		if ((ttyfd = _open(_PATH_TTY, O_RDONLY)) == -1)
+		if ((ttyfd = xopen(_PATH_TTY, O_RDONLY)) == -1)
 			warn("can't open %s", _PATH_TTY);
 		if (ttyfd > STDIN_FILENO) {
 			if (dup2(ttyfd, STDIN_FILENO) != 0)
@@ -186,8 +186,8 @@ terminate_utility() {
 		fprintf(stderr, "signal %d sent to pid %d\n", SIGTERM,
 		    child_pid);
 		#endif
-		_kill(child_pid, SIGTERM);
-		_waitpid(child_pid, &status, 0);
+		xkill(child_pid, SIGTERM);
+		xwaitpid(child_pid, &status, 0);
 		child_pid = 0;
 	}
 }
@@ -224,7 +224,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 		if (buf[0] == '\0')
 			continue;
 
-		ret = _stat(buf, &sb);
+		ret = xstat(buf, &sb);
 		if (ret == -1)
 			err(1, "cannot stat '%s'", buf);
 		if (S_ISREG(sb.st_mode) != 0) {
@@ -246,9 +246,9 @@ int
 set_fifo(char *argv[]) {
 	if (argv[0][0] == (int)'+') {
 		strlcpy(fifo.fn, argv[0]+1, MEMBER_SIZE(WatchFile, fn));
-		if (_mkfifo(fifo.fn, S_IRUSR| S_IWUSR) == -1)
+		if (xmkfifo(fifo.fn, S_IRUSR| S_IWUSR) == -1)
 			err(1, "mkfifo '%s' failed", fifo.fn);
-		if ((fifo.fd = _open(fifo.fn, O_WRONLY, 0)) == -1)
+		if ((fifo.fd = xopen(fifo.fn, O_WRONLY, 0)) == -1)
 			err(1, "open fifo '%s' failed", fifo.fn);
 		return 1;
 	}
@@ -313,7 +313,7 @@ run_script(char *argv[]) {
 	for (m=0, i=0, p=arg_buf; i<argc; i++) {
 		new_argv[i] = p;
 		if ((m < 1) && (strcmp(argv[i], "/_")) == 0) {
-			p += strlen(_realpath(files[0]->fn, p));
+			p += strlen(xrealpath(files[0]->fn, p));
 			m++;
 		}
 		else
@@ -321,7 +321,7 @@ run_script(char *argv[]) {
 		p++;
 	}
 
-	pid = _fork();
+	pid = xfork();
 	if (pid == -1)
 		err(errno, "can't fork");
 
@@ -331,7 +331,7 @@ run_script(char *argv[]) {
 
 		/* wait up to 1 second for each file to become available */
 		for (i=0; i < 10; i++) {
-			ret = _execvp(new_argv[0], new_argv);
+			ret = xexecvp(new_argv[0], new_argv);
 			if (errno == ETXTBSY) nanosleep(&delay, NULL);
 			else break;
 		}
@@ -341,10 +341,10 @@ run_script(char *argv[]) {
 	child_pid = pid;
 
 	if (restart_mode == 0)
-		_waitpid(pid, &status, 0);
+		xwaitpid(pid, &status, 0);
 
-        _free(arg_buf);
-        _free(new_argv);
+        xfree(arg_buf);
+        xfree(new_argv);
 }
 
 /*
@@ -359,9 +359,9 @@ watch_file(int kq, WatchFile *file) {
 	/* wait up to 1 second for file to become available */
 	for (i=0; i < 10; i++) {
 		#ifdef O_EVTONLY
-		file->fd = _open(file->fn, O_RDONLY|O_EVTONLY);
+		file->fd = xopen(file->fn, O_RDONLY|O_EVTONLY);
 		#else
-		file->fd = _open(file->fn, O_RDONLY);
+		file->fd = xopen(file->fn, O_RDONLY);
 		#endif
 		if (file->fd == -1) nanosleep(&delay, NULL);
 		else break;
@@ -371,7 +371,7 @@ watch_file(int kq, WatchFile *file) {
 
 	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_ALL, 0,
 	    file);
-	if (_kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+	if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 		err(1, "failed to register VNODE event");
 }
 
@@ -394,9 +394,9 @@ watch_loop(int kq, char *argv[]) {
 
 main:
 	if (reopen_only == 1)
-		nev = _kevent(kq, NULL, 0, evList, 32, &evTimeout);
+		nev = xkevent(kq, NULL, 0, evList, 32, &evTimeout);
 	else
-		nev = _kevent(kq, NULL, 0, evList, 32, NULL);
+		nev = xkevent(kq, NULL, 0, evList, 32, NULL);
 	if (nev == -2) /* test runner */
 		return;
 
@@ -422,7 +422,7 @@ main:
 		    evList[i].fflags & NOTE_RENAME) {
 			EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_DELETE,
 			    NOTE_ALL, 0, file);
-			if (_kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+			if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 				err(1, "failed to remove VNODE event");
 			if ((file->fd != -1) && (close(file->fd) == -1))
 				err(1, "unable to close file");

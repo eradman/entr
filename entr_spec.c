@@ -612,16 +612,16 @@ int test_main(int argc, char *argv[]) {
 	 signal(SIGSEGV, sighandler);
 
 	/* set up pointers to test doubles */
-	_stat = fake_stat;
-	_kevent = fake_kevent;
-	_kill = fake_kill;
-	_waitpid = fake_waitpid;
-	_execvp = fake_execvp;
-	_fork = fake_fork;
-	_mkfifo = fake_mkfifo;
-	_open = fake_open;
-	_realpath = fake_realpath;
-	_free = fake_free;
+	xstat = fake_stat;
+	xkevent = fake_kevent;
+	xkill = fake_kill;
+	xwaitpid = fake_waitpid;
+	xexecvp = fake_execvp;
+	xfork = fake_fork;
+	xmkfifo = fake_mkfifo;
+	xopen = fake_open;
+	xrealpath = fake_realpath;
+	xfree = fake_free;
 
 	/* all tests */
 	run(process_input_01);

@@ -52,6 +52,11 @@ processed.
     >   markdown2html $F
     > done < notify
 
+Next Release: 2.7
+-----------------
+
+* Changed function pointer prefixes to avoid name space collisions in libc
+
 Releases History
 ----------------
 
@@ -59,7 +64,7 @@ Releases History
 
 2.5 Prevent interactive utilities from paging output _2013-12-30_
 
-2.4 License file describes the copyright for the compatibility libraries _2013-12-18_
+2.4 License file describes the copyright for compatibility libraries _2013-12-18_
 
 2.3 Wait for processes to terminate in restart mode _2013-12-16_
 
@@ -67,9 +72,9 @@ Releases History
 
 2.1 Zero-dependency build on Linux using built-in compatibility layer _2013-07-01_
 
-2.0 More portable build; runs on old architectures without C99 support _2013-06-17_
+2.0 Support for old architectures without C99 support _2013-06-17_
 
-1.9 New auto-reload option _2013-04-13_
+1.9 New auto-reload option (`-r`) _2013-04-13_
 
 1.8 Loosing a file under watch is always fatal _2012-12-05_
 
@@ -79,9 +84,9 @@ Releases History
 
 1.5 Support interactive applications by opening a TTY _2012-07-29_
 
-1.4 New regression tests and better Linux support _2012-05-22_
+1.4 New regression tests using `ksh` _2012-05-22_
 
-1.3 New FIFO mode and better support of Mac OS _2012-05-17_
+1.3 New FIFO mode (`+name`) _2012-05-17_
 
 1.2 Support for Linux via libkqueue _2012-04-26_
 
