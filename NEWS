@@ -14,7 +14,7 @@
  - Include CPPFLAGS since some build systems use it to specify hardening criteria
  - Raise ARG_MAX from 4K to 2MB on Linux
  - Handle RENAME events that are not followed by DELETE. This enables us to cope
-   with Vim's backup option.
+   with the backup option in Vim.
 
 == 2.5: December 30, 2013
 
@@ -37,8 +37,7 @@
  - Set process title for blocking events
  - Correct multiple bugs in the inotify->kqueue translation layer
  - Print out detailed instructions if the user provides configure arguments
- - Remove ${DESTDIR} from Makefile...this interferes with OpenBSD's default port
-   build
+ - Remove ${DESTDIR} from Makefile; this interferes with the OpenBSD port
  - Exception handler for SIGSEGV prints file name and line number if a unit test
    fails
  - Reduce the number of attempts to re-open files to 1 second (10 attempts)
@@ -51,8 +50,8 @@
  - inotify(7) events are consolidated for a duration of 50ms as a workaround for
    a bug in glib/gio
  - Execute mode can run a file under watch by retrying if text file is busy
- - Exit non-zero if list of regular files exceeds the hard limit for the user's
-   login class
+ - Exit non-zero if list of regular files exceeds the hard limit set by the
+   current login class
  - Ignore directories and special files. Exit with error code 1 if no regular
    files are provided as input.
 
