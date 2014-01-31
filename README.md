@@ -66,5 +66,5 @@ detailed information on the license used for compatibility libraries.
 
 [kqueue_2]: http://www.openbsd.org/cgi-bin/man.cgi?query=kqueue&manpath=OpenBSD+Current&format=html
 [inotify_7]: http://man.he.net/?section=all&topic=inotify
-[NEWS]: http://www.bitcket.org/eradman/entr/src/default/NEWS
-[LICENSE]: http://www.bitcket.org/eradman/entr/src/default/LICENSE
+[NEWS]: http://www.bitbucket.org/eradman/entr/src/default/NEWS
+[LICENSE]: http://www.bitbucket.org/eradman/entr/src/default/LICENSE
