@@ -1,0 +1,133 @@
+= Next Release: entr-2.8
+
+ - Changed function pointer prefixes from `_` to `x` to avoid name space
+   collisions in libc. Required to build on DragonFlyBSD
+ - Added NEWS file with more detailed release history
+
+= Release History
+
+== 2.6: January 23, 2014
+
+ - Added -c option to clear the screen before calling execvp(3)
+ - Change command line option `{}` to `/_`
+ - Add Makefile.debian, a more complete replacement of Makefile.linux-lbsd
+ - Include CPPFLAGS since some build systems use it to specify hardening criteria
+ - Raise ARG_MAX from 4K to 2MB on Linux
+ - Handle RENAME events that are not followed by DELETE. This enables us to cope
+   with Vim`s backup option.
+
+== 2.5: December 30, 2013
+
+ - Restore full 50ms period for consolidating events on Linux. Required for the
+   Geany editor
+ - Remove use of setproctitle(3), no plans to implement this on Linux and MacOS
+ - New feature: the first occurrence of `{}` on the command line will be
+   replaced with the name of the first file under watch
+ - Set PAGER to an absolute path; note the assignment of this variable in the man page
+ - `make distclean` should also run clean; observed by wavexx@
+ - Prevent interactive utilities from paging output
+
+== 2.4: December 18, 2013
+
+ - Reintroduce ${DESTDIR} for STAGEDIR installation on FreeBSD and pkgsrc
+ - License file describes the copyright holders for the compatibility libraries
+
+== 2.3: December 12, 2013
+
+ - Wait for processes to terminate in restart mode
+ - Set process title for blocking events
+ - Correct multiple bugs in the inotify->kqueue translation layer
+ - Print out detailed instructions if the user provides configure arguments
+ - Remove ${DESTDIR} from Makefile...this interferes with OpenBSD`s default port
+   build
+ - Exception handler for SIGSEGV prints file name and line number if a unit test
+   fails
+ - Reduce the number of attempts to re-open files to 1 second (10 attempts)
+ - Define architecture in Makefile instead of testing for __linux or __APPLE__
+
+== 2.2: August 07, 2013
+
+ - Process every delete or rename event to ensure files remain tracked
+ - Always process DELETE or RENAME events to prevent a files from escaping watch
+ - inotify(7) events are consolidated for a duration of 50ms as a workaround for
+   a bug in glib/gio
+ - Execute mode can run a file under watch by retrying if text file is busy
+ - Exit non-zero if list of regular files exceeds the hard limit for the user`s
+   login class
+ - Ignore directories and special files. Exit with error code 1 if no regular
+   files are provided as input.
+
+== 2.1: July 01, 2013
+
+ - Zero-dependency build on Linux using built-in compatibility layer
+ - Correct build on MacOS
+ - Add poll with optional timeout in order to prevent change events from accumulating while running a command
+ - Invalidate file->fd after inotify event is closed. Do not respond to
+   IN_MOVE_SELF since this event only occurs on Linux NFS mounts
+ - Optional build on GNU/Linux using external compatibility libraries libkqueue and
+ - Regression tests PASS on Linux
+ - Fix bug in finding the correct filename to write to a FIFO
+ - Trial run at using a simplistic inotify-to-kueue notification layer instead of libkqueue
+
+== 2.0: June 17, 2013
+
+ - Support for old architectures without C99 support
+ - More aggressively remove duplicate events
+ - install/uninstall uses DESTDIR to be compatible with pkgsrc
+
+== 1.9: April 13, 2013
+
+ - New auto-reload option (`-r`). Thanks for Kevin Cox for the idea
+ - Fix ./configure shell syntax for FreeBSD 9.0
+   immediately and is sent SIGTERM if an file changes
+ - Use a simple configure script, BSD is the default
+ - Do not make install directories...they should already exist
+ - Man page installation path can be set with MANPATH. MacOS expects it to be
+   under /usr/local/share
+
+== 1.8: May 12, 2013
+
+ - Ensure that loosing a file under watch is results in an error
+
+== 1.7: November 20, 3012
+
+ - Allocate an array based on _SC_OPEN_MAX, not rl.rlim_max. Always terminate
+   fgets(3) input at buffer boundary.
+ - Stat deleted file until success before running a command
+ - Handle SIGTERM and remove named pipe on exit
+
+== 1.6: August 10, 2012
+
+ - Separate makefile for Linux to make building easier
+ - No need for pthreads on BSD
+ - Respond to RENAME and LINK events to improve behavior on NFS
+
+== 1.5: July 29, 2012
+
+ - Support interactive applications by opening a TTY
+ - Successfully stat deleted files before running a command
+
+== 1.4: May 22, 2013
+
+ - Added regression tests
+ - Delete events instead of relying on implicit removal by close(2) for better
+   compatibility with libkqueue on Linux
+
+== 1.3: May 17, 2012
+
+ - Added FIFO support. Thanks to James K. Lowden for the idea
+ - Use min(OPEN_MAX, rl.rlim_max) to be more compatible of Mac OS. Better use of
+   fgets(3) when reading STDIN
+
+== 1.2: April 26, 2012
+
+ - Added support for Linux via libkqueue
+
+== 1.1: April 17, 2012
+
+ - Added support for Mac OS
+
+== 1.0: April 12, 2012
+
+ - Initial release; builds on all major BSD platforms
+
