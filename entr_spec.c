@@ -74,6 +74,7 @@ void reset_state() {
 	memset(&fifo, 0, sizeof(fifo));
 	restart_mode = 0;
 	clear_mode = 0;
+	changed = 0;
 	files = malloc(sizeof(WatchFile *) * max_files);
 	for (i=0; i<max_files; i++)
 		files[i] = malloc(sizeof(WatchFile));
@@ -222,9 +223,8 @@ int process_input_02() {
 int watch_fd_exec_01() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
-	static char fn[] = "/dev/null";
 
-	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
+	strlcpy(files[0]->fn, "arg1", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 
 	/* event 1/1: 4 (-4) 0x21 0x1 0 0x84d5e800 */
@@ -267,9 +267,8 @@ int watch_fd_exec_01() {
 int watch_fd_exec_02() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
-	static char fn[] = "/dev/null";
 
-	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
+	strlcpy(files[0]->fn, "main.py", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 
 	ctx.event.nlist = 1;
@@ -295,11 +294,10 @@ int watch_fd_exec_02() {
 int watch_fd_exec_03() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
-	static char fn[] = "/dev/null";
 
-	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
+	strlcpy(files[0]->fn, "main.py", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
-	strlcpy(files[1]->fn, fn, sizeof(files[1]->fn));
+	strlcpy(files[1]->fn, "util.py", sizeof(files[1]->fn));
 	watch_file(kq, files[1]);
 
 	ctx.event.nlist = 2;
@@ -308,6 +306,7 @@ int watch_fd_exec_03() {
 
 	watch_loop(kq, argv);
 
+	ok(strcmp(changed->fn, "main.py") == 0);
 	ok(ctx.event.nset == 2);
 	ok(ctx.event.Set[0].ident);
 	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
@@ -331,9 +330,8 @@ int watch_fd_exec_03() {
 int watch_fd_exec_04() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
-	static char fn[] = "/dev/null";
 
-	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
+	strlcpy(files[0]->fn, "arg1", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 
 	ctx.event.nlist = 2;
@@ -377,9 +375,8 @@ int watch_fd_exec_04() {
 int watch_fd_exec_05() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
-	static char fn[] = "/dev/null";
 
-	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
+	strlcpy(files[0]->fn, "arg1", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 
 	ctx.event.nlist = 1;
@@ -495,15 +492,15 @@ int set_options_04() {
 int watch_fd_restart_01() {
 	int kq = kqueue();
 	char *argv[] = { "ruby", "main.rb", NULL };
-	static char fn[] = "/dev/null";
 
 	restart_mode = 1;
-	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
+	strlcpy(files[0]->fn, "main.rb", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 
 	ctx.event.nlist = 0;
 	watch_loop(kq, argv);
 
+	ok(strcmp(changed->fn, "main.rb") == 0);
 	ok(ctx.event.nset == 1);
 	ok(ctx.event.Set[0].ident);
 	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
@@ -525,10 +522,9 @@ int watch_fd_restart_01() {
 int watch_fd_restart_02() {
 	int kq = kqueue();
 	char *argv[] = { "ruby", "main.rb", NULL };
-	static char fn[] = "/dev/null";
 
 	restart_mode = 1;
-	strlcpy(files[0]->fn, fn, sizeof(files[0]->fn));
+	strlcpy(files[0]->fn, "main.rb", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 	child_pid = 222;
 
@@ -565,15 +561,16 @@ int watch_fd_restart_02() {
 	return 0;
 }
 /*
- * Substitue '/_' with the first entry supplied via STDIN
+ * Substitue '/_' with the first file that changed
  */
 int run_script_01() {
 	static char *argv[] = { "psql", "-f", "/_", NULL };
-	char input[] = "my.sql\ntest.sql";
+	char input[] = "one.sql\ntwo.sql";
 	FILE *fake;
 
 	fake = fmemopen(input, strlen(input), "r");
 	(void) process_input(fake, files, 3);
+	changed = files[1];
 	run_script(argv);
 
 	ok(ctx.exec.count == 1);
@@ -581,7 +578,7 @@ int run_script_01() {
 	ok(strcmp(ctx.exec.file, "psql") == 0);
 	ok(strcmp(ctx.exec.argv[0], "psql") == 0);
 	ok(strcmp(ctx.exec.argv[1], "-f") == 0);
-	ok(strcmp(ctx.exec.argv[2], "/home/user/my.sql") == 0);
+	ok(strcmp(ctx.exec.argv[2], "/home/user/two.sql") == 0);
 	return 0;
 }
 
@@ -595,6 +592,7 @@ int run_script_02() {
 
 	fake = fmemopen(input, strlen(input), "r");
 	(void) process_input(fake, files, 3);
+	changed = files[0];
 	run_script(argv);
 
 	ok(ctx.exec.count == 1);

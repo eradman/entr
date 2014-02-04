@@ -3,6 +3,8 @@
  - Changed function pointer prefixes from '_' to 'x' to avoid name space
    collisions in libc. Required to build on DragonFlyBSD
  - Added NEWS file with more detailed release history
+ - Using the argument '/_' on the command line is now replaced with the first
+   file that changed
 
 = Release History
 
@@ -23,7 +25,8 @@
  - Remove use of setproctitle(3), no plans to implement this on Linux and MacOS
  - New feature: the first occurrence of '{}' on the command line will be
    replaced with the name of the first file under watch
- - Set PAGER to an absolute path; note the assignment of this variable in the man page
+ - Set PAGER to an absolute path; note the assignment of this variable in the
+   man page
  - Prevent interactive utilities from paging output
 
 == 2.4: December 18, 2013
@@ -59,13 +62,16 @@
 
  - Zero-dependency build on Linux using built-in compatibility layer
  - Correct build on MacOS
- - Add poll with optional timeout in order to prevent change events from accumulating while running a command
+ - Add poll with optional timeout in order to prevent change events from
+   accumulating while running a command
  - Invalidate file->fd after inotify event is closed. Do not respond to
    IN_MOVE_SELF since this event only occurs on Linux NFS mounts
- - Optional build on GNU/Linux using external compatibility libraries libkqueue and
+ - Optional build on GNU/Linux using external compatibility libraries libkqueue
+   and libbsd
  - Regression tests PASS on Linux
  - Fix bug in finding the correct filename to write to a FIFO
- - Trial run at using a simplistic inotify-to-kueue notification layer instead of libkqueue
+ - Trial run at using a simplistic inotify-to-kueue notification layer instead
+   of libkqueue
 
 == 2.0: June 17, 2013
 

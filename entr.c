@@ -65,6 +65,7 @@ void (*xfree)(void *);
 extern int optind;
 extern WatchFile **files;
 WatchFile fifo;
+WatchFile *changed;
 int restart_mode;
 int clear_mode;
 int child_pid;
@@ -277,7 +278,7 @@ set_options(char *argv[]) {
 			clear_mode = 1;
 			break;
 		default:
-		    usage();
+			usage();
 		}
 	}
 	/* no command to run */
@@ -313,7 +314,7 @@ run_script(char *argv[]) {
 	for (m=0, i=0, p=arg_buf; i<argc; i++) {
 		new_argv[i] = p;
 		if ((m < 1) && (strcmp(argv[i], "/_")) == 0) {
-			p += strlen(xrealpath(files[0]->fn, p));
+			p += strlen(xrealpath(changed->fn, p));
 			m++;
 		}
 		else
@@ -343,8 +344,8 @@ run_script(char *argv[]) {
 	if (restart_mode == 0)
 		xwaitpid(pid, &status, 0);
 
-        xfree(arg_buf);
-        xfree(new_argv);
+	xfree(arg_buf);
+	xfree(new_argv);
 }
 
 /*
@@ -389,6 +390,7 @@ watch_loop(int kq, char *argv[]) {
 	struct timespec evTimeout = { 0, 1000000 };
 	int reopen_only = 0;
 
+	changed = files[0]; /* default */
 	if (restart_mode)
 		run_script(argv);
 
@@ -436,6 +438,7 @@ main:
 	/* respond to all events */
 	for (i=0; i<nev && reopen_only == 0; i++) {
 		file = (WatchFile *)evList[i].udata;
+		changed = file;
 		if (evList[i].fflags & NOTE_DELETE ||
 		    evList[i].fflags & NOTE_WRITE  ||
 		    evList[i].fflags & NOTE_EXTEND ||
