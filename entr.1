@@ -42,19 +42,22 @@ support the invocation of interactive utilities.
 .Pp
 .Ar -r
 modifies the exec mode by launching the
-.Ar utility at startup
-and reloading it if one of the source files change. This features requires the
-application to exit if it receives SIGTERM.
+.Ar utility
+at startup and reloading it if one of the source files change. This features
+requires the application to exit if it receives SIGTERM.
 .Nm
 always waits for the
-.Ar utility to exit to ensure that resources such as sockets have been closed.
+.Ar utility
+to exit to ensure that resources such as sockets have been closed.
 .Pp
 A limited number of features are provided simply to save keystrokes.
 .Pp
 .Ar -c
 runs
 .Ic clear
-as located in the system path before running the utility.
+as located in the system path before invoking the
+.Ar utility
+.
 .Pp
 The first occurrence of
 .Ar /_
