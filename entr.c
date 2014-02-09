@@ -328,8 +328,7 @@ run_script(char *argv[]) {
 
 	if (pid == 0) {
 		if (clear_mode == 1)
-			system("clear");
-
+			system("/usr/bin/clear");
 		/* wait up to 1 second for each file to become available */
 		for (i=0; i < 10; i++) {
 			ret = xexecvp(new_argv[0], new_argv);
