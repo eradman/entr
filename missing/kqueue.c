@@ -147,8 +147,6 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			eventlist[n].fflags = fflags;
 			eventlist[n].data = 0;
 			eventlist[n].udata = file_by_descriptor(iev->wd);
-
-			iev = (struct inotify_event *) &buf[pos];
 			n++;
 		}
 	}
