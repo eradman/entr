@@ -1,4 +1,6 @@
-= Next Release: entr-2.8
+= Release History
+
+== 2.7: February 12, 2014
 
  - Changed function pointer prefixes from '_' to 'x' to avoid runtime symbol
    collisions in libc. Required to build on DragonFlyBSD
@@ -8,8 +10,6 @@
  - Man page formatted with more semantically correct markup
  - Multiple events on the same file are merged on Linux to prevent duplicate
    writes to a named pipe
-
-= Release History
 
 == 2.6: January 23, 2014
 
