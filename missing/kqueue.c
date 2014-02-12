@@ -137,12 +137,18 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			if (iev->mask & IN_MOVE_SELF)   fflags |= NOTE_RENAME;
 			if (fflags == 0) continue;
 
+			/* merge events if we're not acting on a new file descriptor */
+			if ((n > 0) && (eventlist[n-1].ident == iev->wd))
+			    fflags |= eventlist[--n].fflags;
+
 			eventlist[n].ident = iev->wd;
 			eventlist[n].filter = EVFILT_VNODE;
 			eventlist[n].flags = 0; 
 			eventlist[n].fflags = fflags;
 			eventlist[n].data = 0;
 			eventlist[n].udata = file_by_descriptor(iev->wd);
+
+			iev = (struct inotify_event *) &buf[pos];
 			n++;
 		}
 	}

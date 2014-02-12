@@ -5,7 +5,9 @@
  - Added this NEWS file to provide detailed release history for port maintainers
  - Using the argument '/_' on the command line is now replaced with the first
    file that changed
- - Man page formatted with more semanticlly correct markup
+ - Man page formatted with more semantically correct markup
+ - Multiple events on the same file are merged on Linux to prevent duplicate
+   writes to a named pipe
 
 = Release History
 

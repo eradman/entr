@@ -43,10 +43,11 @@ support interactive utilities.
 .Ar -r
 modifies the exec mode by launching the
 .Ar utility
-at startup and reloading it if one of the source files change. This features
-requires the application to exit if it receives SIGTERM.
+at startup and reloads it by sending
+.Dv SIGTERM
+if one of the source files change.
 .Nm
-always waits for the
+waits for the
 .Ar utility
 to exit to ensure that resources such as sockets have been closed.
 .Pp

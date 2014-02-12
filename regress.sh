@@ -167,6 +167,22 @@ try "read each filename from a named pipe as they're modified"
 	wait $bgpid
 	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(printf 'file1\nfile2')"
 
+try "ensure that events are consolodated when writing to a named pipe"
+	setup
+	ls $tmp/file* | ./entr +$tmp/notify &
+	bgpid=$!
+	pause
+	cat $tmp/notify > $tmp/namedpipe.out &
+	pause
+
+	mv $tmp/file1 $tmp/_file1
+	mv $tmp/_file1 $tmp/file1
+	pause
+	kill -INT $bgpid
+
+	wait $bgpid
+	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(printf 'file1')"
+
 try "read each filename from a named pipe until a file is removed"
 	setup
 	ls $tmp/file* | ./entr +$tmp/notify 2> /dev/null || code=$? &
@@ -184,6 +200,7 @@ try "read each filename from a named pipe until a file is removed"
 	wait $bgpid
 	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(printf 'file1')"
 	assert $code 1
+
 
 tty > /dev/null && {
 try "exec an interactive utility when a file changes"
