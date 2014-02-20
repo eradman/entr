@@ -41,6 +41,17 @@ tmp=$(cd $(mktemp -d $system_tmp/entr_regress.XXXXXXXXXX); pwd -P)
 	make
 }
 
+# required utilities
+
+utils="ksh hg"
+for util in $utils; do
+	p=$(which $util 2> /dev/null) || {
+		echo "ERROR: could not locate the '$util' utility" >&2
+		echo "Regression tests depend on the following: $utils" >&2
+		exit 1
+	}
+done
+
 # tests
 
 try "no arguments"
@@ -76,6 +87,33 @@ try "watch and exec a program that is overwritten"
 	wait $bgpid
 	assert "$(cat $tmp/exec.out)" "$(ls $tmp/file1)"
 
+try "exec single shell command when an entire stash of files is reverted"
+	setup
+	cp /usr/include/*.h $tmp/
+	cd $tmp
+	hg init
+	hg add *.h
+	hg commit -u "regression" -m "initial checkin"
+	for f in `ls *.h`; do
+		chmod 644 $f
+		echo "" >> $f
+	done
+	cd - > /dev/null
+	pause
+
+	ls $tmp/*.h | ./entr echo "changed" > $tmp/exec.out &
+	bgpid=$!
+	pause
+
+	cd $tmp
+	hg revert *.h
+	cd - > /dev/null
+	pause
+	kill -INT $bgpid
+
+	wait $bgpid
+	assert "$(cat $tmp/exec.out)" "changed"
+
 try "exec single shell command when a file is renamed and replaced"
 	setup
 	ls $tmp/file* | ./entr file $tmp/file2 > $tmp/exec.out &
@@ -83,21 +121,6 @@ try "exec single shell command when a file is renamed and replaced"
 	pause
 
 	mv $tmp/file2 $tmp/file~
-	pause
-	touch $tmp/file2
-	pause
-	kill -INT $bgpid
-
-	wait $bgpid
-	assert "$(cat $tmp/exec.out)" "$tmp/file2: empty"
-
-try "exec single shell command when a file is removed and replaced"
-	setup
-	ls $tmp/file* | ./entr file $tmp/file2 > $tmp/exec.out &
-	bgpid=$!
-	pause
-
-	rm $tmp/file2
 	pause
 	touch $tmp/file2
 	pause

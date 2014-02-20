@@ -388,19 +388,23 @@ watch_loop(int kq, char *argv[]) {
 	int i;
 	struct timespec evTimeout = { 0, 1000000 };
 	int reopen_only = 0;
+	int settle_only = 0;
+	int hit = 0;
 
 	changed = files[0]; /* default */
 	if (restart_mode)
 		run_script(argv);
 
 main:
-	if (reopen_only == 1)
+	if ((reopen_only == 1) || settle_only == 1)
 		nev = xkevent(kq, NULL, 0, evList, 32, &evTimeout);
 	else
 		nev = xkevent(kq, NULL, 0, evList, 32, NULL);
-	if (nev == -2) /* test runner */
+	/* escape for test runner */
+	if ((nev == -2) && (settle_only == 0))
 		return;
 
+	/* memorize the first file that was changed */
 	for (i=0; i<nev; i++) {
 		#ifdef DEBUG
 		fprintf(stderr, "event %d/%d: %d (%d) 0x%x 0x%x %d %p\n", i+1,
@@ -414,9 +418,14 @@ main:
 		#endif
 		if (evList[i].filter != EVFILT_VNODE)
 			continue;
+		if ((reopen_only == 0) && (settle_only == 0)) {
+			file = (WatchFile *)evList[i].udata;
+			changed = file;
+		}
 	}
 
 	/* reopen all files that were removed */
+	settle_only = 0;
 	for (i=0; i<nev; i++) {
 		file = (WatchFile *)evList[i].udata;
 		if (evList[i].fflags & NOTE_DELETE ||
@@ -428,32 +437,33 @@ main:
 			if ((file->fd != -1) && (close(file->fd) == -1))
 				err(1, "unable to close file");
 			watch_file(kq, file);
+			settle_only = 1;
 		}
 	}
 	if (reopen_only == 1) {
 		reopen_only = 0;
 		goto main;
 	}
+
 	/* respond to all events */
 	for (i=0; i<nev && reopen_only == 0; i++) {
-		file = (WatchFile *)evList[i].udata;
-		changed = file;
 		if (evList[i].fflags & NOTE_DELETE ||
 		    evList[i].fflags & NOTE_WRITE  ||
 		    evList[i].fflags & NOTE_EXTEND ||
 		    evList[i].fflags & NOTE_RENAME) {
-			if (fifo.fd == 0) {
-				run_script(argv);
-				/* don't process any more events */
-				i=nev;
-				reopen_only = 1;
-			}
+			if (fifo.fd == 0) hit = 1;
 			else {
 				write(fifo.fd, file->fn, strlen(file->fn));
 				write(fifo.fd, "\n", 1);
 				fsync(fifo.fd);
 			}
 		}
+	}
+	if (settle_only == 1)
+		goto main;
+	if (hit == 1) {
+		hit = 0; run_script(argv);
+		reopen_only = 1;
 	}
 	goto main;
 }

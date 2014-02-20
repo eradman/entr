@@ -1,3 +1,10 @@
+= Next Release: 2.8
+
+ - Iteratively check for new file system events using a 1ms timeout after a file
+   has been renamed or removed in order to prevent the utility from being
+   executed before successive changes from a version control system have
+   completed.
+
 = Release History
 
 == 2.7: February 12, 2014
