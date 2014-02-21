@@ -296,7 +296,7 @@ run_script(char *argv[]) {
 	int pid;
 	int i, m;
 	int ret, status;
-	struct timespec delay = { 0, 100 * 1000000 };
+	struct timespec delay = { 0, 1000000 };
 	char **new_argv;
 	char *p, *arg_buf;
 	int argc;
@@ -329,7 +329,7 @@ run_script(char *argv[]) {
 	if (pid == 0) {
 		if (clear_mode == 1)
 			system("/usr/bin/clear");
-		/* wait up to 1 second for each file to become available */
+		/* wait up to 1 seconds for each file to become available */
 		for (i=0; i < 10; i++) {
 			ret = xexecvp(new_argv[0], new_argv);
 			if (errno == ETXTBSY) nanosleep(&delay, NULL);
