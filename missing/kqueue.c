@@ -109,8 +109,6 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	if (timeout != 0 && (poll(&pfd, 1, timeout->tv_nsec/1000000) == 0))
 		return 0;
 
-	/* Consolidate events over 50ms since some Linux apps write to a
-	   file before deleting it */
 	n = 0;
 	do {
 		pos = 0;
@@ -150,7 +148,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			n++;
 		}
 	}
-	while ((poll(&pfd, 1, 50) > 0));
+	while ((poll(&pfd, 1, 0) > 0));
 
 	return n;
 }
