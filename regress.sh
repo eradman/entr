@@ -72,17 +72,6 @@ try "no regular files provided as input"
 	rmdir $tmp/dir1
 	assert $code 1
 
-try "watch and exec a program that is overwritten"
-	setup
-	cp $(which ls) $tmp/ls
-	chmod 755 $tmp/ls
-	echo $tmp/ls | ./entr $tmp/ls $tmp/file1 > $tmp/exec.out &
-	bgpid=$! ; zz
-	cp $(which ls) $tmp/ls ; zz
-	kill -INT $bgpid
-	wait $bgpid
-	assert "$(cat $tmp/exec.out)" "$(ls $tmp/file1)"
-
 try "exec single utility when an entire stash of files is reverted"
 	setup
 	cp /usr/include/*.h $tmp/
@@ -202,6 +191,19 @@ try "exec single shell utility using utility substitution"
 	kill -INT $bgpid
 	wait $bgpid
 	assert "$(cat $tmp/exec.out)" "$tmp/file2: ASCII text"
+
+try "watch and exec a program that is overwritten"
+	setup
+	touch $tmp/script; chmod 755 $tmp/script
+	echo $tmp/script | ./entr $tmp/script $tmp/file1 > $tmp/exec.out &
+	bgpid=$! ; zz
+	cat > $tmp/script <<-EOF
+	#!/bin/sh
+	echo vroom
+	EOF
+	zz ; kill -INT $bgpid
+	wait $bgpid
+	assert "$(cat $tmp/exec.out)" "vroom"
 
 tty > /dev/null && {
 try "exec an interactive utility when a file changes"
