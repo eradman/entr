@@ -108,9 +108,9 @@ try "exec utility when a file is written by Vim"
 	setup
 	ls $tmp/file* | ./entr echo "changed" > $tmp/exec.out &
 	bgpid=$! ; zz
-	vim -u NONE -N \
-		-c ":r!date" \
-		-c ":wq" $tmp/file1 ; zz
+	vim -e -s -u NONE -N \
+	    -c ":r!date" \
+	    -c ":wq" $tmp/file1 ; zz
 	kill -INT $bgpid
 	wait $bgpid
 	assert "$(cat $tmp/exec.out)" "changed"
@@ -119,10 +119,10 @@ try "exec shell utility when a file is written by Vim with 'backup'"
 	setup
 	ls $tmp/file* | ./entr echo "changed" > $tmp/exec.out &
 	bgpid=$! ; zz
-	vim -u NONE -N \
-		-c ":set backup" \
-		-c ":r!date" \
-		-c ":wq" $tmp/file1 ; zz
+	vim -e -s -u NONE -N \
+	    -c ":set backup" \
+	    -c ":r!date" \
+	    -c ":wq" $tmp/file1 ; zz
 	kill -INT $bgpid
 	wait $bgpid
 	assert "$(cat $tmp/exec.out)" "changed"
@@ -131,10 +131,10 @@ try "exec shell utility when a file is written by Vim with 'nowritebackup'"
 	setup
 	ls $tmp/file* | ./entr echo "changed" > $tmp/exec.out &
 	bgpid=$! ; zz
-	vim -u NONE -N \
-		-c ":set nowritebackup" \
-		-c ":r!date" \
-		-c ":wq" $tmp/file1 ; zz
+	vim -e -s -u NONE -N \
+	    -c ":set nowritebackup" \
+	    -c ":r!date" \
+	    -c ":wq" $tmp/file1 ; zz
 	kill -INT $bgpid
 	wait $bgpid
 	assert "$(cat $tmp/exec.out)" "changed"
