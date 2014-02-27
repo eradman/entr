@@ -85,7 +85,7 @@ try "watch and exec a program that is overwritten"
 
 try "exec single utility when an entire stash of files is reverted"
 	setup
-	find /usr/include -name '*.h' | head -n 150 | xargs -I % cp % $tmp/
+	cp /usr/include/*.h $tmp/
 	cd $tmp
 	hg init
 	hg add *.h
