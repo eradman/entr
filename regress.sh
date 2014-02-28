@@ -149,6 +149,16 @@ try "exec single shell utility when two files change simultaneously"
 	wait $bgpid
 	assert "$(cat $tmp/exec.out)" "ping"
 
+try "exec using subsituting changed file argument"
+	setup
+	ls $tmp/file* | ./entr cat /_ > $tmp/exec.out &
+	bgpid=$! ; zz
+	echo 123 >> $tmp/file1
+	echo 456 >> $tmp/file2 ; zz
+	kill -INT $bgpid
+	wait $bgpid
+	assert "$(cat $tmp/exec.out)" "123"
+
 try "read each filename from a named pipe as they're modified"
 	setup
 	ls $tmp/file* | ./entr +$tmp/notify &

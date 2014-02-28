@@ -74,7 +74,7 @@ void reset_state() {
 	memset(&fifo, 0, sizeof(fifo));
 	restart_mode = 0;
 	clear_mode = 0;
-	changed = 0;
+	leading_edge = 0;
 	files = malloc(sizeof(WatchFile *) * max_files);
 	for (i=0; i<max_files; i++)
 		files[i] = malloc(sizeof(WatchFile));
@@ -306,7 +306,7 @@ int watch_fd_exec_03() {
 
 	watch_loop(kq, argv);
 
-	ok(strcmp(changed->fn, "main.py") == 0);
+	ok(strcmp(leading_edge->fn, "main.py") == 0);
 	ok(ctx.event.nset == 2);
 	ok(ctx.event.Set[0].ident);
 	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
@@ -500,7 +500,7 @@ int watch_fd_restart_01() {
 	ctx.event.nlist = 0;
 	watch_loop(kq, argv);
 
-	ok(strcmp(changed->fn, "main.rb") == 0);
+	ok(strcmp(leading_edge->fn, "main.rb") == 0);
 	ok(ctx.event.nset == 1);
 	ok(ctx.event.Set[0].ident);
 	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
@@ -561,17 +561,17 @@ int watch_fd_restart_02() {
 	return 0;
 }
 /*
- * Substitue '/_' with the first file that changed
+ * Substitue '/_' with the first file that leading_edge
  */
-int run_script_01() {
+int run_utility_01() {
 	static char *argv[] = { "psql", "-f", "/_", NULL };
 	char input[] = "one.sql\ntwo.sql";
 	FILE *fake;
 
 	fake = fmemopen(input, strlen(input), "r");
 	(void) process_input(fake, files, 3);
-	changed = files[1];
-	run_script(argv);
+	leading_edge = files[1];
+	run_utility(argv);
 
 	ok(ctx.exec.count == 1);
 	ok(ctx.exec.file != 0);
@@ -585,15 +585,15 @@ int run_script_01() {
 /*
  * Substitue only the first occurance of '/_'
  */
-int run_script_02() {
+int run_utility_02() {
 	static char *argv[] = { "/_", "/_", NULL };
 	char input[] = "one.sh\ntwo.sh";
 	FILE *fake;
 
 	fake = fmemopen(input, strlen(input), "r");
 	(void) process_input(fake, files, 3);
-	changed = files[0];
-	run_script(argv);
+	leading_edge = files[0];
+	run_utility(argv);
 
 	ok(ctx.exec.count == 1);
 	ok(ctx.exec.file != 0);
@@ -636,8 +636,8 @@ int test_main(int argc, char *argv[]) {
 	run(set_options_04);
 	run(watch_fd_restart_01);
 	run(watch_fd_restart_02);
-	run(run_script_01);
-	run(run_script_02);
+	run(run_utility_01);
+	run(run_utility_02);
 
 	/* TODO: find out how we broke stdout */
 	fprintf(stderr, "%d of %d tests PASSED\n", tests_run-failures, tests_run);
