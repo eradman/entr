@@ -137,7 +137,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 
 			/* merge events if we're not acting on a new file descriptor */
 			if ((n > 0) && (eventlist[n-1].ident == iev->wd))
-			    fflags |= eventlist[--n].fflags;
+				fflags |= eventlist[--n].fflags;
 
 			eventlist[n].ident = iev->wd;
 			eventlist[n].filter = EVFILT_VNODE;
@@ -148,7 +148,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			n++;
 		}
 	}
-	while ((poll(&pfd, 1, 0) > 0));
+	while ((poll(&pfd, 1, 50) > 0));
 
 	return n;
 }

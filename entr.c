@@ -426,7 +426,7 @@ main:
 		#endif
 		if (evList[i].filter != EVFILT_VNODE)
 			continue;
-		if ((reopen_only == 0) && (collate_only == 0)) {
+		if ((i == 0) && (reopen_only == 0) && (collate_only == 0)) {
 			file = (WatchFile *)evList[i].udata;
 			leading_edge = file;
 		}

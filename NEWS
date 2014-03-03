@@ -4,12 +4,12 @@
    has been renamed or removed in order to prevent the utility from being
    executed before successive changes from a version control system have
    completed.
- - Events are no longer blindly queued for 50ms on Linux; the above method
-   is used on all platforms.
- - Regression tests are now system tests that use real utilities including 'hg'
-   and 'vim'
+ - Regression tests are now system tests that depend on and use Vim and
+   Mercurial
  - Timing on regression tests has been tightened to only support real hardware;
    they are not expected to pass in emulated environments.
+ - More correctly identify the first file to trigger a file change notification
+ - Regression tests no longer require ksh, /bin/sh works fine
 
 = Release History
 
