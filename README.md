@@ -28,6 +28,11 @@ Installation - Ports
 
 Available in OpenBSD ports, FreeBSD ports, and pkgsrc under `sysutils/entr`.
 
+Installation - Debian
+---------------------
+
+    apt-get install entr
+
 Examples from `man entr`
 ------------------------
 

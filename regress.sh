@@ -41,7 +41,7 @@ tmp=$(cd $(mktemp -d $system_tmp/entr_regress.XXXXXXXXXX); pwd -P)
 
 # required utilities
 
-utils="ksh hg vim"
+utils="hg vim"
 for util in $utils; do
 	p=$(which $util 2> /dev/null) || {
 		echo "ERROR: could not locate the '$util' utility" >&2
