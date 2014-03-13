@@ -10,6 +10,7 @@
    they are not expected to pass in emulated environments.
  - More correctly identify the first file to trigger a file change notification
  - Regression tests no longer require ksh
+ - Renamed regress.sh to system_test.sh
 
 = Release History
 
