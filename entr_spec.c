@@ -33,7 +33,6 @@ struct {
 		struct kevent List[32];
 		int nset;
 		int nlist;
-		int decrement;
 	} event;
 	struct {
 		int pid;
@@ -83,7 +82,6 @@ void reset_state() {
 	for (i=0; i<max_files; i++)
 		memset(files[i], 0, sizeof(WatchFile));
 	memset(&ctx, 0, sizeof(ctx));
-	ctx.event.decrement = 1;
 }
 
 void sighandler(int signum) {
@@ -131,9 +129,16 @@ fake_free(void *ptr) {
 
 /* mock objects */
 
+/*
+ * kevent(2) is used to change and retrieve events.
+ * This version always returns at most 2 events
+ */
 int
 fake_kevent(int kq, const struct kevent *changelist, int nchanges, struct
     kevent *eventlist, int nevents, const struct timespec *timeout) {
+	int decrement;
+	decrement = MIN(ctx.event.nlist, 2);
+
 	/* record each event that the application sets */
 	if (nchanges > 0) {
 		memcpy(&ctx.event.Set[ctx.event.nset], changelist,
@@ -145,8 +150,8 @@ fake_kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	if ((nevents > 0) && (ctx.event.nlist > 0)) {
 		memcpy(eventlist, &ctx.event.List,
 		    sizeof(struct kevent) * ctx.event.nlist);
-		ctx.event.nlist -= ctx.event.decrement;
-		return ctx.event.decrement;
+		ctx.event.nlist -= decrement;
+		return decrement;
 	}
 	/* no more events, use bogus return code to cause the main loop to exit */
 	return -2;
@@ -289,7 +294,7 @@ int watch_fd_exec_02() {
 }
 
 /*
- * Write to two files at once
+ * Write to three files at once
  */
 int watch_fd_exec_03() {
 	int kq = kqueue();
@@ -299,15 +304,18 @@ int watch_fd_exec_03() {
 	watch_file(kq, files[0]);
 	strlcpy(files[1]->fn, "util.py", sizeof(files[1]->fn));
 	watch_file(kq, files[1]);
+	strlcpy(files[2]->fn, "app.py", sizeof(files[2]->fn));
+	watch_file(kq, files[2]);
 
-	ctx.event.nlist = 2;
+	ctx.event.nlist = 3;
 	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_WRITE, 0, files[0]);
 	EV_SET(&ctx.event.List[1], files[1]->fd, EVFILT_VNODE, 0, NOTE_WRITE, 0, files[1]);
+	EV_SET(&ctx.event.List[2], files[1]->fd, EVFILT_VNODE, 0, NOTE_WRITE, 0, files[2]);
 
 	watch_loop(kq, argv);
 
 	ok(strcmp(leading_edge->fn, "main.py") == 0);
-	ok(ctx.event.nset == 2);
+	ok(ctx.event.nset == 3);
 	ok(ctx.event.Set[0].ident);
 	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
 	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
@@ -335,7 +343,6 @@ int watch_fd_exec_04() {
 	watch_file(kq, files[0]);
 
 	ctx.event.nlist = 2;
-	ctx.event.decrement = 2;
 	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_WRITE, 0, files[0]);
 	EV_SET(&ctx.event.List[1], files[0]->fd, EVFILT_VNODE, 0, NOTE_DELETE, 0, files[0]);
 
@@ -380,7 +387,6 @@ int watch_fd_exec_05() {
 	watch_file(kq, files[0]);
 
 	ctx.event.nlist = 1;
-	ctx.event.decrement = 1;
 	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_RENAME, 0, files[0]);
 
 	watch_loop(kq, argv);

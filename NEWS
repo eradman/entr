@@ -9,7 +9,7 @@
  - Timing on regression tests has been tightened to only support real hardware;
    they are not expected to pass in emulated environments.
  - More correctly identify the first file to trigger a file change notification
- - Regression tests no longer require ksh, /bin/sh works fine
+ - Regression tests no longer require ksh
 
 = Release History
 
