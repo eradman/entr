@@ -1,4 +1,6 @@
-= Next Release: 2.8
+= Release History
+
+== 2.8: March 15, 2014
 
  - Iteratively check for new file system events using a 1ms timeout after a file
    has been renamed or removed in order to prevent the utility from being
@@ -11,8 +13,6 @@
  - More correctly identify the first file to trigger a file change notification
  - Regression tests no longer require ksh
  - Renamed regress.sh to system_test.sh
-
-= Release History
 
 == 2.7: February 12, 2014
 
