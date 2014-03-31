@@ -1,7 +1,7 @@
 = Next Relase: 2.9
 
-- RPM package by @funollet
-- Makefile.kfreebsd moved to contrib/
+ - RPM package by @funollet
+ - Moved alternate Makefiles to contrib/
 
 = Release History
 
