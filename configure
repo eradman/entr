@@ -2,15 +2,15 @@
 
 copy_mk()
 {
-    cmd="cp Makefile.$1 Makefile"
+    cmd="cp $1/Makefile.$2 Makefile"
     echo "$cmd"; $cmd
 }
 
 case `uname` in
-    Darwin)       copy_mk macos ;;
-    Linux)        copy_mk linux ;;
-    GNU/kFreeBSD) copy_mk kfreebsd ;;
-    *)            copy_mk bsd ;;
+    Darwin)       copy_mk .         macos ;;
+    Linux)        copy_mk .         linux ;;
+    GNU/kFreeBSD) copy_mk ./contrib kfreebsd ;;
+    *)            copy_mk .         bsd ;;
 esac
 
 [ $# = 0 ] && exit 0

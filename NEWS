@@ -1,3 +1,8 @@
+= Next Relase: 2.9
+
+- RPM package by @funollet
+- Makefile.kfreebsd moved to contrib/
+
 = Release History
 
 == 2.8: March 15, 2014
