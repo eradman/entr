@@ -420,6 +420,39 @@ int watch_fd_exec_05() {
 }
 
 /*
+ * Truncate a file
+ */
+int watch_fd_exec_06() {
+	int kq = kqueue();
+	static char *argv[] = { "prog", "arg1", "arg2", NULL };
+
+	strlcpy(files[0]->fn, "main.py", sizeof(files[0]->fn));
+	watch_file(kq, files[0]);
+
+	ctx.event.nlist = 3;
+	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_TRUNCATE, 0, files[0]);
+
+	watch_loop(kq, argv);
+
+	ok(strcmp(leading_edge->fn, "main.py") == 0);
+	ok(ctx.event.nset == 1);
+	ok(ctx.event.Set[0].ident);
+	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
+	ok(ctx.event.Set[0].fflags == (NOTE_ALL));
+	ok(ctx.event.Set[0].data == 0);
+	ok(ctx.event.Set[0].udata == files[0]->fn);
+
+	ok(ctx.exec.count == 1);
+	ok(ctx.exec.file != 0);
+	ok(strcmp(ctx.exec.file, "prog") == 0);
+	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
+	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
+	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
+	return 0;
+}
+
+/*
  * FIFO mode; triggerd by a leading '+' on the filename
  */
 int set_fifo_01() {
@@ -635,6 +668,7 @@ int test_main(int argc, char *argv[]) {
 	run(watch_fd_exec_03);
 	run(watch_fd_exec_04);
 	run(watch_fd_exec_05);
+	run(watch_fd_exec_06);
 	run(set_fifo_01);
 	run(set_options_01);
 	run(set_options_02);

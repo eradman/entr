@@ -2,6 +2,7 @@
 
  - RPM package by @funollet
  - Moved alternate Makefiles to contrib/
+ - Trigger actions when a file is truncated
 
 = Release History
 

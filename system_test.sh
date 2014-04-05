@@ -70,6 +70,16 @@ try "no regular files provided as input"
 	rmdir $tmp/dir1
 	assert $code 1
 
+try "exec utility when a file is opened for write and then closed"
+	setup
+	echo "---" > $tmp/file1
+	ls $tmp/file* | ./entr echo "changed" > $tmp/exec.out &
+	bgpid=$! ; zz
+	: > $tmp/file1 ; zz
+	kill -INT $bgpid
+	wait $bgpid
+	assert "$(cat $tmp/exec.out)" "changed"
+
 try "exec single utility when an entire stash of files is reverted"
 	setup
 	cp /usr/include/*.h $tmp/
