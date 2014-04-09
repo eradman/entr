@@ -2,7 +2,8 @@
 
  - RPM package by @funollet
  - Moved alternate Makefiles to contrib/
- - Trigger actions when a file is truncated
+ - Trigger actions when a file is truncated on BSD
+ - Improved format of DEBUG messages
 
 = Release History
 

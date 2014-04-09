@@ -415,7 +415,8 @@ main:
 
 	for (i=0; i<nev; i++) {
 		#ifdef DEBUG
-		fprintf(stderr, "event %d/%d: %d (%d) 0x%x 0x%x %d %p\n", i+1,
+		fprintf(stderr, "event %d/%d: ident %d filter %d flags 0x%x "
+		    "fflags 0x%x udata %d udata %p\n", i+1,
 		    nev,
 		    evList[i].ident,
 		    evList[i].filter,
