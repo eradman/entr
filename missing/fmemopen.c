@@ -23,7 +23,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* externs from from "local.h" */
 FILE	*__sfp(void);
+int	__sflags(const char *, int *);
 
 struct state {
 	char		*string;	/* actual stream */

@@ -4,6 +4,7 @@
  - Moved alternate Makefiles to contrib/
  - Trigger actions when a file is truncated on BSD
  - Improved format of DEBUG messages
+ - Added missing extern for missing/fmemopen.c to avoid warning on MacOS 10.7+
 
 = Release History
 
