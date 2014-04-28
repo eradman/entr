@@ -79,7 +79,6 @@ try "exec utility when a file is opened for write and then closed"
 	: > $tmp/file1 ; zz
 	kill -INT $bgpid
 	wait $bgpid
-	assert "$(cat $tmp/exec.out)" "changed"
 	if [ `uname` == "Darwin" ]; then
 		skip "MacOS does not support NOTE_TRUNCATE"
 	else
