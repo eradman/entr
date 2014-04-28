@@ -25,6 +25,7 @@ function assert {
 	[[ "$1" == "$2" ]] && { printf "."; return; }
 	printf "\nFAIL: $this\n'$1' != '$2'\n"; exit 1
 }
+function skip { printf "s"; }
 
 function zz { sleep 0.25; }
 function setup { rm -f $tmp/*.out $tmp/file?; touch $tmp/file{1,2}; zz; }
@@ -79,6 +80,11 @@ try "exec utility when a file is opened for write and then closed"
 	kill -INT $bgpid
 	wait $bgpid
 	assert "$(cat $tmp/exec.out)" "changed"
+	if [ `uname` == "Darwin" ]; then
+		skip "MacOS does not support NOTE_TRUNCATE"
+	else
+		assert "$(cat $tmp/exec.out)" "changed"
+	fi
 
 try "exec single utility when an entire stash of files is reverted"
 	setup

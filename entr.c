@@ -38,7 +38,7 @@
 
 /* events to watch for */
 
-#define NOTE_ALL NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND|NOTE_RENAME|NOTE_TRUNCATE
+#define NOTE_ALL NOTE_DELETE|NOTE_WRITE|NOTE_RENAME|NOTE_TRUNCATE
 
 /* shortcuts */
 
@@ -456,7 +456,6 @@ main:
 	for (i=0; i<nev && reopen_only == 0; i++) {
 		if (evList[i].fflags & NOTE_DELETE ||
 		    evList[i].fflags & NOTE_WRITE  ||
-		    evList[i].fflags & NOTE_EXTEND ||
 		    evList[i].fflags & NOTE_RENAME ||
 		    evList[i].fflags & NOTE_TRUNCATE) {
 			if (fifo.fd == 0)
@@ -465,6 +464,7 @@ main:
 				write(fifo.fd, file->fn, strlen(file->fn));
 				write(fifo.fd, "\n", 1);
 				fsync(fifo.fd);
+				reopen_only = 1;
 			}
 		}
 	}
