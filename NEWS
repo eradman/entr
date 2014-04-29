@@ -5,8 +5,8 @@
  - Trigger actions when a file is truncated on BSD
  - Improved format of DEBUG messages
  - Added missing extern for missing/fmemopen.c to avoid warning on MacOS 10.7+
- - No longer register NOTE_EXTEND; this event is not merged with NOTE_WRITE on
-   MacOS
+ - No longer register NOTE_EXTEND; this event is not always merged with
+   NOTE_WRITE on MacOS
 
 = Release History
 
