@@ -43,6 +43,9 @@ struct {
 		int fd;
 		const char *path;
 	} open;
+	struct {
+		int count;
+	} exit;
 } ctx;
 
 /* test runner */
@@ -73,6 +76,7 @@ void reset_state() {
 	memset(&fifo, 0, sizeof(fifo));
 	restart_mode = 0;
 	clear_mode = 0;
+	dirwatch_mode = 0;
 	leading_edge = 0;
 	files = malloc(sizeof(WatchFile *) * max_files);
 	for (i=0; i<max_files; i++)
@@ -182,6 +186,11 @@ fake_open(const char *path, int flags, ...) {
 	return ctx.open.fd;
 }
 
+void
+fake_graceful_exit(const char *msg) {
+	ctx.exit.count++;
+}
+
 
 /* tests */
 
@@ -219,6 +228,33 @@ int process_input_02() {
 	ok(strcmp(files[0]->fn, "file1") == 0);
 	ok(strcmp(files[1]->fn, "file2") == 0);
 	ok(strcmp(files[2]->fn, "file3") == 0);
+	return 0;
+}
+
+/*
+ * Read a list of use supplied files and directories
+ */
+int process_input_03() {
+	int n_files;
+	FILE *fake;
+	char input[] = "dir1\nfile1\nfile2\nfile3";
+
+	dirwatch_mode = 1;
+	fake = fmemopen(input, strlen(input), "r");
+	n_files = process_input(fake, files, 32);
+
+	ok(n_files == 5);
+	ok(strcmp(files[0]->fn, "dir1") == 0);
+	ok(strcmp(files[1]->fn, "file1") == 0);
+	ok(strcmp(files[2]->fn, ".") == 0);
+	ok(strcmp(files[3]->fn, "file2") == 0);
+	ok(strcmp(files[4]->fn, "file3") == 0);
+
+	ok(files[0]->is_dir == 1); /* dir1  */
+	ok(files[1]->is_dir == 0); /* file1 */
+	ok(files[2]->is_dir == 1); /* .     */
+	ok(files[3]->is_dir == 0); /* file2 */
+	ok(files[4]->is_dir == 0); /* file3 */
 	return 0;
 }
 
@@ -263,6 +299,7 @@ int watch_fd_exec_01() {
 	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
 	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
 	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
+	ok(ctx.exit.count == 0);
 	return 0;
 }
 
@@ -290,6 +327,7 @@ int watch_fd_exec_02() {
 
 	ok(ctx.exec.count == 0);
 	ok(ctx.exec.file == 0);
+	ok(ctx.exit.count == 0);
 	return 0;
 }
 
@@ -329,6 +367,7 @@ int watch_fd_exec_03() {
 	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
 	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
 	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
+	ok(ctx.exit.count == 0);
 	return 0;
 }
 
@@ -373,6 +412,7 @@ int watch_fd_exec_04() {
 	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
 	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
 	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
+	ok(ctx.exit.count == 0);
 	return 0;
 }
 
@@ -416,6 +456,92 @@ int watch_fd_exec_05() {
 	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
 	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
 	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
+	ok(ctx.exit.count == 0);
+	return 0;
+}
+
+/*
+ * Add a file to a directory
+ */
+int watch_fd_exec_06() {
+	int kq = kqueue();
+	static char *argv[] = { "prog", "arg1", "arg2", NULL };
+
+	strlcpy(files[0]->fn, ".", sizeof(files[0]->fn));
+	files[0]->is_dir = 1;
+	strlcpy(files[1]->fn, "run.sh", sizeof(files[0]->fn));
+	watch_file(kq, files[0]);
+	watch_file(kq, files[1]);
+
+	dirwatch_mode = 1;
+	ctx.event.nlist = 1;
+	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_WRITE, 0, files[0]);
+
+	watch_loop(kq, argv);
+
+	ok(ctx.event.nset == 2);
+	ok(ctx.event.Set[0].ident);
+	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
+	ok(ctx.event.Set[0].fflags == (NOTE_ALL));
+	ok(ctx.event.Set[0].udata == files[0]->fn);
+
+	ok(ctx.event.Set[1].ident);
+	ok(ctx.event.Set[1].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[1].flags == (EV_CLEAR|EV_ADD)); /* open */
+	ok(ctx.event.Set[1].fflags == (NOTE_ALL));
+	ok(ctx.event.Set[1].udata == files[1]->fn);
+
+	ok(ctx.exec.count == 1);
+	ok(ctx.exec.file != 0);
+	ok(strcmp(ctx.exec.file, "prog") == 0);
+	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
+	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
+	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
+	ok(ctx.exit.count == 1);
+	return 0;
+}
+
+/*
+ * Add a file to a directory and write to a file
+ */
+int watch_fd_exec_07() {
+	int kq = kqueue();
+	static char *argv[] = { "prog", "arg1", "arg2", NULL };
+
+	strlcpy(files[0]->fn, ".", sizeof(files[0]->fn));
+	files[0]->is_dir = 1;
+	strlcpy(files[1]->fn, "run.sh", sizeof(files[0]->fn));
+	watch_file(kq, files[0]);
+	watch_file(kq, files[1]);
+
+	dirwatch_mode = 1;
+	ctx.event.nlist = 2;
+	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_WRITE, 0, files[0]);
+	EV_SET(&ctx.event.List[1], files[1]->fd, EVFILT_VNODE, 0, NOTE_WRITE, 0, files[1]);
+
+	watch_loop(kq, argv);
+
+	ok(ctx.event.nset == 2);
+	ok(ctx.event.Set[0].ident);
+	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
+	ok(ctx.event.Set[0].fflags == (NOTE_ALL));
+	ok(ctx.event.Set[0].udata == files[0]->fn);
+
+	ok(ctx.event.Set[1].ident);
+	ok(ctx.event.Set[1].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[1].flags == (EV_CLEAR|EV_ADD)); /* open */
+	ok(ctx.event.Set[1].fflags == (NOTE_ALL));
+	ok(ctx.event.Set[1].udata == files[1]->fn);
+
+	ok(ctx.exec.count == 1);
+	ok(ctx.exec.file != 0);
+	ok(strcmp(ctx.exec.file, "prog") == 0);
+	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
+	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
+	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
+	ok(ctx.exit.count == 0); /* a regular file was modified, do not exit */
 	return 0;
 }
 
@@ -445,6 +571,7 @@ int set_options_01() {
 	ok(argv_offset == 1);
 	ok(restart_mode == 0);
 	ok(clear_mode == 0);
+	ok(dirwatch_mode == 0);
 	return 0;
 }
 
@@ -459,6 +586,8 @@ int set_options_02() {
 
 	ok(argv_offset == 2);
 	ok(restart_mode == 1);
+	ok(clear_mode == 0);
+	ok(dirwatch_mode == 0);
 	return 0;
 }
 
@@ -474,13 +603,30 @@ int set_options_03() {
 	ok(argv_offset == 2);
 	ok(restart_mode == 0);
 	ok(clear_mode == 1);
+	ok(dirwatch_mode == 0);
+	return 0;
+}
+
+/*
+ * Parse command line arguments with the directory watch option
+ */
+int set_options_04() {
+	int argv_offset;
+	char *argv[] = { "entr", "-d", "ruby", "test4.rb", NULL };
+	
+	argv_offset = set_options(argv);
+
+	ok(argv_offset == 2);
+	ok(restart_mode == 0);
+	ok(clear_mode == 0);
+	ok(dirwatch_mode == 1);
 	return 0;
 }
 
 /*
  * Ensure that command line arguments are not confused with utility arguments
  */
-int set_options_04() {
+int set_options_05() {
 	int argv_offset;
 	char *argv[] = { "entr", "ls", "-r", "-c", NULL };
 	
@@ -626,20 +772,25 @@ int test_main(int argc, char *argv[]) {
 	xopen = fake_open;
 	xrealpath = fake_realpath;
 	xfree = fake_free;
+	xgraceful_exit = fake_graceful_exit;
 
 	/* all tests */
 	run(process_input_01);
 	run(process_input_02);
+	run(process_input_03);
 	run(watch_fd_exec_01);
 	run(watch_fd_exec_02);
 	run(watch_fd_exec_03);
 	run(watch_fd_exec_04);
 	run(watch_fd_exec_05);
+	run(watch_fd_exec_06);
+	run(watch_fd_exec_07);
 	run(set_fifo_01);
 	run(set_options_01);
 	run(set_options_02);
 	run(set_options_03);
 	run(set_options_04);
+	run(set_options_05);
 	run(watch_fd_restart_01);
 	run(watch_fd_restart_02);
 	run(run_utility_01);

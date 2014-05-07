@@ -48,13 +48,20 @@ Launch and auto-reload a node.js server
 
     $ ls *.js | entr -r node index.js
 
+Rebuild project if a source file is modified or added to the src/ directory
+
+    $ while :; do
+    >    ls src/*.rb | entr -d rake
+    > done
+
+
 Convert Markdown files to HTML using a FIFO. Only files that change will be
 processed.
 
     $ ls *.md | entr +notify &
     $ while read F
     > do
-    >   markdown2html $F
+    >     markdown2html $F
     > done < notify
 
 News

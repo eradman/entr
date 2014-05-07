@@ -21,6 +21,7 @@
 typedef struct {
 	char fn[PATH_MAX];
 	int fd;
+	int is_dir;
 } WatchFile;
 
 /* declare as extern in source */

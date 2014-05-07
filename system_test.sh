@@ -28,9 +28,9 @@ function assert {
 function skip { printf "s"; }
 
 function zz { sleep 0.25; }
-function setup { rm -f $tmp/*.out $tmp/file?; touch $tmp/file{1,2}; zz; }
+function setup { rm -f $tmp/*; touch $tmp/file{1,2}; zz; }
 system_tmp=$(cd /tmp; pwd -P)
-tmp=$(cd $(mktemp -d $system_tmp/entr_regress.XXXXXXXXXX); pwd -P)
+tmp=$(cd $(mktemp -d $system_tmp/entr_system_test.XXXXXXXXXX); pwd -P)
 
 # rebuild
 
@@ -46,7 +46,7 @@ utils="hg vim"
 for util in $utils; do
 	p=$(which $util 2> /dev/null) || {
 		echo "ERROR: could not locate the '$util' utility" >&2
-		echo "Regression tests depend on the following: $utils" >&2
+		echo "System tests depend on the following: $utils" >&2
 		exit 1
 	}
 done
@@ -70,6 +70,24 @@ try "no regular files provided as input"
 	ls $tmp | ./entr echo 2> /dev/null || code=$?
 	rmdir $tmp/dir1
 	assert $code 1
+
+try "exec single shell utility and exit when a file is added to an implicit watch path"
+	setup
+	ls $tmp/file* | ./entr -d sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err &
+	bgpid=$! ; zz
+	touch $tmp/newfile
+	wait $bgpid
+	assert "$(cat $tmp/exec.out)" "ping"
+	assert "$(cat $tmp/exec.err)" "entr: directory altered"
+
+try "exec single shell utility and exit when a file is added to a specific path"
+	setup
+	ls -d $tmp | ./entr -d sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err &
+	bgpid=$! ; zz
+	touch $tmp/newfile
+	wait $bgpid
+	assert "$(cat $tmp/exec.out)" "ping"
+	assert "$(cat $tmp/exec.err)" "entr: directory altered"
 
 try "exec utility when a file is opened for write and then closed"
 	setup

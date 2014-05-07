@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: February 06 2014 $
+.Dd $Mdocdate: May 06 2014 $
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -21,7 +21,7 @@
 .Nd run arbitrary commands when files change
 .Sh SYNOPSIS
 .Nm
-.Op Fl r
+.Op Fl dr
 .Op Fl c
 .Ar utility
 .Op Ar argument ...
@@ -40,10 +40,14 @@ waits for the child process to finish before responding to subsequent file
 system events. A TTY is also opened before entering the watch loop in order to
 support interactive utilities.
 .Pp
+.Ar -d
+track directories and the paths to regular files provided as input. In this
+mode entr will exit with status code 0 if a new file is created.
+.Pp
 .Ar -r
-modifies the exec mode by launching the
+launch the
 .Ar utility
-at startup and reloads it by sending
+at startup and reload it by sending
 .Dv SIGTERM
 if one of the source files change.
 .Nm
@@ -54,7 +58,7 @@ to exit to ensure that resources such as sockets have been closed.
 A limited number of features are provided to reduce keystrokes.
 .Pp
 .Ar -c
-executes
+execute
 .Pa /usr/bin/clear
 before invoking the
 .Ar utility
@@ -85,13 +89,12 @@ keyboard input if output does not fit on the screen.
 .Sh EXIT STATUS
 The
 .Nm entr
-utility does not normally return, but it will exit with a value of 0 if the
-signal
+utility will exit with a value of 0 if the signal
 .Dv SIGINT
 or
 .Dv SIGTERM
-was received. An exit status of 1 indicates that no regular files were provided
-as input.
+was received. If no regular files were provided
+as input an exit status 1 is returned.
 .Sh EXAMPLES
 Rebuild project when source files change
 .Pp
@@ -109,12 +112,15 @@ Run an SQL query
 .Pp
 .Dl $ echo my.sql | entr psql -f /_
 .Pp
+Rebuild project if a source file is modified or added to the src/ directory
+.Pp
+.Dl $ while :; do
+.Dl > 	ls src/*.rb | entr -d rake
+.Dl > done
+.Pp
 Convert individual Markdown files to HTML if they're modified
 .Pp
 .Dl $ ls *.md | entr +notify &
 .Dl $ while read F; do
-.Dl >   markdown2html $F
+.Dl > 	markdown2html $F
 .Dl > done < notify
-.Sh CAVEATS
-Only regular files are monitored, directories and special files are ignored.
-

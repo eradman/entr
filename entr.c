@@ -23,6 +23,7 @@
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <libgen.h>
 #include <limits.h>
 #include <paths.h>
 #include <signal.h>
@@ -59,6 +60,7 @@ int (*xmkfifo)(const char *path, mode_t mode);
 int (*xopen)(const char *path, int flags, ...);
 char * (*xrealpath)(const char *, char *);
 void (*xfree)(void *);
+void (*xgraceful_exit)(const char *);
 
 /* globals */
 
@@ -68,12 +70,14 @@ WatchFile fifo;
 WatchFile *leading_edge;
 int restart_mode;
 int clear_mode;
+int dirwatch_mode;
 int child_pid;
 
 /* forwards */
 
 static void usage();
 static void terminate_utility();
+static void graceful_exit(const char *);
 static void handle_exit(int sig);
 static int process_input(FILE *, WatchFile *[], int);
 static int set_fifo(char *[]);
@@ -110,6 +114,7 @@ main(int argc, char *argv[]) {
 	xopen = open;
 	xrealpath = realpath;
 	xfree = free;
+	xgraceful_exit = graceful_exit;
 
 	/* call usage() if no command is supplied */
 	if (argc < 2) usage();
@@ -171,7 +176,7 @@ main(int argc, char *argv[]) {
 void
 usage() {
 	extern char *__progname;
-	fprintf(stderr, "usage: %s [-cr] utility [args, [/_], ...] < filenames\n",
+	fprintf(stderr, "usage: %s [-dr] [-c] utility [args, [/_], ...] < filenames\n",
 	    __progname);
 	fprintf(stderr, "       %s +fifo < filenames\n",
 	    __progname);
@@ -191,6 +196,12 @@ terminate_utility() {
 		xwaitpid(child_pid, &status, 0);
 		child_pid = 0;
 	}
+}
+
+void
+graceful_exit(const char *msg) {
+	warnx("%s", msg);
+	handle_exit(0);
 }
 
 /* Callbacks */
@@ -213,10 +224,10 @@ handle_exit(int sig) {
 int
 process_input(FILE *file, WatchFile *files[], int max_files) {
 	char buf[PATH_MAX];
-	char *p;
+	char *p, *path;
 	int n_files = 0;
 	struct stat sb;
-	int ret;
+	int i, matches;
 
 	while (fgets(buf, sizeof(buf), file) != NULL) {
 		buf[PATH_MAX-1] = '\0';
@@ -225,13 +236,30 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 		if (buf[0] == '\0')
 			continue;
 
-		ret = xstat(buf, &sb);
-		if (ret == -1)
+		if (xstat(buf, &sb) == -1)
 			err(1, "cannot stat '%s'", buf);
 		if (S_ISREG(sb.st_mode) != 0) {
 			files[n_files] = malloc(sizeof(WatchFile));
 			strlcpy(files[n_files]->fn, buf, MEMBER_SIZE(WatchFile, fn));
+			files[n_files]->is_dir = 0;
 			n_files++;
+		}
+		/* also watch the directory if it's not already in the list */
+		if (dirwatch_mode == 1) {
+			if (S_ISDIR(sb.st_mode) != 0)
+				path = &buf[0];
+			else
+				if ((path = dirname(buf)) == 0)
+					err(1, "dirname '%s' failed", buf);
+			for (matches=0, i=0; i<n_files; i++)
+				if (strcmp(files[i]->fn, path) == 0) matches++;
+			if (matches == 0) {
+				files[n_files] = malloc(sizeof(WatchFile));
+				strlcpy(files[n_files]->fn, path,
+				    MEMBER_SIZE(WatchFile, fn));
+				files[n_files]->is_dir = 1;
+				n_files++;
+			}
 		}
 		if (n_files+1 > max_files)
 			return -1;
@@ -269,13 +297,16 @@ set_options(char *argv[]) {
 
 	/* read arguments until we reach a command */
 	for (argc=1; argv[argc] != 0 && argv[argc][0] == '-'; argc++);
-	while ((ch = getopt(argc, argv, "rc")) != -1) {
+	while ((ch = getopt(argc, argv, "cdr")) != -1) {
 		switch (ch) {
-		case 'r':
-			restart_mode = 1;
-			break;
 		case 'c':
 			clear_mode = 1;
+			break;
+		case 'd':
+			dirwatch_mode = 1;
+			break;
+		case 'r':
+			restart_mode = 1;
 			break;
 		default:
 			usage();
@@ -387,6 +418,8 @@ watch_file(int kq, WatchFile *file) {
  *   do_exec     : Delay execution until all events have been processed. Allow
  *                 the user to edit files while the utility is running without
  *                 any visible side-effects
+ *   dir_only    : A file was added or renamed and no events on regular files
+ *                 were triggered
  */
 void
 watch_loop(int kq, char *argv[]) {
@@ -399,6 +432,7 @@ watch_loop(int kq, char *argv[]) {
 	int reopen_only = 0;
 	int collate_only = 0;
 	int do_exec = 0;
+	int dir_only = 0;
 
 	leading_edge = files[0]; /* default */
 	if (restart_mode)
@@ -413,6 +447,8 @@ main:
 	if ((nev == -2) && (collate_only == 0))
 		return;
 
+	if (nev > 0)
+		dir_only = 1;
 	for (i=0; i<nev; i++) {
 		#ifdef DEBUG
 		fprintf(stderr, "event %d/%d: ident %d filter %d flags 0x%x "
@@ -427,10 +463,11 @@ main:
 		#endif
 		if (evList[i].filter != EVFILT_VNODE)
 			continue;
-		if ((i == 0) && (reopen_only == 0) && (collate_only == 0)) {
-			file = (WatchFile *)evList[i].udata;
+		file = (WatchFile *)evList[i].udata;
+		if (file->is_dir == 0)
+			dir_only = 0;
+		if ((i == 0) && (reopen_only == 0) && (collate_only == 0))
 			leading_edge = file;
-		}
 	}
 
 	collate_only = 0;
@@ -468,6 +505,7 @@ main:
 			}
 		}
 	}
+
 	if (collate_only == 1)
 		goto main;
 	if (do_exec == 1) {
@@ -475,5 +513,7 @@ main:
 		run_utility(argv);
 		reopen_only = 1;
 	}
+	if (dir_only == 1)
+		xgraceful_exit("directory altered");
 	goto main;
 }
