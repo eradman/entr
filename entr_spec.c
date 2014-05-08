@@ -117,6 +117,11 @@ fake_realpath(const char *pathname, char *resolved) {
 	return resolved;
 }
 
+int
+fake_list_dir(char *path) {
+	return 2;
+}
+
 pid_t
 fake_fork() {
 	return 0; /* pretend to be the child */
@@ -469,6 +474,7 @@ int watch_fd_exec_06() {
 
 	strlcpy(files[0]->fn, ".", sizeof(files[0]->fn));
 	files[0]->is_dir = 1;
+	files[0]->file_count = 1;
 	strlcpy(files[1]->fn, "run.sh", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 	watch_file(kq, files[1]);
@@ -541,7 +547,7 @@ int watch_fd_exec_07() {
 	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
 	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
 	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
-	ok(ctx.exit.count == 0); /* a regular file was modified, do not exit */
+	ok(ctx.exit.count == 1);
 	return 0;
 }
 
@@ -773,6 +779,7 @@ int test_main(int argc, char *argv[]) {
 	xrealpath = fake_realpath;
 	xfree = fake_free;
 	xgraceful_exit = fake_graceful_exit;
+	xlist_dir = fake_list_dir;
 
 	/* all tests */
 	run(process_input_01);

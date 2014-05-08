@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 #include <sys/event.h>
 
+#include <dirent.h>
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -61,6 +62,7 @@ int (*xopen)(const char *path, int flags, ...);
 char * (*xrealpath)(const char *, char *);
 void (*xfree)(void *);
 void (*xgraceful_exit)(const char *);
+int (*xlist_dir)(char *);
 
 /* globals */
 
@@ -76,14 +78,17 @@ int child_pid;
 /* forwards */
 
 static void usage();
+static WatchFile * file_by_descriptor(int fd);
 static void terminate_utility();
 static void graceful_exit(const char *);
 static void handle_exit(int sig);
 static int process_input(FILE *, WatchFile *[], int);
 static int set_fifo(char *[]);
 static int set_options(char *[]);
+static int list_dir(char *);
 static void run_utility(char *[]);
 static void watch_file(int, WatchFile *);
+static int compare_dir_contents(WatchFile *);
 static void watch_loop(int, char *[]);
 
 /*
@@ -115,6 +120,7 @@ main(int argc, char *argv[]) {
 	xrealpath = realpath;
 	xfree = free;
 	xgraceful_exit = graceful_exit;
+	xlist_dir = list_dir;
 
 	/* call usage() if no command is supplied */
 	if (argc < 2) usage();
@@ -183,6 +189,18 @@ usage() {
 	exit(2);
 }
 
+static WatchFile *
+file_by_descriptor(int wd) {
+	int i;
+
+	for (i=0; files[i] != NULL; i++) {
+		if (files[i]->fd == wd)
+			return files[i];
+	}
+	return NULL; /* lookup failed */
+}
+
+
 void
 terminate_utility() {
 	int status;
@@ -242,6 +260,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 			files[n_files] = malloc(sizeof(WatchFile));
 			strlcpy(files[n_files]->fn, buf, MEMBER_SIZE(WatchFile, fn));
 			files[n_files]->is_dir = 0;
+			files[n_files]->file_count = 0;
 			n_files++;
 		}
 		/* also watch the directory if it's not already in the list */
@@ -258,6 +277,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 				strlcpy(files[n_files]->fn, path,
 				    MEMBER_SIZE(WatchFile, fn));
 				files[n_files]->is_dir = 1;
+				files[n_files]->file_count = xlist_dir(path);
 				n_files++;
 			}
 		}
@@ -284,6 +304,21 @@ set_fifo(char *argv[]) {
 
 	memset(&fifo, 0, sizeof(fifo));
 	return 0;
+}
+
+
+int list_dir(char *dir) {
+	struct dirent *dp;
+	DIR *dfd = opendir(dir);
+	int count = 0;
+
+	if (dfd == NULL)
+		errx(1, "Unable to open directory: %s", dir);
+	while((dp = readdir(dfd)) != NULL)
+		if (dp->d_name[0] != '.')
+			count++;
+	closedir(dfd);
+	return count;
 }
 
 /*
@@ -407,6 +442,23 @@ watch_file(int kq, WatchFile *file) {
 }
 
 /*
+ * Wait for directory contents to stabilize
+ */
+int
+compare_dir_contents(WatchFile *file) {
+	int i;
+	struct timespec delay = { 0, 100 * 1000000 };
+
+	/* wait up to 0.5 seconds for file to become available */
+	for (i=0; i < 5; i++) {
+		if (xlist_dir(file->fn) == file->file_count)
+			return 0;
+		nanosleep(&delay, NULL);
+	}
+	return 1;
+}
+
+/*
  * Wait for events to and execute a command or write filename to a FIFO.
  * Four major concerns are in play here:
  *   leading_edge: Global reference to the first file to have changed
@@ -418,8 +470,7 @@ watch_file(int kq, WatchFile *file) {
  *   do_exec     : Delay execution until all events have been processed. Allow
  *                 the user to edit files while the utility is running without
  *                 any visible side-effects
- *   dir_only    : A file was added or renamed and no events on regular files
- *                 were triggered
+ *   dir_modified: The number of files changed for a directory under watch
  */
 void
 watch_loop(int kq, char *argv[]) {
@@ -432,7 +483,7 @@ watch_loop(int kq, char *argv[]) {
 	int reopen_only = 0;
 	int collate_only = 0;
 	int do_exec = 0;
-	int dir_only = 0;
+	int dir_modified = 0;
 
 	leading_edge = files[0]; /* default */
 	if (restart_mode)
@@ -441,14 +492,14 @@ watch_loop(int kq, char *argv[]) {
 main:
 	if ((reopen_only == 1) || (collate_only == 1))
 		nev = xkevent(kq, NULL, 0, evList, 32, &evTimeout);
-	else
+	else {
 		nev = xkevent(kq, NULL, 0, evList, 32, NULL);
+		dir_modified = 0;
+	}
 	/* escape for test runner */
 	if ((nev == -2) && (collate_only == 0))
 		return;
 
-	if (nev > 0)
-		dir_only = 1;
 	for (i=0; i<nev; i++) {
 		#ifdef DEBUG
 		fprintf(stderr, "event %d/%d: ident %d filter %d flags 0x%x "
@@ -460,12 +511,14 @@ main:
 		    evList[i].fflags,
 		    evList[i].data,
 		    evList[i].udata);
+		fprintf(stderr, "(%s)\n",
+		    file_by_descriptor(evList[i].ident)->fn);
 		#endif
 		if (evList[i].filter != EVFILT_VNODE)
 			continue;
 		file = (WatchFile *)evList[i].udata;
-		if (file->is_dir == 0)
-			dir_only = 0;
+		if (file->is_dir == 1)
+			dir_modified += compare_dir_contents(file);
 		if ((i == 0) && (reopen_only == 0) && (collate_only == 0))
 			leading_edge = file;
 	}
@@ -491,6 +544,9 @@ main:
 	}
 
 	for (i=0; i<nev && reopen_only == 0; i++) {
+		file = (WatchFile *)evList[i].udata;
+		if ((file->is_dir == 1) && (dir_modified == 0))
+			continue;
 		if (evList[i].fflags & NOTE_DELETE ||
 		    evList[i].fflags & NOTE_WRITE  ||
 		    evList[i].fflags & NOTE_RENAME ||
@@ -513,7 +569,7 @@ main:
 		run_utility(argv);
 		reopen_only = 1;
 	}
-	if (dir_only == 1)
+	if (dir_modified > 0)
 		xgraceful_exit("directory altered");
 	goto main;
 }

@@ -89,6 +89,18 @@ try "exec single shell utility and exit when a file is added to a specific path"
 	assert "$(cat $tmp/exec.out)" "ping"
 	assert "$(cat $tmp/exec.err)" "entr: directory altered"
 
+try "exec utility when a file is written by Vim in directory watch mode"
+	setup
+	ls $tmp/file* | ./entr -d echo "changed" >$tmp/exec.out 2>$tmp/exec.err &
+	bgpid=$! ; zz
+	vim -e -s -u NONE -N \
+	    -c ":r!date" \
+	    -c ":wq" $tmp/file1 ; zz
+	kill -INT $bgpid
+	wait $bgpid
+	assert "$(cat $tmp/exec.out)" "changed"
+	assert "$(cat $tmp/exec.err)" ""
+
 try "exec utility when a file is opened for write and then closed"
 	setup
 	echo "---" > $tmp/file1
