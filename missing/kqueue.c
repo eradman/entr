@@ -32,6 +32,23 @@
 
 extern WatchFile **files;
 
+/* forwards */
+
+static WatchFile * file_by_descriptor(int fd);
+
+/* utility functions */
+
+static WatchFile *
+file_by_descriptor(int wd) {
+	int i;
+
+	for (i=0; files[i] != NULL; i++) {
+		if (files[i]->fd == wd)
+			return files[i];
+	}
+	return NULL; /* lookup failed */
+}
+
 /* interface */
 
 #define EVENT_SIZE (sizeof (struct inotify_event))

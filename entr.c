@@ -78,7 +78,6 @@ int child_pid;
 /* forwards */
 
 static void usage();
-static WatchFile * file_by_descriptor(int fd);
 static void terminate_utility();
 static void graceful_exit(const char *);
 static void handle_exit(int sig);
@@ -188,18 +187,6 @@ usage() {
 	    __progname);
 	exit(2);
 }
-
-static WatchFile *
-file_by_descriptor(int wd) {
-	int i;
-
-	for (i=0; files[i] != NULL; i++) {
-		if (files[i]->fd == wd)
-			return files[i];
-	}
-	return NULL; /* lookup failed */
-}
-
 
 void
 terminate_utility() {
@@ -511,8 +498,6 @@ main:
 		    evList[i].fflags,
 		    evList[i].data,
 		    evList[i].udata);
-		fprintf(stderr, "(%s)\n",
-		    file_by_descriptor(evList[i].ident)->fn);
 		#endif
 		if (evList[i].filter != EVFILT_VNODE)
 			continue;
