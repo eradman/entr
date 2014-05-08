@@ -145,7 +145,8 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			eventlist[n].fflags = fflags;
 			eventlist[n].data = 0;
 			eventlist[n].udata = file_by_descriptor(iev->wd);
-			n++;
+			if (eventlist[n].udata)
+				n++;
 		}
 	}
 	while ((poll(&pfd, 1, 50) > 0));
