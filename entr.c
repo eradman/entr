@@ -152,7 +152,7 @@ main(int argc, char *argv[]) {
 	/* read input and populate watch list, skipping non-regular files */
 	n_files = process_input(stdin, files, rl.rlim_cur);
 	if (n_files == 0)
-		errx(2, "No regular files to watch");
+		errx(1, "No regular files to watch");
 	if (n_files == -1)
 		errx(1, "Too many files listed; the hard limit for your login"
 		    " class is %d", (int)rl.rlim_cur);
@@ -206,13 +206,15 @@ terminate_utility() {
 void
 graceful_exit(const char *msg) {
 	warnx("%s", msg);
-	handle_exit(0);
+	terminate_utility();
+	exit(2);
 }
 
 /* Callbacks */
 
 void
 handle_exit(int sig) {
+	signal(sig, SIG_DFL);
 	if (fifo.fd) {
 		close(fifo.fd);
 		unlink(fifo.fn);

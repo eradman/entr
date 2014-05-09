@@ -9,6 +9,7 @@
    NOTE_WRITE on MacOS
  - New directory-watch option ('-d'). In this mode a shell while-loop can be
    used to track the addition of new files.
+ - Reset signal handlers reset so that Ctrl+C works in a shell while loop
 
 = Release History
 

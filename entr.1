@@ -41,8 +41,8 @@ system events. A TTY is also opened before entering the watch loop in order to
 support interactive utilities.
 .Pp
 .Ar -d
-track directories and the paths to regular files provided as input. In this
-mode entr will exit with status code 0 if a new file is created.
+track directories and the paths to regular files provided as input.  In this
+mode a shell while-loop can be used to track the addition of new files.
 .Pp
 .Ar -r
 launch the
@@ -93,8 +93,9 @@ utility will exit with a value of 0 if the signal
 .Dv SIGINT
 or
 .Dv SIGTERM
-was received. If no regular files were provided
-as input an exit status 1 is returned.
+was received. If no regular files were provided as input or an error occurs exit
+status 1 is returned. In directory watch exit status 2 is returned if a file is
+added to a drectory.
 .Sh EXAMPLES
 Rebuild project when source files change
 .Pp
