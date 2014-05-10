@@ -36,32 +36,28 @@ Installation - Debian
 Examples from `man entr`
 ------------------------
 
-Rebuild project when source files change
+Clear the screen and rebuild a project if source files change:
 
-    $ find src | entr make
+    $ find src/ | entr make
 
-Clear the screen and run tests
+Launch and auto-reload a node.js server:
 
-    $ ls *.py | entr -c ./test.py
+    $ ls *.js | entr -r node app.js
 
-Launch and auto-reload a node.js server
+Run an SQL query:
 
-    $ ls *.js | entr -r node index.js
+    $ echo my.sql | entr psql -f /_
 
-Rebuild project if a source file is modified or added to the src/ directory
+Rebuild project if a source file is modified or added to the src/
+directory:
 
-    $ while :; do
-    >    ls src/*.rb | entr -d rake
-    > done
+    $ while sleep 1; do ls src/*.rb | entr -d rake; done
 
-
-Convert Markdown files to HTML using a FIFO. Only files that change will be
-processed.
+Convert individual Markdown files to HTML if they're modified:
 
     $ ls *.md | entr +notify &
-    $ while read F
-    > do
-    >     markdown2html $F
+    $ while read F; do
+    >    markdown2html $F
     > done < notify
 
 News

@@ -105,23 +105,23 @@ A file was added to a directory while using the while using the directory watch
 option
 .El
 .Sh EXAMPLES
-Clear the screen and rebuild a project if source files change
+Clear the screen and rebuild a project if source files change:
 .Pp
 .Dl $ find src/ | entr make
 .Pp
-Launch and auto-reload a node.js server
+Launch and auto-reload a node.js server:
 .Pp
 .Dl $ ls *.js | entr -r node app.js
 .Pp
-Run an SQL query
+Run an SQL query:
 .Pp
 .Dl $ echo my.sql | entr psql -f /_
 .Pp
-Rebuild project if a source file is modified or added to the src/ directory
+Rebuild project if a source file is modified or added to the src/ directory:
 .Pp
-.Dl $ until (ls src/*.rb | entr -d rake); do :; done
+.Dl $ while sleep 1; do ls src/*.rb | entr -d rake; done
 .Pp
-Convert individual Markdown files to HTML if they're modified
+Convert individual Markdown files to HTML if they're modified:
 .Pp
 .Dl $ ls *.md | entr +notify &
 .Dl $ while read F; do
