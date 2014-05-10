@@ -55,15 +55,15 @@ done
 
 try "no arguments"
 	./entr 2> /dev/null || code=$?
-	assert $code 2
+	assert $code 1
 
 try "reload and clear options with no utility to run"
 	./entr -r -c 2> /dev/null || code=$?
-	assert $code 2
+	assert $code 1
 
 try "empty input"
 	echo "" | ./entr echo 2> /dev/null || code=$?
-	assert $code 2
+	assert $code 1
 
 try "no regular files provided as input"
 	mkdir $tmp/dir1
@@ -193,6 +193,17 @@ try "restart a server when a file is modified"
 	kill -INT $bgpid
 	wait $bgpid
 	assert "$(cat $tmp/exec.out)" "$(printf 'started.\nstarted.')"
+
+try "exit with no action when restart and dirwatch flags are combined"
+	setup
+	echo "started." > $tmp/file1
+	ls $tmp/file* | ./entr -rd tail -f $tmp/file1 2> /dev/null > $tmp/exec.out &
+	bgpid=$! ; zz
+	assert "$(cat $tmp/exec.out)" "started."
+	touch $tmp/newfile
+	kill -INT $bgpid
+	wait $bgpid
+	assert "$(cat $tmp/exec.out)" "$(printf 'started.')"
 
 try "exec single shell utility when two files change simultaneously"
 	setup

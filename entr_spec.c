@@ -192,10 +192,9 @@ fake_open(const char *path, int flags, ...) {
 }
 
 void
-fake_graceful_exit(const char *msg) {
+fake_errx(int eval, const char *msg, ...) {
 	ctx.exit.count++;
 }
-
 
 /* tests */
 
@@ -778,7 +777,7 @@ int test_main(int argc, char *argv[]) {
 	xopen = fake_open;
 	xrealpath = fake_realpath;
 	xfree = fake_free;
-	xgraceful_exit = fake_graceful_exit;
+	xerrx = fake_errx;
 	xlist_dir = fake_list_dir;
 
 	/* all tests */

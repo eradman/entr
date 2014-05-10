@@ -61,7 +61,7 @@ int (*xmkfifo)(const char *path, mode_t mode);
 int (*xopen)(const char *path, int flags, ...);
 char * (*xrealpath)(const char *, char *);
 void (*xfree)(void *);
-void (*xgraceful_exit)(const char *);
+void (*xerrx)(int, const char *, ...);
 int (*xlist_dir)(char *);
 
 /* globals */
@@ -79,7 +79,6 @@ int child_pid;
 
 static void usage();
 static void terminate_utility();
-static void graceful_exit(const char *);
 static void handle_exit(int sig);
 static int process_input(FILE *, WatchFile *[], int);
 static int set_fifo(char *[]);
@@ -118,7 +117,7 @@ main(int argc, char *argv[]) {
 	xopen = open;
 	xrealpath = realpath;
 	xfree = free;
-	xgraceful_exit = graceful_exit;
+	xerrx = errx;
 	xlist_dir = list_dir;
 
 	/* call usage() if no command is supplied */
@@ -185,7 +184,7 @@ usage() {
 	    __progname);
 	fprintf(stderr, "       %s +fifo < filenames\n",
 	    __progname);
-	exit(2);
+	exit(1);
 }
 
 void
@@ -203,18 +202,11 @@ terminate_utility() {
 	}
 }
 
-void
-graceful_exit(const char *msg) {
-	warnx("%s", msg);
-	terminate_utility();
-	exit(2);
-}
-
 /* Callbacks */
 
 void
 handle_exit(int sig) {
-	signal(sig, SIG_DFL);
+	/*signal(sig, SIG_DFL);*/
 	if (fifo.fd) {
 		close(fifo.fd);
 		unlink(fifo.fn);
@@ -379,7 +371,7 @@ run_utility(char *argv[]) {
 
 	pid = xfork();
 	if (pid == -1)
-		err(errno, "can't fork");
+		err(1, "can't fork");
 
 	if (pid == 0) {
 		if (clear_mode == 1)
@@ -422,7 +414,7 @@ watch_file(int kq, WatchFile *file) {
 		else break;
 	}
 	if (file->fd == -1)
-		err(errno, "cannot open `%s'", file->fn);
+		err(1, "cannot open `%s'", file->fn);
 
 	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_ALL, 0,
 	    file);
@@ -538,8 +530,11 @@ main:
 		    evList[i].fflags & NOTE_WRITE  ||
 		    evList[i].fflags & NOTE_RENAME ||
 		    evList[i].fflags & NOTE_TRUNCATE) {
-			if (fifo.fd == 0)
+			if (fifo.fd == 0) {
+				if ((dir_modified > 0) && (restart_mode == 1))
+					continue;
 				do_exec = 1;
+			}
 			else {
 				write(fifo.fd, file->fn, strlen(file->fn));
 				write(fifo.fd, "\n", 1);
@@ -557,6 +552,7 @@ main:
 		reopen_only = 1;
 	}
 	if (dir_modified > 0)
-		xgraceful_exit("directory altered");
+		xerrx(2, "directory altered");
+
 	goto main;
 }

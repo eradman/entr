@@ -21,8 +21,7 @@
 .Nd run arbitrary commands when files change
 .Sh SYNOPSIS
 .Nm
-.Op Fl dr
-.Op Fl c
+.Op Fl cdr
 .Ar utility
 .Op Ar argument ...
 .Op Ar /_
@@ -31,8 +30,8 @@
 .Sh DESCRIPTION
 .Ss EXEC Mode
 .Nm entr
-has two modes of operation; the first use reads a list of files provided on STDIN
-and executes the supplied
+has two modes of operation; the first reads a list of files provided on the
+standard input and executes the supplied
 .Ar utility
 if any of them change.
 .Nm
@@ -40,12 +39,22 @@ waits for the child process to finish before responding to subsequent file
 system events. A TTY is also opened before entering the watch loop in order to
 support interactive utilities.
 .Pp
-.Ar -d
-track directories and the paths to regular files provided as input.  In this
-mode a shell while-loop can be used to track the addition of new files.
-.Pp
-.Ar -r
-launch the
+The arguments are as follows:
+.Bl -tag -width Ds
+.It Fl c
+Execute
+.Pa /usr/bin/clear
+before invoking the
+.Ar utility
+specified on the command line.
+.It Fl d
+Track the directories of regular files provided as input and exit if a new file
+is added. This option also enables directories to be specified explicitly.
+Files with names beginning with
+.Ql \&.
+are ignored.
+.It Fl r
+Launch the
 .Ar utility
 at startup and reload it by sending
 .Dv SIGTERM
@@ -54,15 +63,7 @@ if one of the source files change.
 waits for the
 .Ar utility
 to exit to ensure that resources such as sockets have been closed.
-.Pp
-A limited number of features are provided to reduce keystrokes.
-.Pp
-.Ar -c
-execute
-.Pa /usr/bin/clear
-before invoking the
-.Ar utility
-specified on the command line.
+.El
 .Pp
 The first occurrence of
 .Ar /_
@@ -70,8 +71,8 @@ on the command line will be replaced with the absolute path of the first file
 that was modified. If the restart option is used the first file under watch is
 treated as the default.
 .Ss FIFO Mode
-The second mode also reads a list of filenames provided on STDIN and is enabled
-by specifying
+The second mode also reads a list of filenames provided on the standard input
+and is enabled by specifying
 .Ql +
 and the name of a fifo. In this mode
 .Nm
@@ -88,22 +89,25 @@ to prevent interactive utilities from waiting for
 keyboard input if output does not fit on the screen.
 .Sh EXIT STATUS
 The
-.Nm entr
-utility will exit with a value of 0 if the signal
+.Nm
+utility exits with one of the following values:
+.Pp
+.Bl -tag -width Ds -offset indent -compact
+.It Li 0
 .Dv SIGINT
 or
 .Dv SIGTERM
-was received. If no regular files were provided as input or an error occurs exit
-status 1 is returned. In directory watch exit status 2 is returned if a file is
-added to a drectory.
+was received
+.It Li 1
+No regular files were provided as input or an error occurred
+.It Li 2
+A file was added to a directory while using the while using the directory watch
+option
+.El
 .Sh EXAMPLES
-Rebuild project when source files change
+Clear the screen and rebuild a project if source files change
 .Pp
-.Dl $ find src | entr make
-.Pp
-Clear the screen and run tests
-.Pp
-.Dl $ ls *.py  | entr -c ./test.py
+.Dl $ find src/ | entr make
 .Pp
 Launch and auto-reload a node.js server
 .Pp
@@ -115,9 +119,7 @@ Run an SQL query
 .Pp
 Rebuild project if a source file is modified or added to the src/ directory
 .Pp
-.Dl $ while :; do
-.Dl > 	ls src/*.rb | entr -d rake
-.Dl > done
+.Dl $ until (ls src/*.rb | entr -d rake); do :; done
 .Pp
 Convert individual Markdown files to HTML if they're modified
 .Pp
