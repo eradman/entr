@@ -74,9 +74,9 @@ void reset_state() {
 
 	/* initialize global data */
 	memset(&fifo, 0, sizeof(fifo));
-	restart_mode = 0;
-	clear_mode = 0;
-	dirwatch_mode = 0;
+	restart_opt = 0;
+	clear_opt = 0;
+	dirwatch_opt = 0;
 	leading_edge = 0;
 	files = malloc(sizeof(WatchFile *) * max_files);
 	for (i=0; i<max_files; i++)
@@ -243,7 +243,7 @@ int process_input_03() {
 	FILE *fake;
 	char input[] = "dir1\nfile1\nfile2\nfile3";
 
-	dirwatch_mode = 1;
+	dirwatch_opt = 1;
 	fake = fmemopen(input, strlen(input), "r");
 	n_files = process_input(fake, files, 32);
 
@@ -478,7 +478,7 @@ int watch_fd_exec_06() {
 	watch_file(kq, files[0]);
 	watch_file(kq, files[1]);
 
-	dirwatch_mode = 1;
+	dirwatch_opt = 1;
 	ctx.event.nlist = 1;
 	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_WRITE, 0, files[0]);
 
@@ -520,7 +520,7 @@ int watch_fd_exec_07() {
 	watch_file(kq, files[0]);
 	watch_file(kq, files[1]);
 
-	dirwatch_mode = 1;
+	dirwatch_opt = 1;
 	ctx.event.nlist = 2;
 	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_WRITE, 0, files[0]);
 	EV_SET(&ctx.event.List[1], files[1]->fd, EVFILT_VNODE, 0, NOTE_WRITE, 0, files[1]);
@@ -574,9 +574,9 @@ int set_options_01() {
 	argv_offset = set_options(argv);
 
 	ok(argv_offset == 1);
-	ok(restart_mode == 0);
-	ok(clear_mode == 0);
-	ok(dirwatch_mode == 0);
+	ok(restart_opt == 0);
+	ok(clear_opt == 0);
+	ok(dirwatch_opt == 0);
 	return 0;
 }
 
@@ -590,9 +590,9 @@ int set_options_02() {
 	argv_offset = set_options(argv);
 
 	ok(argv_offset == 2);
-	ok(restart_mode == 1);
-	ok(clear_mode == 0);
-	ok(dirwatch_mode == 0);
+	ok(restart_opt == 1);
+	ok(clear_opt == 0);
+	ok(dirwatch_opt == 0);
 	return 0;
 }
 
@@ -606,9 +606,9 @@ int set_options_03() {
 	argv_offset = set_options(argv);
 
 	ok(argv_offset == 2);
-	ok(restart_mode == 0);
-	ok(clear_mode == 1);
-	ok(dirwatch_mode == 0);
+	ok(restart_opt == 0);
+	ok(clear_opt == 1);
+	ok(dirwatch_opt == 0);
 	return 0;
 }
 
@@ -622,9 +622,9 @@ int set_options_04() {
 	argv_offset = set_options(argv);
 
 	ok(argv_offset == 2);
-	ok(restart_mode == 0);
-	ok(clear_mode == 0);
-	ok(dirwatch_mode == 1);
+	ok(restart_opt == 0);
+	ok(clear_opt == 0);
+	ok(dirwatch_opt == 1);
 	return 0;
 }
 
@@ -638,8 +638,8 @@ int set_options_05() {
 	argv_offset = set_options(argv);
 
 	ok(argv_offset == 1);
-	ok(restart_mode == 0);
-	ok(clear_mode == 0);
+	ok(restart_opt == 0);
+	ok(clear_opt == 0);
 	return 0;
 }
 
@@ -650,7 +650,7 @@ int watch_fd_restart_01() {
 	int kq = kqueue();
 	char *argv[] = { "ruby", "main.rb", NULL };
 
-	restart_mode = 1;
+	restart_opt = 1;
 	strlcpy(files[0]->fn, "main.rb", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 
@@ -680,7 +680,7 @@ int watch_fd_restart_02() {
 	int kq = kqueue();
 	char *argv[] = { "ruby", "main.rb", NULL };
 
-	restart_mode = 1;
+	restart_opt = 1;
 	strlcpy(files[0]->fn, "main.rb", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 	child_pid = 222;

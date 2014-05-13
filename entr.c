@@ -70,9 +70,9 @@ extern int optind;
 extern WatchFile **files;
 WatchFile fifo;
 WatchFile *leading_edge;
-int restart_mode;
-int clear_mode;
-int dirwatch_mode;
+int restart_opt;
+int clear_opt;
+int dirwatch_opt;
 int child_pid;
 
 /* forwards */
@@ -245,7 +245,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 			n_files++;
 		}
 		/* also watch the directory if it's not already in the list */
-		if (dirwatch_mode == 1) {
+		if (dirwatch_opt == 1) {
 			if (S_ISDIR(sb.st_mode) != 0)
 				path = &buf[0];
 			else
@@ -316,13 +316,13 @@ set_options(char *argv[]) {
 	while ((ch = getopt(argc, argv, "cdr")) != -1) {
 		switch (ch) {
 		case 'c':
-			clear_mode = 1;
+			clear_opt = 1;
 			break;
 		case 'd':
-			dirwatch_mode = 1;
+			dirwatch_opt = 1;
 			break;
 		case 'r':
-			restart_mode = 1;
+			restart_opt = 1;
 			break;
 		default:
 			usage();
@@ -348,7 +348,7 @@ run_utility(char *argv[]) {
 	char *p, *arg_buf;
 	int argc;
 
-	if (restart_mode == 1)
+	if (restart_opt == 1)
 		terminate_utility();
 
 	/* clone argv on each invocation to make the implementation of more
@@ -374,7 +374,7 @@ run_utility(char *argv[]) {
 		err(1, "can't fork");
 
 	if (pid == 0) {
-		if (clear_mode == 1)
+		if (clear_opt == 1)
 			system("/usr/bin/clear");
 		/* wait up to 1 seconds for each file to become available */
 		for (i=0; i < 10; i++) {
@@ -387,7 +387,7 @@ run_utility(char *argv[]) {
 	}
 	child_pid = pid;
 
-	if (restart_mode == 0)
+	if (restart_opt == 0)
 		xwaitpid(pid, &status, 0);
 
 	xfree(arg_buf);
@@ -467,7 +467,7 @@ watch_loop(int kq, char *argv[]) {
 	int dir_modified = 0;
 
 	leading_edge = files[0]; /* default */
-	if (restart_mode)
+	if (restart_opt)
 		run_utility(argv);
 
 main:
@@ -531,7 +531,7 @@ main:
 		    evList[i].fflags & NOTE_RENAME ||
 		    evList[i].fflags & NOTE_TRUNCATE) {
 			if (fifo.fd == 0) {
-				if ((dir_modified > 0) && (restart_mode == 1))
+				if ((dir_modified > 0) && (restart_opt == 1))
 					continue;
 				do_exec = 1;
 			}
