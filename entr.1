@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: May 06 2014 $
+.Dd May 14, 2014
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -36,8 +36,9 @@ standard input and executes the supplied
 if any of them change.
 .Nm
 waits for the child process to finish before responding to subsequent file
-system events. A TTY is also opened before entering the watch loop in order to
-support interactive utilities.
+system events.
+A TTY is also opened before entering the watch loop in order to support
+interactive utilities.
 .Pp
 The arguments are as follows:
 .Bl -tag -width Ds
@@ -49,7 +50,8 @@ before invoking the
 specified on the command line.
 .It Fl d
 Track the directories of regular files provided as input and exit if a new file
-is added. This option also enables directories to be specified explicitly.
+is added.
+This option also enables directories to be specified explicitly.
 Files with names beginning with
 .Ql \&.
 are ignored.
@@ -67,14 +69,14 @@ to exit to ensure that resources such as sockets have been closed.
 .Pp
 The first occurrence of
 .Ar /_
-on the command line will be replaced with the absolute path of the first file
-that was modified. If the restart option is used the first file under watch is
-treated as the default.
+on the command line will be replaced with the absolute path of the first file that was modified.
+If the restart option is used the first file under watch is treated as the default.
 .Ss FIFO Mode
 The second mode also reads a list of filenames provided on the standard input
 and is enabled by specifying
 .Ql +
-and the name of a fifo. In this mode
+and the name of a fifo.
+In this mode
 .Nm
 enables more sophisticated scripting by writing filenames to a named pipe when
 they are modified.
@@ -122,8 +124,9 @@ Rebuild project if a source file is modified or added to the src/ directory:
 .Dl $ while sleep 1; do ls src/*.rb | entr -d rake; done
 .Pp
 Convert individual Markdown files to HTML if they're modified:
-.Pp
-.Dl $ ls *.md | entr +notify &
-.Dl $ while read F; do
-.Dl > 	markdown2html $F
-.Dl > done < notify
+.Bd -literal -offset indent
+$ ls *.md | entr +notify &
+$ while read F; do
+>     markdown2html $F
+> done < notify
+.Ed
