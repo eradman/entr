@@ -18,11 +18,11 @@ debug: entr_spec
 	gdb -q entr_spec
 
 entr: entr.c ${EXTRA_SRC}
-	${CC} ${CPPFLAGS} ${CFLAGS} ${EXTRA_SRC} entr.c -o $@ ${LDFLAGS}
+	${CC} ${CFLAGS} ${CPPFLAGS} ${EXTRA_SRC} entr.c -o $@ ${LDFLAGS}
 	@chmod +x $@
 
 entr_spec: entr_spec.c entr.c ${EXTRA_SRC}
-	${CC} ${CPPFLAGS} ${CFLAGS} ${EXTRA_SRC} entr_spec.c -o $@ ${LDFLAGS}
+	${CC} ${CFLAGS} ${CPPFLAGS} ${EXTRA_SRC} entr_spec.c -o $@ ${LDFLAGS}
 	@chmod +x $@
 
 clean:
