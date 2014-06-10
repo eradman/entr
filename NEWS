@@ -1,4 +1,6 @@
-= Next Relase: 2.9
+= Release History
+
+== 2.9: June 10, 2014
 
  - RPM package by @funollet
  - Moved alternate Makefiles to contrib/
@@ -10,7 +12,6 @@
  - New directory-watch option ('-d'). In this mode a shell while-loop can be
    used to track the addition of new files.
 
-= Release History
 
 == 2.8: March 15, 2014
 
