@@ -1,5 +1,5 @@
 Name:		entr
-Version:	2.8
+Version:	2.9
 Release:	1%{?dist}
 Summary:	A utility for running arbitrary commands when files change
 Group:		Development/Tools
@@ -8,7 +8,7 @@ URL:		http://entrproject.org/
 # You can generate this tarball with:
 #	hg clone https://bitbucket.org/eradman/entr
 #	cd entr
-#	hg archive -r entr-2.8 ../entr-2.6.tar.gz
+#	hg archive -r entr-2.9 ../entr-2.9.tar.gz
 Source0:	%{name}-%{version}.tar.gz
 
 %description
@@ -36,6 +36,8 @@ make test
 %doc LICENSE README.md
 
 %changelog
+* Fri Jun 20 2014 Eric Radman <ericshane@eradman.com>
+- Packaged 2.9-1
 * Mon Mar 31 2014 Eric Radman <ericshane@eradman.com>
 - Packaged 2.8-1
 * Sun Feb  9 2014 Jordi Funollet Pujol <funollet@fastmail.fm>
