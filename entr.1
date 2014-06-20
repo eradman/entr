@@ -107,17 +107,18 @@ A file was added to a directory while using the while using the directory watch
 option
 .El
 .Sh EXAMPLES
-Clear the screen and rebuild a project if source files change:
+Rebuild a project if source files change, showing only the first 20 lines of
+output
 .Pp
-.Dl $ find src/ | entr make
+.Dl $ find src/ | entr sh -c 'make | head -n 20'
 .Pp
 Launch and auto-reload a node.js server:
 .Pp
 .Dl $ ls *.js | entr -r node app.js
 .Pp
-Run an SQL query:
+Clear the screen and run a query:
 .Pp
-.Dl $ echo my.sql | entr psql -f /_
+.Dl $ echo my.sql | entr -c psql -f /_
 .Pp
 Rebuild project if a source file is modified or added to the src/ directory:
 .Pp
