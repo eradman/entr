@@ -1,0 +1,33 @@
+#!/bin/sh -e
+# reload-browser, a cross-platform wrapper for reloading a browser
+# http://entrproject.org/
+
+usage() {
+	case `uname` in
+	Darwin)
+		# applescript needs the exact title
+		echo "Usage: $(basename $0) Firefox|Safari|\"Google Chrome\"" ;;
+	*)
+		# xdotool uses regular expressions
+		echo "Usage: $(basename $0) Firefox|Safari|Chromium" ;;
+	esac
+	exit 1
+}
+[ $# != 1 ] && usage
+
+case `uname` in
+Darwin)
+	/usr/bin/osascript <<-APPLESCRIPT
+	tell application "$1"
+	  activate
+	  tell application "System Events" to keystroke "r" using command down
+	end tell
+	APPLESCRIPT
+	;;
+*)
+	xdotool search --class "$1" key --window %@ 'ctrl+r' || {
+		echo "error: unable to locate an application named \"$1\"" 1>&2
+		exit 1
+	}
+	;;
+esac

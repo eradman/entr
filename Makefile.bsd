@@ -35,10 +35,12 @@ install: entr
 	@mkdir -p ${DESTDIR}${PREFIX}/bin
 	@mkdir -p ${DESTDIR}${MANPREFIX}/man1
 	install entr ${DESTDIR}${PREFIX}/bin
+	install scripts/reload-browser ${DESTDIR}${PREFIX}/bin
 	install entr.1 ${DESTDIR}${MANPREFIX}/man1
 
 uninstall:
 	rm ${DESTDIR}${PREFIX}/bin/entr
+	rm ${DESTDIR}${PREFIX}/bin/reload-browser
 	rm ${DESTDIR}${MANPREFIX}/man1/entr.1
 
 env:
