@@ -3,6 +3,8 @@
 - Man page highlights the flexibility of executing a commands (sh -c '...')
 - 'reload-browser', a cross-platform wrapper for reloading a browser included in
   default install
+- system_test.sh auto-upgrades to bash if the default shell does not support the
+  ERR trap
 
 = Release History
 

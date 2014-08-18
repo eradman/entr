@@ -16,10 +16,10 @@
 
 # test runner
 
+trap 'printf "$0: exit code $? on line $LINENO\nFAIL: $this\n"; exit 1' ERR \
+	|| exec bash $0 "$@"
 typeset -i tests=0
-
 function try { let tests+=1; this="$1"; }
-trap 'printf "$0: exit code $? on line $LINENO\nFAIL: $this\n"; exit 1' ERR
 
 function assert {
 	[[ "$1" == "$2" ]] && { printf "."; return; }
