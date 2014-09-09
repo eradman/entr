@@ -1,33 +1,38 @@
-#!/bin/sh -e
-# reload-browser, a cross-platform wrapper for reloading a browser
+#!/bin/sh
+# reload-browser, a cross-platform wrapper for reloading the current browser tab
 # http://entrproject.org/
 
 usage() {
 	case `uname` in
 	Darwin)
 		# applescript needs the exact title
-		echo "Usage: $(basename $0) Firefox|Safari|\"Google Chrome\"" ;;
+		echo "Usage: $(basename $0) Firefox [Safari \"Google Chrome\" ...]"
+		;;
 	*)
 		# xdotool uses regular expressions
-		echo "Usage: $(basename $0) Firefox|Safari|Chromium" ;;
+		echo "Usage: $(basename $0) Firefox [Safari Chrome ...]"
+		;;
 	esac
 	exit 1
 }
-[ $# != 1 ] && usage
+[ $# -lt 1 ] && usage
 
-case `uname` in
-Darwin)
-	/usr/bin/osascript <<-APPLESCRIPT
-	tell application "$1"
-	  activate
-	  tell application "System Events" to keystroke "r" using command down
-	end tell
-	APPLESCRIPT
-	;;
-*)
-	xdotool search --class "$1" key --window %@ 'ctrl+r' || {
-		echo "error: unable to locate an application named \"$1\"" 1>&2
-		exit 1
-	}
-	;;
-esac
+for app in "$@"
+do
+	case `uname` in
+	Darwin)
+		/usr/bin/osascript <<-APPLESCRIPT
+		tell application "$app"
+		  activate
+		  tell application "System Events" to keystroke "r" using command down
+		end tell
+		APPLESCRIPT
+		;;
+	*)
+		xdotool search --onlyvisible --class "$app" windowfocus \
+		    key 'ctrl+r' || {
+			1>&2 echo "unable to signal an application named \"$app\""
+		}
+		;;
+	esac
+done

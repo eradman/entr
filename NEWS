@@ -1,8 +1,8 @@
 = Next Release: 3.0
 
 - Man page highlights the flexibility of executing a commands (sh -c '...')
-- 'reload-browser', a cross-platform wrapper for reloading a browser included in
-  default install
+- 'reload-browser', a cross-platform wrapper for reloading the current tab
+  in one or more browsers
 - system_test.sh auto-upgrades to bash if the default shell does not support the
   ERR trap
 
@@ -166,5 +166,6 @@
 
 == 1.0: April 12, 2012
 
- - Initial release; builds on all major BSD platforms
+ - Initial release at https://bitbucket.org/eradman/entr
+ - Builds on all major BSD platforms
 
