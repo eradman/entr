@@ -15,6 +15,8 @@
 
 #include <sys/inotify.h>
 #include <sys/event.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include <errno.h>
 #include <limits.h>
@@ -53,6 +55,7 @@ file_by_descriptor(int wd) {
 
 #define EVENT_SIZE (sizeof (struct inotify_event))
 #define EVENT_BUF_LEN (32 * (EVENT_SIZE + 16))
+#define IN_ALL IN_CLOSE_WRITE|IN_DELETE_SELF|IN_MODIFY|IN_MOVE_SELF|IN_ATTRIB
 
 /*
  * Conveniently inotify and kqueue ids both have the type `int`
@@ -80,6 +83,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	const struct kevent *kev;
 	int ignored;
 	struct pollfd pfd;
+	struct stat sb;
 
 	if (nchanges > 0) {
 		ignored = 0;
@@ -92,7 +96,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			}
 			else if (kev->flags & EV_ADD) {
 				wd = inotify_add_watch(kq /* ifd */, file->fn,
-				    IN_CLOSE_WRITE|IN_DELETE_SELF|IN_MODIFY|IN_MOVE_SELF);
+				    IN_ALL);
 				if (wd < 0)
 					return -1;
 				close(file->fd);
@@ -133,6 +137,10 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			if (iev->mask & IN_DELETE_SELF) fflags |= NOTE_DELETE;
 			if (iev->mask & IN_CLOSE_WRITE) fflags |= NOTE_WRITE;
 			if (iev->mask & IN_MOVE_SELF)   fflags |= NOTE_RENAME;
+			if (iev->mask & IN_ATTRIB) {
+				if ((fstat(iev->wd, &sb) == -1) && errno == ENOENT)
+					fflags |= NOTE_DELETE;
+			}
 			if (fflags == 0) continue;
 
 			/* merge events if we're not acting on a new file descriptor */

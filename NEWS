@@ -1,10 +1,12 @@
 = Next Release: 3.0
 
-- Man page highlights the flexibility of executing a commands (sh -c '...')
-- 'reload-browser', a cross-platform wrapper for reloading the current tab
-  in one or more browsers
+- Man page highlights the flexibility of executing a commands using a shell
+- 'reload-browser', a cross-platform wrapper for reloading the current tab in
+  one or more browsers
 - system_test.sh auto-upgrades to bash if the default shell does not support the
   ERR trap
+- Workaround implemented for Linux using fstat(2) to detect if a binary was
+  removed if inotify issues IN_ATTRIB but not IN_DELETE_SELF
 
 = Release History
 
