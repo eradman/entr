@@ -36,20 +36,19 @@ Installation - Debian
 Examples from `man entr`
 ------------------------
 
-Clear the screen and rebuild a project if source files change:
+Rebuild a project if source files change, limiting output to the first 20 lines
 
-    $ find src/ | entr make
+    $ find src/ | entr sh -c 'make | head -n 20'
 
 Launch and auto-reload a node.js server:
 
     $ ls *.js | entr -r node app.js
 
-Run an SQL query:
+Clear the screen and run a query:
 
-    $ echo my.sql | entr psql -f /_
+    $ echo my.sql | entr -c psql -f /_
 
-Rebuild project if a source file is modified or added to the src/
-directory:
+Rebuild project if a source file is modified or added to the src/ directory:
 
     $ while sleep 1; do ls src/*.rb | entr -d rake; done
 
@@ -57,7 +56,7 @@ Convert individual Markdown files to HTML if they're modified:
 
     $ ls *.md | entr +notify &
     $ while read F; do
-    >    markdown2html $F
+    >     markdown2html $F
     > done < notify
 
 News

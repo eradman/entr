@@ -107,8 +107,7 @@ A file was added to a directory while using the while using the directory watch
 option
 .El
 .Sh EXAMPLES
-Rebuild a project if source files change, showing only the first 20 lines of
-output
+Rebuild a project if source files change, limiting output to the first 20 lines
 .Pp
 .Dl $ find src/ | entr sh -c 'make | head -n 20'
 .Pp
