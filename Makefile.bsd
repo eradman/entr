@@ -36,7 +36,7 @@ install: entr
 	@mkdir -p ${DESTDIR}${MANPREFIX}/man1
 	install entr ${DESTDIR}${PREFIX}/bin
 	install scripts/reload-browser ${DESTDIR}${PREFIX}/bin
-	install entr.1 ${DESTDIR}${MANPREFIX}/man1
+	install -m 644 entr.1 ${DESTDIR}${MANPREFIX}/man1
 
 uninstall:
 	rm ${DESTDIR}${PREFIX}/bin/entr
