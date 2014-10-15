@@ -6,8 +6,8 @@ A utility for running arbitrary commands when files change. Uses
 responds to file system events by executing command line arguments or by writing
 to a FIFO.
 
-`entr` was written to provide to make rapid feedback and automated testing
-natural and completely ordinary.
+`entr` was written to make rapid feedback and automated testing natural and
+completely ordinary.
 
 Installation - BSD, Mac OS, and Linux
 -------------------------------------
