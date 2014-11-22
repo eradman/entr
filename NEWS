@@ -7,6 +7,7 @@
   ERR trap
 - Workaround implemented for Linux using fstat(2) to detect if a binary was
   removed if inotify issues IN_ATTRIB but not IN_DELETE_SELF
+- Use calloc(3) to take advantage of overflow detection
 
 = Release History
 

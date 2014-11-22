@@ -142,8 +142,7 @@ main(int argc, char *argv[]) {
 	setenv("PAGER", "/bin/cat", 0);
 
 	/* sequential scan may depend on a 0 at the end */
-	files = malloc(sizeof(char *) * rl.rlim_cur+1);
-	memset(files, 0, sizeof(char *) * rl.rlim_cur+1);
+	files = calloc(rl.rlim_cur+1, sizeof(char *));
 
 	if ((kq = kqueue()) == -1)
 		err(1, "cannot create kqueue");
@@ -356,8 +355,7 @@ run_utility(char *argv[]) {
 	 */
 	for (argc=0; argv[argc]; argc++);
 	arg_buf = malloc(ARG_MAX);
-	new_argv = malloc((argc + 1) * sizeof(char *));
-	memset(new_argv, 0, (argc + 1) * sizeof(char *));
+	new_argv = calloc(argc+1, sizeof(char *));
 	for (m=0, i=0, p=arg_buf; i<argc; i++) {
 		new_argv[i] = p;
 		if ((m < 1) && (strcmp(argv[i], "/_")) == 0) {

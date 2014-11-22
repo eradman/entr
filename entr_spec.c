@@ -78,13 +78,10 @@ void reset_state() {
 	clear_opt = 0;
 	dirwatch_opt = 0;
 	leading_edge = 0;
-	files = malloc(sizeof(WatchFile *) * max_files);
+	files = calloc(max_files, sizeof(WatchFile *));
 	for (i=0; i<max_files; i++)
-		files[i] = malloc(sizeof(WatchFile));
-
+		files[i] = calloc(1, sizeof(WatchFile));
 	/* initialize test context */
-	for (i=0; i<max_files; i++)
-		memset(files[i], 0, sizeof(WatchFile));
 	memset(&ctx, 0, sizeof(ctx));
 }
 
