@@ -29,8 +29,7 @@ function skip { printf "s"; }
 
 function zz { sleep 0.25; }
 function setup { rm -f $tmp/*; touch $tmp/file{1,2}; zz; }
-system_tmp=$(cd /tmp; pwd -P)
-tmp=$(cd $(mktemp -d $system_tmp/entr_system_test.XXXXXXXXXX); pwd -P)
+tmp=$(mktemp -dt entr_system_test.XXXXXXXXXX)
 
 # rebuild
 
