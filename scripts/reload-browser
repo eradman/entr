@@ -23,11 +23,12 @@ do
 	Darwin)
 		/usr/bin/osascript <<-APPLESCRIPT
 		set prev to (path to frontmost application as text)
-		tell application "$app" to activate
-		tell application "System Events"
-		    keystroke "r" using {command down}
+		tell application "$app"
+		    activate
 		end tell
-		delay 1
+		delay 0.5
+		tell application "System Events" to keystroke "r" using {command down}
+		delay 0.5
 		activate application prev
 		APPLESCRIPT
 		;;
