@@ -1,7 +1,7 @@
 = Next Release: 3.0
 
 - Man page highlights the flexibility of executing a commands using a shell
-- 'reload-browser', a cross-platform wrapper for reloading the current tab in
+- 'reload-browser', a cross-platform script for reloading the current tab in
   one or more browsers
 - system_test.sh auto-upgrades to bash if the default shell does not support the
   ERR trap

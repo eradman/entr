@@ -22,10 +22,13 @@ do
 	case `uname` in
 	Darwin)
 		/usr/bin/osascript <<-APPLESCRIPT
-		tell application "$app"
-		  activate
-		  tell application "System Events" to keystroke "r" using command down
+		set prev to (path to frontmost application as text)
+		tell application "$app" to activate
+		tell application "System Events"
+		    keystroke "r" using {command down}
 		end tell
+		delay 1
+		activate application prev
 		APPLESCRIPT
 		;;
 	*)
