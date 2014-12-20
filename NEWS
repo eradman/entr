@@ -1,4 +1,6 @@
-= Next Release: 3.0
+= Release History
+
+== 3.0: December 19, 2014
 
 - Man page highlights the flexibility of executing a commands using a shell
 - 'reload-browser', a cross-platform script for reloading the current tab in
@@ -8,8 +10,6 @@
 - Workaround implemented for Linux using fstat(2) to detect if a binary was
   removed if inotify issues IN_ATTRIB but not IN_DELETE_SELF
 - Use calloc(3) to take advantage of overflow detection
-
-= Release History
 
 == 2.9: June 10, 2014
 
