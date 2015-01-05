@@ -1,3 +1,7 @@
+= Next Release
+
+- Return error code indicating exit reason after handling signals
+
 = Release History
 
 == 3.0: December 19, 2014

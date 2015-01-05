@@ -76,7 +76,7 @@ try "exec single shell utility and exit when a file is added to an implicit watc
 	    || true &
 	bgpid=$! ; zz
 	touch $tmp/newfile
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "ping"
 	assert "$(cat $tmp/exec.err)" "entr: directory altered"
 
@@ -86,7 +86,7 @@ try "exec single shell utility and exit when a file is added to a specific path"
 	    || true &
 	bgpid=$! ; zz
 	touch $tmp/newfile
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "ping"
 	assert "$(cat $tmp/exec.err)" "entr: directory altered"
 
@@ -96,7 +96,7 @@ try "do nothing when a file not monitored is changed in directory watch mode"
 	bgpid=$! ; zz
 	echo "123" > file1
 	kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" ""
 	assert "$(cat $tmp/exec.err)" ""
 
@@ -108,7 +108,7 @@ try "exec utility when a file is written by Vim in directory watch mode"
 	    -c ":r!date" \
 	    -c ":wq" $tmp/file1 ; zz
 	kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "changed"
 	assert "$(cat $tmp/exec.err)" ""
 
@@ -119,7 +119,7 @@ try "exec utility when a file is opened for write and then closed"
 	bgpid=$! ; zz
 	: > $tmp/file1 ; zz
 	kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	if [ $(uname | egrep 'Darwin|FreeBSD|DragonFly') ]; then
 		skip "NOTE_TRUNCATE not supported"
 	else
@@ -144,7 +144,7 @@ try "exec single utility when an entire stash of files is reverted"
 	hg revert *.h
 	cd - > /dev/null ; zz
 	kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "changed"
 
 try "exec utility when a file is written by Vim"
@@ -155,7 +155,7 @@ try "exec utility when a file is written by Vim"
 	    -c ":r!date" \
 	    -c ":wq" $tmp/file1 ; zz
 	kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "changed"
 
 try "exec shell utility when a file is written by Vim with 'backup'"
@@ -167,7 +167,7 @@ try "exec shell utility when a file is written by Vim with 'backup'"
 	    -c ":r!date" \
 	    -c ":wq" $tmp/file1 ; zz
 	kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "changed"
 
 try "exec shell utility when a file is written by Vim with 'nowritebackup'"
@@ -179,7 +179,7 @@ try "exec shell utility when a file is written by Vim with 'nowritebackup'"
 	    -c ":r!date" \
 	    -c ":wq" $tmp/file1 ; zz
 	kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "changed"
 
 try "restart a server when a file is modified"
@@ -190,7 +190,7 @@ try "restart a server when a file is modified"
 	assert "$(cat $tmp/exec.out)" "started."
 	echo 456 >> $tmp/file2 ; zz
 	kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "$(printf 'started.\nstarted.')"
 
 try "exit with no action when restart and dirwatch flags are combined"
@@ -201,7 +201,7 @@ try "exit with no action when restart and dirwatch flags are combined"
 	assert "$(cat $tmp/exec.out)" "started."
 	touch $tmp/newfile
 	kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "$(printf 'started.')"
 
 try "exec single shell utility when two files change simultaneously"
@@ -211,7 +211,7 @@ try "exec single shell utility when two files change simultaneously"
 	bgpid=$! ; zz
 	echo 456 >> $tmp/file1 ; zz
 	kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "ping"
 
 try "exec using subsituting changed file argument"
@@ -221,7 +221,7 @@ try "exec using subsituting changed file argument"
 	echo 123 >> $tmp/file1
 	echo 456 >> $tmp/file2 ; zz
 	kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "123"
 
 try "read each filename from a named pipe as they're modified"
@@ -232,7 +232,7 @@ try "read each filename from a named pipe as they're modified"
 	echo 123 >> $tmp/file1 ; zz
 	echo 789 >> $tmp/file2 ; zz
 	kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(printf 'file1\nfile2')"
 
 try "ensure that events are consolodated when writing to a named pipe"
@@ -243,7 +243,7 @@ try "ensure that events are consolodated when writing to a named pipe"
 	mv $tmp/file1 $tmp/_file1 ; zz
 	mv $tmp/_file1 $tmp/file1 ; zz
 	kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(printf 'file1')"
 
 try "read each filename from a named pipe until a file is removed"
@@ -254,7 +254,7 @@ try "read each filename from a named pipe until a file is removed"
 	echo 123 >> $tmp/file1 ; zz
 	rm $tmp/file2 ; zz
 	kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(printf 'file1')"
 	assert $code 1
 
@@ -264,7 +264,7 @@ try "exec single shell utility using utility substitution"
 	bgpid=$! ; zz
 	echo 456 >> $tmp/file2; zz
 	kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "$tmp/file2: ASCII text"
 
 try "watch and exec a program that is overwritten"
@@ -277,7 +277,7 @@ try "watch and exec a program that is overwritten"
 	echo vroom
 	EOF
 	zz ; kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "vroom"
 
 tty > /dev/null && {
@@ -287,7 +287,7 @@ try "exec an interactive utility when a file changes"
 	bgpid=$! ; zz
 	echo 456 >> $tmp/file2 ; zz
 	kill -INT $bgpid
-	wait $bgpid
+	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out | tr '/pts' '/tty')" "/dev/tty"
 }
 
