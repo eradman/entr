@@ -280,16 +280,18 @@ try "watch and exec a program that is overwritten"
 	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "vroom"
 
-tty > /dev/null && {
 try "exec an interactive utility when a file changes"
 	setup
-	ls $tmp/file* | ./entr sh -c 'tty | colrm 9; sleep 0.3' > $tmp/exec.out &
+	ls $tmp/file* | ./entr sh -c 'tty | colrm 9' 2> /dev/null > $tmp/exec.out &
 	bgpid=$! ; zz
 	echo 456 >> $tmp/file2 ; zz
 	kill -INT $bgpid
 	wait $bgpid || assert "$?" "130"
-	assert "$(cat $tmp/exec.out | tr '/pts' '/tty')" "/dev/tty"
-}
+	if ! tty > /dev/null ; then
+		skip "A TTY is not available"
+	else
+		assert "$(cat $tmp/exec.out | tr '/pts' '/tty')" "/dev/tty"
+	fi
 
 # cleanup
 rm -r $tmp
