@@ -51,7 +51,7 @@
 
 int (*test_runner_main)(int, char**);
 int (*xstat)(const char *, struct stat *);
-int (*xkill)(pid_t, int);
+int (*xkillpg)(pid_t, int);
 int (*xexecvp)(const char *, char *const []);
 pid_t (*xwaitpid)(pid_t, int *, int);
 pid_t (*xfork)();
@@ -109,7 +109,7 @@ main(int argc, char *argv[]) {
 	/* set up pointers to real functions */
 	xstat = stat;
 	xkevent = kevent;
-	xkill = kill;
+	xkillpg = killpg;
 	xexecvp = execvp;
 	xwaitpid = waitpid;
 	xfork = fork;
@@ -143,7 +143,7 @@ main(int argc, char *argv[]) {
 	setenv("PAGER", "/bin/cat", 0);
 
 	/* sequential scan may depend on a 0 at the end */
-	files = calloc(rl.rlim_cur+1, sizeof(char *));
+	files = calloc(rl.rlim_cur+1, sizeof(WatchFile *));
 
 	if ((kq = kqueue()) == -1)
 		err(1, "cannot create kqueue");
@@ -192,11 +192,7 @@ terminate_utility() {
 	int status;
 
 	if (child_pid > 0) {
-		#ifdef DEBUG
-		fprintf(stderr, "signal %d sent to pid %d\n", SIGTERM,
-		    child_pid);
-		#endif
-		xkill(child_pid, SIGTERM);
+		xkillpg(child_pid, SIGTERM);
 		xwaitpid(child_pid, &status, 0);
 		child_pid = 0;
 	}
@@ -374,6 +370,8 @@ run_utility(char *argv[]) {
 	if (pid == 0) {
 		if (clear_opt == 1)
 			system("/usr/bin/clear");
+		/* Set process group so subprocess can be signaled */
+		setpgid(0, 0);
 		/* wait up to 1 seconds for each file to become available */
 		for (i=0; i < 10; i++) {
 			ret = xexecvp(new_argv[0], new_argv);

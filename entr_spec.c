@@ -166,7 +166,7 @@ fake_kevent(int kq, const struct kevent *changelist, int nchanges, struct
 /* spies */
 
 int
-fake_kill(pid_t pid, int sig) {
+fake_killpg(pid_t pid, int sig) {
 	ctx.signal.pid = pid;
 	ctx.signal.sig = sig;
 	ctx.signal.count++;
@@ -766,7 +766,7 @@ int test_main(int argc, char *argv[]) {
 	/* set up pointers to test doubles */
 	xstat = fake_stat;
 	xkevent = fake_kevent;
-	xkill = fake_kill;
+	xkillpg = fake_killpg;
 	xwaitpid = fake_waitpid;
 	xexecvp = fake_execvp;
 	xfork = fake_fork;

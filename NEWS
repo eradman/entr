@@ -1,6 +1,8 @@
-= Next Release
+= Next Release: 3.1
 
 - Return error code indicating exit reason after handling signals
+- Use a process group to ensure that wrapper scripts do not prevent signals
+  from reaching child processes
 
 = Release History
 
