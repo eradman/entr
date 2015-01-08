@@ -1,21 +1,21 @@
 = Next Release: 3.1
 
-- Return error code indicating exit reason after handling signals
-- Use a process group to ensure that wrapper scripts do not prevent signals
-  from reaching child processes
+ - Return error code indicating exit reason after handling signals
+ - Use a process group to ensure that wrapper scripts do not prevent signals
+   from reaching child processes
 
 = Release History
 
 == 3.0: December 19, 2014
 
-- Man page highlights the flexibility of executing a commands using a shell
-- 'reload-browser', a cross-platform script for reloading the current tab in
-  one or more browsers
-- system_test.sh auto-upgrades to bash if the default shell does not support the
-  ERR trap
-- Workaround implemented for Linux using fstat(2) to detect if a binary was
-  removed if inotify issues IN_ATTRIB but not IN_DELETE_SELF
-- Use calloc(3) to take advantage of overflow detection
+ - Man page highlights the flexibility of executing a commands using a shell
+ - 'reload-browser', a cross-platform script for reloading the current tab in
+   one or more browsers
+ - system_test.sh auto-upgrades to bash if the default shell does not support
+   the ERR trap
+ - Workaround implemented for Linux using fstat(2) to detect if a binary was
+   removed if inotify issues IN_ATTRIB but not IN_DELETE_SELF
+ - Use calloc(3) to take advantage of overflow detection
 
 == 2.9: June 10, 2014
 
