@@ -478,17 +478,6 @@ main:
 		return;
 
 	for (i=0; i<nev; i++) {
-		#ifdef DEBUG
-		fprintf(stderr, "event %d/%d: ident %d filter %d flags 0x%x "
-		    "fflags 0x%x udata %d udata %p\n", i+1,
-		    nev,
-		    evList[i].ident,
-		    evList[i].filter,
-		    evList[i].flags,
-		    evList[i].fflags,
-		    evList[i].data,
-		    evList[i].udata);
-		#endif
 		if (evList[i].filter != EVFILT_VNODE)
 			continue;
 		file = (WatchFile *)evList[i].udata;

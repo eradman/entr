@@ -3,6 +3,7 @@
  - Return error code indicating exit reason after handling signals
  - Use a process group to ensure that wrapper scripts do not prevent signals
    from reaching child processes
+ - Removed DEBUG printfs
 
 = Release History
 

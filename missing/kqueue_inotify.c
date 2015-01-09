@@ -128,10 +128,6 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			iev = (struct inotify_event *) &buf[pos];
 			pos += EVENT_SIZE + iev->len;
 
-			#ifdef DEBUG
-			fprintf(stderr, "wd: %d mask: 0x%x\n", iev->wd, iev->mask);
-			#endif
-
 			/* convert iev->mask; to comparable kqueue flags */
 			fflags = 0;
 			if (iev->mask & IN_DELETE_SELF) fflags |= NOTE_DELETE;
