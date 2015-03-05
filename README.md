@@ -2,14 +2,9 @@ Event Notify Test Runner
 ========================
 
 A utility for running arbitrary commands when files change. Uses
-[kqueue(2)][kqueue_2] or [inotify(7)][inotify_7] to avoid polling. `entr`
-responds to file system events by executing command line arguments or by writing
-to a FIFO.
-
-`entr` was written to make rapid feedback and automated testing natural and
-completely ordinary.
-
-[![Build Status](https://drone.io/bitbucket.org/eradman/entr/status.png)](https://drone.io/bitbucket.org/eradman/entr/latest)
+[kqueue(2)][kqueue_2] or [inotify(7)][inotify_7] to avoid polling.  `entr` was
+written to make rapid feedback and automated testing natural and completely
+ordinary.
 
 Installation - BSD, Mac OS, and Linux
 -------------------------------------
@@ -53,13 +48,6 @@ Clear the screen and run a query:
 Rebuild project if a source file is modified or added to the src/ directory:
 
     $ while sleep 1; do ls src/*.rb | entr -d rake; done
-
-Convert individual Markdown files to HTML if they're modified:
-
-    $ ls *.md | entr +notify &
-    $ while read F; do
-    >     markdown2html $F
-    > done < notify
 
 News
 ----

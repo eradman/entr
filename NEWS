@@ -1,3 +1,7 @@
+= Next Release: 3.2
+
+ - Remove references to FIFO mode from the README
+
 = Release History
 
 == 3.1: March 4, 2015
