@@ -1,11 +1,11 @@
-= Next Release: 3.1
+= Release History
+
+== 3.1: March 4, 2015
 
  - Return error code indicating exit reason after handling signals
  - Restart mode sets process group to ensure that wrapper scripts do not prevent
    signals from reaching child processes
- - Removed DEBUG printfs
-
-= Release History
+ - Removed DEBUG printf statements
 
 == 3.0: December 19, 2014
 

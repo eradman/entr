@@ -9,6 +9,8 @@ to a FIFO.
 `entr` was written to make rapid feedback and automated testing natural and
 completely ordinary.
 
+[![Build Status](https://drone.io/bitbucket.org/eradman/entr/status.png)](https://drone.io/bitbucket.org/eradman/entr/latest)
+
 Installation - BSD, Mac OS, and Linux
 -------------------------------------
 
