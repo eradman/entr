@@ -60,8 +60,11 @@ Postpone the first execution of the
 .Ar utility
 until a file is modified.
 .It Fl r
-Restart the child process by sending
-.Dv SIGTERM .
+Reload a persistent child process.
+.Dv SIGTERM
+is used to terminate the
+.Ar utility before it is restarted.
+A process group is created to prevent shell scripts from masking signals.
 .Nm
 waits for the
 .Ar utility
@@ -108,7 +111,7 @@ A file was added to a directory while using the while using the directory watch
 option
 .El
 .Sh EXAMPLES
-Rebuild a project if source files change, limiting output to the first 20 lines
+Rebuild a project if source files change, limiting output to the first 20 lines:
 .Pp
 .Dl $ find src/ | entr sh -c 'make | head -n 20'
 .Pp

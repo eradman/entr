@@ -33,7 +33,7 @@ Installation - Debian
 Examples from `man entr`
 ------------------------
 
-Rebuild a project if source files change, limiting output to the first 20 lines
+Rebuild a project if source files change, limiting output to the first 20 lines:
 
     $ find src/ | entr sh -c 'make | head -n 20'
 
@@ -41,9 +41,9 @@ Launch and auto-reload a node.js server:
 
     $ ls *.js | entr -r node app.js
 
-Clear the screen and run a query:
+Clear the screen and run a query after the SQL script is updated:
 
-    $ echo my.sql | entr -c psql -f /_
+    $ echo my.sql | entr -p psql -f /_
 
 Rebuild project if a source file is modified or added to the src/ directory:
 

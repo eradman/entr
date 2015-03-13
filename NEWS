@@ -1,5 +1,7 @@
 = Next Release: 3.2
 
+ - Execute the utility immediately after registering watch events. Old behavior
+   is restored using new postpone option ('-p')
  - Remove references to FIFO mode from the README
 
 = Release History
