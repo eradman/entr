@@ -74,9 +74,10 @@ void reset_state() {
 
 	/* initialize global data */
 	memset(&fifo, 0, sizeof(fifo));
-	restart_opt = 0;
 	clear_opt = 0;
 	dirwatch_opt = 0;
+	postpone_opt = 0;
+	restart_opt = 0;
 	leading_edge = 0;
 	files = calloc(max_files, sizeof(WatchFile *));
 	for (i=0; i<max_files; i++)
@@ -266,6 +267,7 @@ int watch_fd_exec_01() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 
+	postpone_opt = 1;
 	strlcpy(files[0]->fn, "arg1", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 
@@ -311,6 +313,7 @@ int watch_fd_exec_02() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 
+	postpone_opt = 1;
 	strlcpy(files[0]->fn, "main.py", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 
@@ -339,6 +342,7 @@ int watch_fd_exec_03() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 
+	postpone_opt = 1;
 	strlcpy(files[0]->fn, "main.py", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 	strlcpy(files[1]->fn, "util.py", sizeof(files[1]->fn));
@@ -379,6 +383,7 @@ int watch_fd_exec_04() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 
+	postpone_opt = 1;
 	strlcpy(files[0]->fn, "arg1", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 
@@ -424,6 +429,7 @@ int watch_fd_exec_05() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 
+	postpone_opt = 1;
 	strlcpy(files[0]->fn, "arg1", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
 
@@ -468,6 +474,7 @@ int watch_fd_exec_06() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 
+	postpone_opt = 1;
 	strlcpy(files[0]->fn, ".", sizeof(files[0]->fn));
 	files[0]->is_dir = 1;
 	files[0]->file_count = 1;
@@ -511,6 +518,7 @@ int watch_fd_exec_07() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 
+	postpone_opt = 1;
 	strlcpy(files[0]->fn, ".", sizeof(files[0]->fn));
 	files[0]->is_dir = 1;
 	strlcpy(files[1]->fn, "run.sh", sizeof(files[0]->fn));
@@ -590,6 +598,7 @@ int set_options_02() {
 	ok(restart_opt == 1);
 	ok(clear_opt == 0);
 	ok(dirwatch_opt == 0);
+	ok(postpone_opt == 0);
 	return 0;
 }
 
@@ -606,6 +615,7 @@ int set_options_03() {
 	ok(restart_opt == 0);
 	ok(clear_opt == 1);
 	ok(dirwatch_opt == 0);
+	ok(postpone_opt == 0);
 	return 0;
 }
 
@@ -622,6 +632,7 @@ int set_options_04() {
 	ok(restart_opt == 0);
 	ok(clear_opt == 0);
 	ok(dirwatch_opt == 1);
+	ok(postpone_opt == 0);
 	return 0;
 }
 

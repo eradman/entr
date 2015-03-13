@@ -72,7 +72,7 @@ try "no regular files provided as input"
 
 try "exec single shell utility and exit when a file is added to an implicit watch path"
 	setup
-	ls $tmp/file* | ./entr -d sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
+	ls $tmp/file* | ./entr -dp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
 	    || true &
 	bgpid=$! ; zz
 	touch $tmp/newfile
@@ -82,7 +82,7 @@ try "exec single shell utility and exit when a file is added to an implicit watc
 
 try "exec single shell utility and exit when a file is added to a specific path"
 	setup
-	ls -d $tmp | ./entr -d sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
+	ls -d $tmp | ./entr -dp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
 	    || true &
 	bgpid=$! ; zz
 	touch $tmp/newfile
@@ -92,9 +92,9 @@ try "exec single shell utility and exit when a file is added to a specific path"
 
 try "do nothing when a file not monitored is changed in directory watch mode"
 	setup
-	ls $tmp/file2 | ./entr -d echo "changed" >$tmp/exec.out 2>$tmp/exec.err &
+	ls $tmp/file2 | ./entr -dp echo "changed" >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
-	echo "123" > file1
+	echo "123" > $tmp/file1
 	kill -INT $bgpid
 	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" ""
@@ -102,7 +102,7 @@ try "do nothing when a file not monitored is changed in directory watch mode"
 
 try "exec utility when a file is written by Vim in directory watch mode"
 	setup
-	ls $tmp/file* | ./entr -d echo "changed" >$tmp/exec.out 2>$tmp/exec.err &
+	ls $tmp/file* | ./entr -dp echo "changed" >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
 	vim -e -s -u NONE -N \
 	    -c ":r!date" \
@@ -115,7 +115,7 @@ try "exec utility when a file is written by Vim in directory watch mode"
 try "exec utility when a file is opened for write and then closed"
 	setup
 	echo "---" > $tmp/file1
-	ls $tmp/file* | ./entr echo "changed" > $tmp/exec.out &
+	ls $tmp/file* | ./entr -p echo "changed" > $tmp/exec.out &
 	bgpid=$! ; zz
 	: > $tmp/file1 ; zz
 	kill -INT $bgpid
@@ -138,7 +138,7 @@ try "exec single utility when an entire stash of files is reverted"
 		echo "" >> $f
 	done
 	cd - > /dev/null ; zz
-	ls $tmp/*.h | ./entr echo "changed" > $tmp/exec.out &
+	ls $tmp/*.h | ./entr -p echo "changed" > $tmp/exec.out &
 	bgpid=$! ; zz
 	cd $tmp
 	hg revert *.h
@@ -149,7 +149,7 @@ try "exec single utility when an entire stash of files is reverted"
 
 try "exec utility when a file is written by Vim"
 	setup
-	ls $tmp/file* | ./entr echo "changed" > $tmp/exec.out &
+	ls $tmp/file* | ./entr -p echo "changed" > $tmp/exec.out &
 	bgpid=$! ; zz
 	vim -e -s -u NONE -N \
 	    -c ":r!date" \
@@ -160,7 +160,7 @@ try "exec utility when a file is written by Vim"
 
 try "exec shell utility when a file is written by Vim with 'backup'"
 	setup
-	ls $tmp/file* | ./entr echo "changed" > $tmp/exec.out &
+	ls $tmp/file* | ./entr -p echo "changed" > $tmp/exec.out &
 	bgpid=$! ; zz
 	vim -e -s -u NONE -N \
 	    -c ":set backup" \
@@ -172,7 +172,7 @@ try "exec shell utility when a file is written by Vim with 'backup'"
 
 try "exec shell utility when a file is written by Vim with 'nowritebackup'"
 	setup
-	ls $tmp/file* | ./entr echo "changed" > $tmp/exec.out &
+	ls $tmp/file* | ./entr -p echo "changed" > $tmp/exec.out &
 	bgpid=$! ; zz
 	vim -e -s -u NONE -N \
 	    -c ":set nowritebackup" \
@@ -220,16 +220,25 @@ try "exit with no action when restart and dirwatch flags are combined"
 try "exec single shell utility when two files change simultaneously"
 	setup
 	ln $tmp/file1 $tmp/file3
-	ls $tmp/file* | ./entr sh -c 'echo ping' > $tmp/exec.out &
+	ls $tmp/file* | ./entr -p sh -c 'echo ping' > $tmp/exec.out &
 	bgpid=$! ; zz
 	echo 456 >> $tmp/file1 ; zz
 	kill -INT $bgpid
 	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "ping"
 
+try "exec shell utility on startup and after a file is changed"
+	setup
+	ls $tmp/file* | ./entr sh -c 'printf ping' > $tmp/exec.out &
+	bgpid=$! ; zz
+	echo 456 >> $tmp/file1 ; zz
+	kill -INT $bgpid
+	wait $bgpid || assert "$?" "130"
+	assert "$(cat $tmp/exec.out)" "pingping"
+
 try "exec using subsituting changed file argument"
 	setup
-	ls $tmp/file* | ./entr cat /_ > $tmp/exec.out &
+	ls $tmp/file* | ./entr -p cat /_ > $tmp/exec.out &
 	bgpid=$! ; zz
 	echo 123 >> $tmp/file1
 	echo 456 >> $tmp/file2 ; zz
@@ -273,7 +282,7 @@ try "read each filename from a named pipe until a file is removed"
 
 try "exec single shell utility using utility substitution"
 	setup
-	ls $tmp/file1 $tmp/file2 | ./entr file /_ > $tmp/exec.out &
+	ls $tmp/file1 $tmp/file2 | ./entr -p file /_ > $tmp/exec.out &
 	bgpid=$! ; zz
 	echo 456 >> $tmp/file2; zz
 	kill -INT $bgpid
@@ -283,7 +292,7 @@ try "exec single shell utility using utility substitution"
 try "watch and exec a program that is overwritten"
 	setup
 	touch $tmp/script; chmod 755 $tmp/script
-	echo $tmp/script | ./entr $tmp/script $tmp/file1 > $tmp/exec.out &
+	echo $tmp/script | ./entr -p $tmp/script $tmp/file1 > $tmp/exec.out &
 	bgpid=$! ; zz
 	cat > $tmp/script <<-EOF
 	#!/bin/sh
@@ -295,7 +304,7 @@ try "watch and exec a program that is overwritten"
 
 try "exec an interactive utility when a file changes"
 	setup
-	ls $tmp/file* | ./entr sh -c 'tty | colrm 9' 2> /dev/null > $tmp/exec.out &
+	ls $tmp/file* | ./entr -p sh -c 'tty | colrm 9' 2> /dev/null > $tmp/exec.out &
 	bgpid=$! ; zz
 	echo 456 >> $tmp/file2 ; zz
 	kill -INT $bgpid

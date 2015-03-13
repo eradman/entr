@@ -70,10 +70,12 @@ extern int optind;
 extern WatchFile **files;
 WatchFile fifo;
 WatchFile *leading_edge;
-int restart_opt;
+int child_pid;
+
 int clear_opt;
 int dirwatch_opt;
-int child_pid;
+int restart_opt;
+int postpone_opt;
 
 /* forwards */
 
@@ -180,7 +182,7 @@ main(int argc, char *argv[]) {
 void
 usage() {
 	extern char *__progname;
-	fprintf(stderr, "usage: %s [-dr] [-c] utility [args, [/_], ...] < filenames\n",
+	fprintf(stderr, "usage: %s [-cdpr] [-c] utility [args, [/_], ...] < filenames\n",
 	    __progname);
 	fprintf(stderr, "       %s +fifo < filenames\n",
 	    __progname);
@@ -308,13 +310,16 @@ set_options(char *argv[]) {
 
 	/* read arguments until we reach a command */
 	for (argc=1; argv[argc] != 0 && argv[argc][0] == '-'; argc++);
-	while ((ch = getopt(argc, argv, "cdr")) != -1) {
+	while ((ch = getopt(argc, argv, "cdpr")) != -1) {
 		switch (ch) {
 		case 'c':
 			clear_opt = 1;
 			break;
 		case 'd':
 			dirwatch_opt = 1;
+			break;
+		case 'p':
+			postpone_opt = 1;
 			break;
 		case 'r':
 			restart_opt = 1;
@@ -464,7 +469,7 @@ watch_loop(int kq, char *argv[]) {
 	int dir_modified = 0;
 
 	leading_edge = files[0]; /* default */
-	if (restart_opt)
+	if (postpone_opt == 0 && fifo.fd == 0)
 		run_utility(argv);
 
 main:

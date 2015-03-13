@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd May 14, 2014
+.Dd March 13, 2015
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -21,7 +21,7 @@
 .Nd run arbitrary commands when files change
 .Sh SYNOPSIS
 .Nm
-.Op Fl cdr
+.Op Fl cdpr
 .Ar utility
 .Op Ar argument ...
 .Op Ar /_
@@ -55,12 +55,13 @@ This option also enables directories to be specified explicitly.
 Files with names beginning with
 .Ql \&.
 are ignored.
-.It Fl r
-Launch the
+.It Fl p
+Postpone the first execution of the
 .Ar utility
-at startup and reload it by sending
-.Dv SIGTERM
-if one of the source files change.
+until a file is modified.
+.It Fl r
+Restart the child process by sending
+.Dv SIGTERM .
 .Nm
 waits for the
 .Ar utility
@@ -115,9 +116,9 @@ Launch and auto-reload a node.js server:
 .Pp
 .Dl $ ls *.js | entr -r node app.js
 .Pp
-Clear the screen and run a query:
+Clear the screen and run a query after the SQL script is updated:
 .Pp
-.Dl $ echo my.sql | entr -c psql -f /_
+.Dl $ echo my.sql | entr -p psql -f /_
 .Pp
 Rebuild project if a source file is modified or added to the src/ directory:
 .Pp
