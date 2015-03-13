@@ -73,7 +73,6 @@ void reset_state() {
 	optind = 1;
 
 	/* initialize global data */
-	memset(&fifo, 0, sizeof(fifo));
 	clear_opt = 0;
 	dirwatch_opt = 0;
 	postpone_opt = 0;
@@ -123,11 +122,6 @@ fake_list_dir(char *path) {
 pid_t
 fake_fork() {
 	return 0; /* pretend to be the child */
-}
-
-int
-fake_mkfifo(const char *path, mode_t mode) {
-	return 0; /* success */
 }
 
 void
@@ -556,20 +550,6 @@ int watch_fd_exec_07() {
 }
 
 /*
- * FIFO mode; triggerd by a leading '+' on the filename
- */
-int set_fifo_01() {
-	static char *argv[] = { "entr", "+notify", NULL };
-
-	ok(set_fifo(argv+1));
-	ok(ctx.open.fd > 0);
-	ok(strcmp(fifo.fn, "notify") == 0);
-	ok(fifo.fd == ctx.open.fd);
-
-	return 0;
-}
-
-/*
  * Parse command line arguments up to but not including the utility to execute
  */
 int set_options_01() {
@@ -781,7 +761,6 @@ int test_main(int argc, char *argv[]) {
 	xwaitpid = fake_waitpid;
 	xexecvp = fake_execvp;
 	xfork = fake_fork;
-	xmkfifo = fake_mkfifo;
 	xopen = fake_open;
 	xrealpath = fake_realpath;
 	xfree = fake_free;
@@ -799,7 +778,6 @@ int test_main(int argc, char *argv[]) {
 	run(watch_fd_exec_05);
 	run(watch_fd_exec_06);
 	run(watch_fd_exec_07);
-	run(set_fifo_01);
 	run(set_options_01);
 	run(set_options_02);
 	run(set_options_03);

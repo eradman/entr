@@ -246,40 +246,6 @@ try "exec using subsituting changed file argument"
 	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "123"
 
-try "read each filename from a named pipe as they're modified"
-	setup
-	ls $tmp/file* | ./entr +$tmp/notify &
-	bgpid=$! ; zz
-	cat $tmp/notify > $tmp/namedpipe.out &
-	echo 123 >> $tmp/file1 ; zz
-	echo 789 >> $tmp/file2 ; zz
-	kill -INT $bgpid
-	wait $bgpid || assert "$?" "130"
-	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(printf 'file1\nfile2')"
-
-try "ensure that events are consolodated when writing to a named pipe"
-	setup
-	ls $tmp/file* | ./entr +$tmp/notify &
-	bgpid=$! ; zz
-	cat $tmp/notify > $tmp/namedpipe.out &
-	mv $tmp/file1 $tmp/_file1 ; zz
-	mv $tmp/_file1 $tmp/file1 ; zz
-	kill -INT $bgpid
-	wait $bgpid || assert "$?" "130"
-	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(printf 'file1')"
-
-try "read each filename from a named pipe until a file is removed"
-	setup
-	ls $tmp/file* | ./entr +$tmp/notify 2> /dev/null || code=$? &
-	bgpid=$! ; zz
-	cat $tmp/notify > $tmp/namedpipe.out &
-	echo 123 >> $tmp/file1 ; zz
-	rm $tmp/file2 ; zz
-	kill -INT $bgpid
-	wait $bgpid || assert "$?" "130"
-	assert "$(cat $tmp/namedpipe.out | sed 's/.*\///')" "$(printf 'file1')"
-	assert $code 1
-
 try "exec single shell utility using utility substitution"
 	setup
 	ls $tmp/file1 $tmp/file2 | ./entr -p file /_ > $tmp/exec.out &

@@ -2,7 +2,8 @@
 
  - Execute the utility immediately after registering watch events. Old behavior
    is restored using new postpone option ('-p')
- - Remove references to FIFO mode from the README
+ - Drop FIFO support. It was conceptually neat, but the default mode is very
+   clever hand easily handles the vast majority of use cases
 
 = Release History
 
