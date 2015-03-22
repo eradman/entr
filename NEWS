@@ -3,6 +3,8 @@
  - Execute the utility immediately after registering watch events. Old behavior
    is restored using new postpone option ('-p')
  - Remove references to FIFO mode from the README
+ - Relocated 'scripts/reload-browser' to
+   https://bitbucket.org/snippets/eradman/xR7d/reload-browser
 
 = Release History
 
