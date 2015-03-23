@@ -57,7 +57,6 @@ pid_t (*xwaitpid)(pid_t, int *, int);
 pid_t (*xfork)();
 int (*xkevent)(int, const struct kevent *, int, struct kevent *, int , const
     struct timespec *);
-int (*xmkfifo)(const char *path, mode_t mode);
 int (*xopen)(const char *path, int flags, ...);
 char * (*xrealpath)(const char *, char *);
 void (*xfree)(void *);
@@ -68,7 +67,6 @@ int (*xlist_dir)(char *);
 
 extern int optind;
 extern WatchFile **files;
-WatchFile fifo;
 WatchFile *leading_edge;
 int child_pid;
 
@@ -83,7 +81,6 @@ static void usage();
 static void terminate_utility();
 static void handle_exit(int sig);
 static int process_input(FILE *, WatchFile *[], int);
-static int set_fifo(char *[]);
 static int set_options(char *[]);
 static int list_dir(char *);
 static void run_utility(char *[]);
@@ -115,7 +112,6 @@ main(int argc, char *argv[]) {
 	xexecvp = execvp;
 	xwaitpid = waitpid;
 	xfork = fork;
-	xmkfifo = mkfifo;
 	xopen = open;
 	xrealpath = realpath;
 	xfree = free;
@@ -160,17 +156,13 @@ main(int argc, char *argv[]) {
 	for (i=0; i<n_files; i++)
 		watch_file(kq, files[i]);
 
-	/* FIFO mode will block until reader connects */
-	if (set_fifo(argv+argv_index));
-	else {
-		/* Attempt to open a tty so that editors don't complain */
-		if ((ttyfd = xopen(_PATH_TTY, O_RDONLY)) == -1)
-			warn("can't open %s", _PATH_TTY);
-		if (ttyfd > STDIN_FILENO) {
-			if (dup2(ttyfd, STDIN_FILENO) != 0)
-				warn("can't dup2 to stdin");
-			close(ttyfd);
-		}
+	/* Attempt to open a tty so that editors don't complain */
+	if ((ttyfd = xopen(_PATH_TTY, O_RDONLY)) == -1)
+		warn("can't open %s", _PATH_TTY);
+	if (ttyfd > STDIN_FILENO) {
+		if (dup2(ttyfd, STDIN_FILENO) != 0)
+			warn("can't dup2 to stdin");
+		close(ttyfd);
 	}
 
 	watch_loop(kq, argv+argv_index);
@@ -183,8 +175,6 @@ void
 usage() {
 	extern char *__progname;
 	fprintf(stderr, "usage: %s [-cdpr] [-c] utility [args, [/_], ...] < filenames\n",
-	    __progname);
-	fprintf(stderr, "       %s +fifo < filenames\n",
 	    __progname);
 	exit(1);
 }
@@ -204,10 +194,6 @@ terminate_utility() {
 
 void
 handle_exit(int sig) {
-	if (fifo.fd) {
-		close(fifo.fd);
-		unlink(fifo.fn);
-	}
 	terminate_utility();
 	raise(sig);
 }
@@ -264,26 +250,6 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 	}
 	return n_files;
 }
-
-/*
- * Determine if the user is specifying FIFO mode by supplying a pathname
- * prefixed with '+' and set the global mode flag accordingly
- */
-int
-set_fifo(char *argv[]) {
-	if (argv[0][0] == (int)'+') {
-		strlcpy(fifo.fn, argv[0]+1, MEMBER_SIZE(WatchFile, fn));
-		if (xmkfifo(fifo.fn, S_IRUSR| S_IWUSR) == -1)
-			err(1, "mkfifo '%s' failed", fifo.fn);
-		if ((fifo.fd = xopen(fifo.fn, O_WRONLY, 0)) == -1)
-			err(1, "open fifo '%s' failed", fifo.fn);
-		return 1;
-	}
-
-	memset(&fifo, 0, sizeof(fifo));
-	return 0;
-}
-
 
 int list_dir(char *dir) {
 	struct dirent *dp;
@@ -442,8 +408,7 @@ compare_dir_contents(WatchFile *file) {
 }
 
 /*
- * Wait for events to and execute a command or write filename to a FIFO.
- * Four major concerns are in play here:
+ * Wait for events to and execute a command. Four major concerns are in play:
  *   leading_edge: Global reference to the first file to have changed
  *   reopen_only : Unlink or rename events which require us to spin while
  *                 waiting for the file to reappear. These must always be
@@ -469,7 +434,7 @@ watch_loop(int kq, char *argv[]) {
 	int dir_modified = 0;
 
 	leading_edge = files[0]; /* default */
-	if (postpone_opt == 0 && fifo.fd == 0)
+	if (postpone_opt == 0)
 		run_utility(argv);
 
 main:
@@ -521,17 +486,9 @@ main:
 		    evList[i].fflags & NOTE_WRITE  ||
 		    evList[i].fflags & NOTE_RENAME ||
 		    evList[i].fflags & NOTE_TRUNCATE) {
-			if (fifo.fd == 0) {
-				if ((dir_modified > 0) && (restart_opt == 1))
-					continue;
-				do_exec = 1;
-			}
-			else {
-				write(fifo.fd, file->fn, strlen(file->fn));
-				write(fifo.fd, "\n", 1);
-				fsync(fifo.fd);
-				reopen_only = 1;
-			}
+			if ((dir_modified > 0) && (restart_opt == 1))
+				continue;
+			do_exec = 1;
 		}
 	}
 

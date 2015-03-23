@@ -25,15 +25,10 @@
 .Ar utility
 .Op Ar argument ...
 .Op Ar /_
-.Nm entr
-.Ar +fifo
 .Sh DESCRIPTION
-.Ss EXEC Mode
-.Nm entr
-has two modes of operation; the first reads a list of files provided on the
-standard input and executes the supplied
+A list of files provided on the standard input and the
 .Ar utility
-if any of them change.
+is executed using the supplied arguments if any of them change.
 .Nm
 waits for the child process to finish before responding to subsequent file
 system events.
@@ -75,15 +70,6 @@ The first occurrence of
 .Ar /_
 on the command line will be replaced with the absolute path of the first file that was modified.
 If the restart option is used the first file under watch is treated as the default.
-.Ss FIFO Mode
-The second mode also reads a list of filenames provided on the standard input
-and is enabled by specifying
-.Ql +
-and the name of a fifo.
-In this mode
-.Nm
-enables more sophisticated scripting by writing filenames to a named pipe when
-they are modified.
 .Sh ENVIRONMENT
 If
 .Ev PAGER
@@ -126,11 +112,3 @@ Clear the screen and run a query after the SQL script is updated:
 Rebuild project if a source file is modified or added to the src/ directory:
 .Pp
 .Dl $ while sleep 1; do ls src/*.rb | entr -d rake; done
-.Pp
-Convert individual Markdown files to HTML if they're modified:
-.Bd -literal -offset indent
-$ ls *.md | entr +notify &
-$ while read F; do
->     markdown2html $F
-> done < notify
-.Ed
