@@ -1,4 +1,6 @@
-= Next Release: 3.2
+= Release History
+
+== 3.2: April 9, 2015
 
  - Execute the utility immediately after registering watch events. Old behavior
    is restored using new postpone option ('-p')
@@ -7,8 +9,6 @@
    conceptually good, but EXEC mode is intelligent hand easily handles the vast
    majority of use cases.
  - Remove kFreeBSD as a target platform
-
-= Release History
 
 == 3.1: March 4, 2015
 
