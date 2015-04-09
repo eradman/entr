@@ -2,8 +2,7 @@
 
  - Execute the utility immediately after registering watch events. Old behavior
    is restored using new postpone option ('-p')
- - Relocated 'scripts/reload-browser' to
-   https://bitbucket.org/snippets/eradman/xR7d/reload-browser
+ - Relocated 'reload-browser' to http://entrproject.org/scripts/reload-browser
  - Drop FIFO support to further simply code and documentation. FIFO mode was
    conceptually good, but EXEC mode is intelligent hand easily handles the vast
    majority of use cases.
