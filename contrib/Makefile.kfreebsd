@@ -1,5 +1,0 @@
-CFLAGS += -D_GNU_SOURCE -Imissing
-MANPREFIX ?= ${PREFIX}/share/man
-EXTRA_SRC = missing/strlcpy.c
-
-include Makefile.bsd

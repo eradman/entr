@@ -6,6 +6,7 @@
  - Drop FIFO support to further simply code and documentation. FIFO mode was
    conceptually good, but EXEC mode is intelligent hand easily handles the vast
    majority of use cases.
+ - Remove kFreeBSD as a target platform
 
 = Release History
 

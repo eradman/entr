@@ -9,7 +9,6 @@ copy_mk()
 case `uname` in
     Darwin)       copy_mk .         macos ;;
     Linux)        copy_mk .         linux ;;
-    GNU/kFreeBSD) copy_mk ./contrib kfreebsd ;;
     *)            copy_mk .         bsd ;;
 esac
 
