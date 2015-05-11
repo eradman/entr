@@ -432,6 +432,7 @@ watch_loop(int kq, char *argv[]) {
 	int collate_only = 0;
 	int do_exec = 0;
 	int dir_modified = 0;
+	int leading_edge_set = 0;
 
 	leading_edge = files[0]; /* default */
 	if (postpone_opt == 0)
@@ -454,8 +455,11 @@ main:
 		file = (WatchFile *)evList[i].udata;
 		if (file->is_dir == 1)
 			dir_modified += compare_dir_contents(file);
-		if ((i == 0) && (reopen_only == 0) && (collate_only == 0))
-			leading_edge = file;
+		else if (leading_edge_set == 0)
+			if ((reopen_only == 0) && (collate_only == 0)) {
+				leading_edge = file;
+				leading_edge_set = 1;
+			}
 	}
 
 	collate_only = 0;

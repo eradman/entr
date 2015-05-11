@@ -550,6 +550,36 @@ int watch_fd_exec_07() {
 }
 
 /*
+ * Write to a file in directory watch mode
+ */
+int watch_fd_exec_08() {
+	int kq = kqueue();
+	static char *argv[] = { "prog", "arg1", "arg2", NULL };
+
+	postpone_opt = 1;
+	dirwatch_opt = 1;
+	strlcpy(files[0]->fn, "src", sizeof(files[0]->fn));
+	files[0]->is_dir = 1;
+	watch_file(kq, files[0]);
+	strlcpy(files[1]->fn, "main.py", sizeof(files[1]->fn));
+	watch_file(kq, files[1]);
+
+	ctx.event.nlist = 2;
+	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_WRITE, 0, files[0]);
+	EV_SET(&ctx.event.List[1], files[1]->fd, EVFILT_VNODE, 0, NOTE_WRITE, 0, files[1]);
+
+	watch_loop(kq, argv);
+
+	ok(ctx.event.nset == 2);
+	ok(ctx.exec.count == 1);
+	ok(ctx.exec.file != 0);
+	ok(ctx.exit.count == 1);
+	ok(strcmp(leading_edge->fn, "main.py") == 0);
+
+	return 0;
+}
+
+/*
  * Parse command line arguments up to but not including the utility to execute
  */
 int set_options_01() {
@@ -778,6 +808,7 @@ int test_main(int argc, char *argv[]) {
 	run(watch_fd_exec_05);
 	run(watch_fd_exec_06);
 	run(watch_fd_exec_07);
+	run(watch_fd_exec_08);
 	run(set_options_01);
 	run(set_options_02);
 	run(set_options_03);

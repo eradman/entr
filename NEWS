@@ -1,3 +1,7 @@
+= Next Release: 3.3
+
+- Substitute '/_' only with regular files when using the directory watch option
+
 = Release History
 
 == 3.2: April 9, 2015
@@ -60,8 +64,7 @@
  - Changed function pointer prefixes from '_' to 'x' to avoid runtime symbol
    collisions in libc. Required to build on DragonFlyBSD
  - Added this NEWS file to provide detailed release history for port maintainers
- - Using the argument '/_' on the command line is now replaced with the first
-   file that changed
+ - Subsitute '/_' argument with the first file that changed
  - Man page formatted with more semantically correct markup
  - Multiple events on the same file are merged on Linux to prevent duplicate
    writes to a named pipe
