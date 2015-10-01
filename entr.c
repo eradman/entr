@@ -174,7 +174,7 @@ main(int argc, char *argv[]) {
 void
 usage() {
 	extern char *__progname;
-	fprintf(stderr, "usage: %s [-cdpr] [-c] utility [args, [/_], ...] < filenames\n",
+	fprintf(stderr, "usage: %s [-cdpr] utility [args, [/_], ...] < filenames\n",
 	    __progname);
 	exit(1);
 }
@@ -502,6 +502,7 @@ main:
 		do_exec = 0;
 		run_utility(argv);
 		reopen_only = 1;
+		leading_edge_set = 0;
 	}
 	if (dir_modified > 0)
 		xerrx(2, "directory altered");

@@ -236,15 +236,16 @@ try "exec shell utility on startup and after a file is changed"
 	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "pingping"
 
-try "exec using subsituting changed file argument"
+try "exec a command using the first file to change"
 	setup
 	ls $tmp/file* | ./entr -p cat /_ > $tmp/exec.out &
 	bgpid=$! ; zz
-	echo 123 >> $tmp/file1
-	echo 456 >> $tmp/file2 ; zz
+	echo 123 > $tmp/file2 ; zz
+	echo 456 > $tmp/file1
+	echo 789 > $tmp/file2 ; zz
 	kill -INT $bgpid
 	wait $bgpid || assert "$?" "130"
-	assert "$(cat $tmp/exec.out)" "123"
+	assert "$(cat $tmp/exec.out)" "$(printf '123\n456')"
 
 try "exec single shell utility using utility substitution"
 	setup
