@@ -8,7 +8,7 @@ test: entr_spec entr
 	@./entr_spec
 
 gcc-lint: clean
-	@CFLAGS="-std=c89 -pedantic -Wall -Wpointer-arith -Wbad-function-cast" make test
+	@CPPFLAGS="-std=c89 -pedantic -Wall -Wpointer-arith -Wbad-function-cast" make test
 
 regress:
 	@/bin/echo -n "Running functional tests"
@@ -41,13 +41,4 @@ uninstall:
 	rm ${DESTDIR}${PREFIX}/bin/entr
 	rm ${DESTDIR}${MANPREFIX}/man1/entr.1
 
-env:
-	@echo "CC         = ${CC}"
-	@echo "DESTDIR    = ${DESTDIR}"
-	@echo "EXTRA_SRC  = ${EXTRA_SRC}"
-	@echo "LDFLAGS    = ${LDFLAGS}"
-	@echo "MANPREFIX  = ${MANPREFIX}"
-	@echo "PREFIX     = ${PREFIX}"
-	@echo "SRC        = ${SRC}"
-
-.PHONY: clean distclean install uninstall env
+.PHONY: clean distclean install uninstall

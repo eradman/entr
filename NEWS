@@ -1,7 +1,7 @@
 = Next Release: 3.3
 
-- Substitute '/_' only with regular files when using the directory watch option
-- Bugfix when tracking the first file to change
+ - Substitute '/_' only with regular files when using the directory watch option
+ - Bugfix when tracking the first file to change
 
 = Release History
 
