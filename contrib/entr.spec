@@ -1,20 +1,16 @@
 Name:		entr
-Version:	2.9
+Version:	3.3
 Release:	1%{?dist}
 Summary:	A utility for running arbitrary commands when files change
 Group:		Development/Tools
 License:	ISC
 URL:		http://entrproject.org/
-# You can generate this tarball with:
-#	hg clone https://bitbucket.org/eradman/entr
-#	cd entr
-#	hg archive -r entr-2.9 ../entr-2.9.tar.gz
 Source0:	%{name}-%{version}.tar.gz
 
 %description
 A utility for running arbitrary commands when files change. Uses kqueue(2) or
 inotify(7) to avoid polling. entr responds to file system events by executing
-command line arguments or by writing to a FIFO.
+command line arguments.
 
 %prep
 %setup -q
@@ -36,11 +32,8 @@ make test
 %doc LICENSE README.md
 
 %changelog
-* Fri Jun 20 2014 Eric Radman <ericshane@eradman.com>
-- Packaged 2.9-1
-* Mon Mar 31 2014 Eric Radman <ericshane@eradman.com>
-- Packaged 2.8-1
+* Tue Nov 06 2015 Eric Radman <ericshane@eradman.com>
+- Modified description to match features of 3.2
 * Sun Feb  9 2014 Jordi Funollet Pujol <funollet@fastmail.fm>
 - Packaged 2.6-1
-
 

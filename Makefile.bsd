@@ -1,29 +1,26 @@
 PREFIX ?= /usr/local
 MANPREFIX ?= ${PREFIX}/man
+RELEASE = 3.3
+CPPFLAGS += -DRELEASE=\"${RELEASE}\"
 
-all: entr
+all: versioncheck entr
 
 test: entr_spec entr
-	@/bin/echo "Running unit tests"
+	@echo "Running unit tests"
 	@./entr_spec
 
 gcc-lint: clean
 	@CPPFLAGS="-std=c89 -pedantic -Wall -Wpointer-arith -Wbad-function-cast" make test
 
 regress:
-	@/bin/echo -n "Running functional tests"
-	@./regress.sh
-
-debug: entr_spec
-	gdb -q entr_spec
+	@echo "Running functional tests"
+	@./system_test.sh
 
 entr: entr.c ${EXTRA_SRC}
 	${CC} ${CFLAGS} ${CPPFLAGS} ${EXTRA_SRC} entr.c -o $@ ${LDFLAGS}
-	@chmod +x $@
 
 entr_spec: entr_spec.c entr.c ${EXTRA_SRC}
 	${CC} ${CFLAGS} ${CPPFLAGS} ${EXTRA_SRC} entr_spec.c -o $@ ${LDFLAGS}
-	@chmod +x $@
 
 clean:
 	rm -f entr entr_spec *.o
@@ -41,4 +38,8 @@ uninstall:
 	rm ${DESTDIR}${PREFIX}/bin/entr
 	rm ${DESTDIR}${MANPREFIX}/man1/entr.1
 
-.PHONY: clean distclean install uninstall
+versioncheck:
+	@head -n3 NEWS | egrep -q "^= Next Release: ${RELEASE}|^== ${RELEASE}: "
+	@grep -q "Version:.*${RELEASE}" contrib/entr.spec
+
+.PHONY: all test gcc-lint clean distclean install uninstall versioncheck

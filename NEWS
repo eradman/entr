@@ -2,6 +2,7 @@
 
  - Substitute '/_' only with regular files when using the directory watch option
  - Bugfix when tracking the first file to change
+ - Display release number along with usage
 
 = Release History
 
