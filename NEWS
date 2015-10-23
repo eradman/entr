@@ -1,10 +1,11 @@
-= Next Release: 3.3
+= Release History
+
+== 3.3: October 23, 2015
 
  - Substitute '/_' only with regular files when using the directory watch option
  - Bugfix when tracking the first file to change
  - Display release number along with usage
 
-= Release History
 
 == 3.2: April 9, 2015
 
