@@ -505,8 +505,10 @@ main:
 		reopen_only = 1;
 		leading_edge_set = 0;
 	}
-	if (dir_modified > 0)
+	if (dir_modified > 0) {
+		terminate_utility();
 		xerrx(2, "directory altered");
+	}
 
 	goto main;
 }

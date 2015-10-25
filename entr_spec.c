@@ -40,6 +40,10 @@ struct {
 		int count;
 	} signal;
 	struct {
+		int pid;
+		int count;
+	} wait;
+	struct {
 		int fd;
 		const char *path;
 	} open;
@@ -105,6 +109,8 @@ fake_stat(const char *path, struct stat *sb) {
 
 pid_t
 fake_waitpid(pid_t wpid, int *status, int options) {
+	ctx.wait.pid = wpid;
+	ctx.wait.count++;
 	return wpid;
 }
 
@@ -121,7 +127,7 @@ fake_list_dir(char *path) {
 
 pid_t
 fake_fork() {
-	return 0; /* pretend to be the child */
+	return child_pid; /* pretend to be the child */
 }
 
 void
@@ -462,7 +468,7 @@ int watch_fd_exec_05() {
 }
 
 /*
- * Add a file to a directory
+ * Add a file to a directory and wait for child to exit
  */
 int watch_fd_exec_06() {
 	int kq = kqueue();
@@ -476,7 +482,9 @@ int watch_fd_exec_06() {
 	watch_file(kq, files[0]);
 	watch_file(kq, files[1]);
 
+	child_pid = 222;
 	dirwatch_opt = 1;
+	restart_opt = 1;
 	ctx.event.nlist = 1;
 	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_WRITE, 0, files[0]);
 
@@ -495,12 +503,9 @@ int watch_fd_exec_06() {
 	ok(ctx.event.Set[1].fflags == (NOTE_ALL));
 	ok(ctx.event.Set[1].udata == files[1]->fn);
 
-	ok(ctx.exec.count == 1);
-	ok(ctx.exec.file != 0);
-	ok(strcmp(ctx.exec.file, "prog") == 0);
-	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
-	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
-	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
+	ok(ctx.exec.count == 0);
+	ok(ctx.wait.count == 1);
+	ok(ctx.wait.pid == 222);
 	ok(ctx.exit.count == 1);
 	return 0;
 }

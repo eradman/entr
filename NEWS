@@ -1,3 +1,8 @@
+= Next Release: 3.4
+
+ - Terminate the child process before exiting when the reload option is combined
+   with the directory watch option
+
 = Release History
 
 == 3.3: October 23, 2015
