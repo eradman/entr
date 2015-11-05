@@ -1,5 +1,5 @@
 Name:		entr
-Version:	3.3
+Version:	3.4
 Release:	1%{?dist}
 Summary:	A utility for running arbitrary commands when files change
 Group:		Development/Tools
