@@ -152,7 +152,8 @@ main(int argc, char *argv[]) {
 		errx(1, "No regular files to watch");
 	if (n_files == -1)
 		errx(1, "Too many files listed; the hard limit for your login"
-		    " class is %d", (int)rl.rlim_cur);
+		    " class is %d. Please consult"
+		    " http://entrproject.org/limits.html", (int)rl.rlim_cur);
 	for (i=0; i<n_files; i++)
 		watch_file(kq, files[i]);
 

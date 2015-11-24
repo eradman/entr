@@ -2,6 +2,8 @@
 
  - Terminate the child process before exiting when the reload option is combined
    with the directory watch option
+ - Direct users to http://entrproject.org/limits.html if the maximum number of
+   open files is exceeded
 
 = Release History
 
