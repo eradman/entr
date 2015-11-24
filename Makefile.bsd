@@ -5,6 +5,15 @@ CPPFLAGS += -DRELEASE=\"${RELEASE}\"
 
 all: versioncheck entr
 
+env:
+	@echo "CC         = ${CC}"
+	@echo "DESTDIR    = ${DESTDIR}"
+	@echo "EXTRA_SRC  = ${EXTRA_SRC}"
+	@echo "LDFLAGS    = ${LDFLAGS}"
+	@echo "MANPREFIX  = ${MANPREFIX}"
+	@echo "PREFIX     = ${PREFIX}"
+	@echo "SRC        = ${SRC}"
+
 test: entr_spec entr
 	@echo "Running unit tests"
 	@./entr_spec
@@ -42,4 +51,4 @@ versioncheck:
 	@head -n3 NEWS | egrep -q "^= Next Release: ${RELEASE}|^== ${RELEASE}: "
 	@grep -q "Version:.*${RELEASE}" contrib/entr.spec
 
-.PHONY: all test gcc-lint clean distclean install uninstall versioncheck
+.PHONY: all env test gcc-lint clean distclean install uninstall versioncheck
