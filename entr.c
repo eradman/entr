@@ -342,7 +342,7 @@ run_utility(char *argv[]) {
 
 	if (pid == 0) {
 		if (clear_opt == 1)
-			system("/usr/bin/clear");
+			(void) system("/usr/bin/clear");
 		/* Set process group so subprocess can be signaled */
 		if (restart_opt == 1)
 			setpgid(0, getpid());
