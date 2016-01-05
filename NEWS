@@ -1,3 +1,7 @@
+= Next Release: 3.5
+
+ - Removed contrib/*
+
 = Release History
 
 == 3.4: December 12, 2015

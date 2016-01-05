@@ -1,6 +1,6 @@
 PREFIX ?= /usr/local
 MANPREFIX ?= ${PREFIX}/man
-RELEASE = 3.4
+RELEASE = 3.5
 CPPFLAGS += -DRELEASE=\"${RELEASE}\"
 
 all: versioncheck entr
@@ -49,6 +49,5 @@ uninstall:
 
 versioncheck:
 	@head -n3 NEWS | egrep -q "^= Next Release: ${RELEASE}|^== ${RELEASE}: "
-	@grep -q "Version:.*${RELEASE}" contrib/entr.spec
 
 .PHONY: all env test gcc-lint clean distclean install uninstall versioncheck
