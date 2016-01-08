@@ -1,6 +1,7 @@
 = Next Release: 3.5
 
  - Removed contrib/*
+ - Detect new subdirectories on Linux
 
 = Release History
 

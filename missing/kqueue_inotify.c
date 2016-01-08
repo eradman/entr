@@ -55,7 +55,7 @@ file_by_descriptor(int wd) {
 
 #define EVENT_SIZE (sizeof (struct inotify_event))
 #define EVENT_BUF_LEN (32 * (EVENT_SIZE + 16))
-#define IN_ALL IN_CLOSE_WRITE|IN_DELETE_SELF|IN_MODIFY|IN_MOVE_SELF|IN_ATTRIB
+#define IN_ALL IN_CLOSE_WRITE|IN_DELETE_SELF|IN_MODIFY|IN_MOVE_SELF|IN_ATTRIB|IN_CREATE
 
 /*
  * Conveniently inotify and kqueue ids both have the type `int`
@@ -132,6 +132,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			fflags = 0;
 			if (iev->mask & IN_DELETE_SELF) fflags |= NOTE_DELETE;
 			if (iev->mask & IN_CLOSE_WRITE) fflags |= NOTE_WRITE;
+			if (iev->mask & IN_CREATE)      fflags |= NOTE_WRITE;
 			if (iev->mask & IN_MOVE_SELF)   fflags |= NOTE_RENAME;
 			if (iev->mask & IN_ATTRIB) {
 				if ((fstat(iev->wd, &sb) == -1) && errno == ENOENT)

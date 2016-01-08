@@ -80,6 +80,17 @@ try "exec single shell utility and exit when a file is added to an implicit watc
 	assert "$(cat $tmp/exec.out)" "ping"
 	assert "$(cat $tmp/exec.err)" "entr: directory altered"
 
+try "exec single shell utility and exit when a subdirectory is added"
+	setup
+	ls -d $tmp | ./entr -dp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
+	    || true &
+	bgpid=$! ; zz
+	mkdir $tmp/newdir
+	wait $bgpid || assert "$?" "130"
+	assert "$(cat $tmp/exec.out)" "ping"
+	assert "$(cat $tmp/exec.err)" "entr: directory altered"
+	rmdir $tmp/newdir
+
 try "exec single shell utility and exit when a file is added to a specific path"
 	setup
 	ls -d $tmp | ./entr -dp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
@@ -94,7 +105,7 @@ try "do nothing when a file not monitored is changed in directory watch mode"
 	setup
 	ls $tmp/file2 | ./entr -dp echo "changed" >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
-	echo "123" > $tmp/file1
+	echo "123" > file1
 	kill -INT $bgpid
 	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" ""
@@ -227,7 +238,7 @@ try "exec single shell utility when two files change simultaneously"
 	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "ping"
 
-try "exec shell utility on startup and after a file is changed"
+try "exec single shell utility on startup and when a file is changed"
 	setup
 	ls $tmp/file* | ./entr sh -c 'printf ping' > $tmp/exec.out &
 	bgpid=$! ; zz
