@@ -111,4 +111,4 @@ Clear the screen and run a query after the SQL script is updated:
 .Pp
 Rebuild project if a source file is modified or added to the src/ directory:
 .Pp
-.Dl $ while sleep 1; do ls src/*.rb | entr -d rake; done
+.Dl $ while true; do ls src/*.rb | entr -d make; done
