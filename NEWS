@@ -2,6 +2,8 @@
 
  - Removed contrib/*
  - Detect new subdirectories on Linux
+ - Direct users to http://entrproject.org/limits.html if inotify hits a kernel
+   limit
 
 = Release History
 
