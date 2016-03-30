@@ -388,13 +388,14 @@ watch_file(int kq, WatchFile *file) {
 
 	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_ALL, 0,
 	    file);
-	if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
-		if ((errno == ENOMEM) || (errno == ENOSPC))
+	if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1) {
+		if (errno == ENOSPC)
 			errx(1, "Unable to allocate memory for kernel queue."
 			    " Please consult"
 			    " http://entrproject.org/limits.html");
 		else
 			err(1, "failed to register VNODE event");
+	}
 }
 
 /*
