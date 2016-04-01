@@ -1,11 +1,11 @@
-= Next Release: 3.5
+= Release History
+
+== 3.5: April 01, 2016
 
  - Removed contrib/*
  - Detect new subdirectories on Linux
  - Direct users to http://entrproject.org/limits.html if inotify hits a kernel
    limit
-
-= Release History
 
 == 3.4: December 12, 2015
 
