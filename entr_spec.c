@@ -71,7 +71,7 @@ void fail() {
 
 void reset_state() {
 	int i;
-	int max_files = 4;
+	int max_files = 32;
 
 	/* getopt(3) keeps an external reference */
 	optind = 1;
