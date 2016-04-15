@@ -158,8 +158,7 @@ main(int argc, char *argv[]) {
 		watch_file(kq, files[i]);
 
 	/* Attempt to open a tty so that editors don't complain */
-	if ((ttyfd = xopen(_PATH_TTY, O_RDONLY)) == -1)
-		warn("can't open %s", _PATH_TTY);
+	ttyfd = xopen(_PATH_TTY, O_RDONLY);
 	if (ttyfd > STDIN_FILENO) {
 		if (dup2(ttyfd, STDIN_FILENO) != 0)
 			warn("can't dup2 to stdin");
