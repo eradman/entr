@@ -105,7 +105,7 @@ try "do nothing when a file not monitored is changed in directory watch mode"
 	setup
 	ls $tmp/file2 | ./entr -dp echo "changed" >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
-	echo "123" > file1
+	echo "123" > $tmp/file1
 	kill -INT $bgpid
 	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" ""
