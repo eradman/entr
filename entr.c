@@ -173,10 +173,8 @@ main(int argc, char *argv[]) {
 
 void
 usage() {
-	extern char *__progname;
 	fprintf(stderr, "release: %s\n", RELEASE);
-	fprintf(stderr, "usage: %s [-cdpr] utility [args, [/_], ...] < filenames\n",
-	    __progname);
+	fprintf(stderr, "usage: entr [-cdpr] utility [args, [/_], ...] < filenames\n");
 	exit(1);
 }
 
