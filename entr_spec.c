@@ -100,6 +100,8 @@ void sighandler(int signum) {
 
 int
 fake_stat(const char *path, struct stat *sb) {
+	if (strncmp(path, "nosuch", 6) == 0)
+		return -1;
 	if (strncmp(path, "dir", 3) == 0)
 		sb->st_mode = S_IFDIR;
 	else
@@ -197,7 +199,7 @@ fake_errx(int eval, const char *msg, ...) {
 /* tests */
 
 /*
- * Read a list of use supplied files where input exceeds available watch
+ * Read a list of user supplied files where input exceeds available watch
  * descriptors
  */
 int process_input_01() {
@@ -216,7 +218,7 @@ int process_input_01() {
 }
 
 /*
- * Read a list of use supplied files and populate files array
+ * Read a list of user supplied files and populate files array
  */
 int process_input_02() {
 	int n_files;
@@ -234,7 +236,7 @@ int process_input_02() {
 }
 
 /*
- * Read a list of use supplied files and directories
+ * Read a list of user supplied files and directories
  */
 int process_input_03() {
 	int n_files;

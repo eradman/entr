@@ -161,7 +161,7 @@ main(int argc, char *argv[]) {
 	ttyfd = xopen(_PATH_TTY, O_RDONLY);
 	if (ttyfd > STDIN_FILENO) {
 		if (dup2(ttyfd, STDIN_FILENO) != 0)
-			warn("can't dup2 to stdin");
+			warnx("can't dup2 to stdin");
 		close(ttyfd);
 	}
 
@@ -218,7 +218,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 			continue;
 
 		if (xstat(buf, &sb) == -1)
-			err(1, "cannot stat '%s'", buf);
+			xerrx(1, "unable to stat '%s'", buf);
 		if (S_ISREG(sb.st_mode) != 0) {
 			files[n_files] = malloc(sizeof(WatchFile));
 			strlcpy(files[n_files]->fn, buf, MEMBER_SIZE(WatchFile, fn));
@@ -256,7 +256,7 @@ int list_dir(char *dir) {
 	int count = 0;
 
 	if (dfd == NULL)
-		errx(1, "Unable to open directory: %s", dir);
+		errx(1, "unable to open directory: '%s'", dir);
 	while((dp = readdir(dfd)) != NULL)
 		if (dp->d_name[0] != '.')
 			count++;
@@ -381,7 +381,7 @@ watch_file(int kq, WatchFile *file) {
 		else break;
 	}
 	if (file->fd == -1)
-		err(1, "cannot open `%s'", file->fn);
+		err(1, "cannot open '%s'", file->fn);
 
 	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_ALL, 0,
 	    file);
