@@ -1,6 +1,7 @@
 = Next Release: 3.6:
 
  - Do not print warning if _TTY_PATH cannot be opened (for chroot, docker, ...)
+ - Non-existent input files produce a warning instead of an error
 
 = Release History
 

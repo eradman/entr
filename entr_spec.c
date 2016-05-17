@@ -49,6 +49,9 @@ struct {
 	} open;
 	struct {
 		int count;
+	} warn;
+	struct {
+		int count;
 	} exit;
 } ctx;
 
@@ -192,6 +195,11 @@ fake_open(const char *path, int flags, ...) {
 }
 
 void
+fake_warnx(const char *msg, ...) {
+	ctx.warn.count++;
+}
+
+void
 fake_errx(int eval, const char *msg, ...) {
 	ctx.exit.count++;
 }
@@ -259,6 +267,24 @@ int process_input_03() {
 	ok(files[2]->is_dir == 1); /* .     */
 	ok(files[3]->is_dir == 0); /* file2 */
 	ok(files[4]->is_dir == 0); /* file3 */
+	return 0;
+}
+
+/*
+ * Read a list of user supplied files where one of the files cannot be opened
+ */
+int process_input_04() {
+	char input[] = "file1\nnosuch1\nfile2";
+	FILE *fake;
+	int n_files;
+
+	fake = fmemopen(input, strlen(input), "r");
+	n_files = process_input(fake, files, 4);
+
+	ok(ctx.warn.count == 1);
+	ok(n_files == 2);
+	ok(strcmp(files[0]->fn, "file1") == 0);
+	ok(strcmp(files[1]->fn, "file2") == 0);
 	return 0;
 }
 
@@ -802,12 +828,14 @@ int test_main(int argc, char *argv[]) {
 	xrealpath = fake_realpath;
 	xfree = fake_free;
 	xerrx = fake_errx;
+	xwarnx = fake_warnx;
 	xlist_dir = fake_list_dir;
 
 	/* all tests */
 	run(process_input_01);
 	run(process_input_02);
 	run(process_input_03);
+	run(process_input_04);
 	run(watch_fd_exec_01);
 	run(watch_fd_exec_02);
 	run(watch_fd_exec_03);

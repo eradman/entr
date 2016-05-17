@@ -60,6 +60,7 @@ int (*xkevent)(int, const struct kevent *, int, struct kevent *, int , const
 int (*xopen)(const char *path, int flags, ...);
 char * (*xrealpath)(const char *, char *);
 void (*xfree)(void *);
+void (*xwarnx)(const char *, ...);
 void (*xerrx)(int, const char *, ...);
 int (*xlist_dir)(char *);
 
@@ -115,6 +116,7 @@ main(int argc, char *argv[]) {
 	xopen = open;
 	xrealpath = realpath;
 	xfree = free;
+	xwarnx = warnx;
 	xerrx = errx;
 	xlist_dir = list_dir;
 
@@ -161,7 +163,7 @@ main(int argc, char *argv[]) {
 	ttyfd = xopen(_PATH_TTY, O_RDONLY);
 	if (ttyfd > STDIN_FILENO) {
 		if (dup2(ttyfd, STDIN_FILENO) != 0)
-			warnx("can't dup2 to stdin");
+			xwarnx("can't dup2 to stdin");
 		close(ttyfd);
 	}
 
@@ -217,8 +219,10 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 		if (buf[0] == '\0')
 			continue;
 
-		if (xstat(buf, &sb) == -1)
-			xerrx(1, "unable to stat '%s'", buf);
+		if (xstat(buf, &sb) == -1) {
+			xwarnx("unable to stat '%s'", buf);
+			continue;
+		}
 		if (S_ISREG(sb.st_mode) != 0) {
 			files[n_files] = malloc(sizeof(WatchFile));
 			strlcpy(files[n_files]->fn, buf, MEMBER_SIZE(WatchFile, fn));
