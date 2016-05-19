@@ -14,6 +14,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <sys/stat.h>
+
 #include <limits.h>
 
 /* data */
@@ -23,6 +25,7 @@ typedef struct {
 	int fd;
 	int is_dir;
 	int file_count;
+	mode_t mode;
 } WatchFile;
 
 /* declare as extern in source */

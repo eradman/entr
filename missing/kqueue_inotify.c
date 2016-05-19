@@ -137,6 +137,8 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			if (iev->mask & IN_ATTRIB) {
 				if ((fstat(iev->wd, &sb) == -1) && errno == ENOENT)
 					fflags |= NOTE_DELETE;
+				else
+					fflags |= NOTE_ATTRIB;
 			}
 			if (fflags == 0) continue;
 

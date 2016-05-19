@@ -40,7 +40,7 @@
 
 /* events to watch for */
 
-#define NOTE_ALL NOTE_DELETE|NOTE_WRITE|NOTE_RENAME|NOTE_TRUNCATE
+#define NOTE_ALL NOTE_DELETE|NOTE_WRITE|NOTE_RENAME|NOTE_TRUNCATE|NOTE_ATTRIB
 
 /* shortcuts */
 
@@ -51,6 +51,7 @@
 
 int (*test_runner_main)(int, char**);
 int (*xstat)(const char *, struct stat *);
+int (*xfstat)(int fd, struct stat *);
 int (*xkillpg)(pid_t, int);
 int (*xexecvp)(const char *, char *const []);
 pid_t (*xwaitpid)(pid_t, int *, int);
@@ -107,6 +108,7 @@ main(int argc, char *argv[]) {
 
 	/* set up pointers to real functions */
 	xstat = stat;
+	xfstat = fstat;
 	xkevent = kevent;
 	xkillpg = killpg;
 	xexecvp = execvp;
@@ -224,6 +226,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 			strlcpy(files[n_files]->fn, buf, MEMBER_SIZE(WatchFile, fn));
 			files[n_files]->is_dir = 0;
 			files[n_files]->file_count = 0;
+			files[n_files]->mode = sb.st_mode;
 			n_files++;
 		}
 		/* also watch the directory if it's not already in the list */
@@ -438,6 +441,7 @@ watch_loop(int kq, char *argv[]) {
 	int do_exec = 0;
 	int dir_modified = 0;
 	int leading_edge_set = 0;
+	struct stat sb;
 
 	leading_edge = files[0]; /* default */
 	if (postpone_opt == 0)
@@ -498,6 +502,12 @@ main:
 			if ((dir_modified > 0) && (restart_opt == 1))
 				continue;
 			do_exec = 1;
+		}
+		if (evList[i].fflags & NOTE_ATTRIB &&
+		    xfstat(file->fd, &sb) == 0 &&
+		    !(file->mode & S_IXUSR) && sb.st_mode & S_IXUSR) {
+			do_exec = 1;
+			file->mode = sb.st_mode;
 		}
 	}
 
