@@ -256,15 +256,6 @@ try "exec a command if a file is made executable"
 	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "$tmp/file2"
 
-try "do nothing if a file mode changes"
-	setup
-	ls $tmp/file* | ./entr -p echo /_ > $tmp/exec.out &
-	bgpid=$! ; zz
-	chmod -x $tmp/file2 ; zz
-	kill -INT $bgpid
-	wait $bgpid || assert "$?" "130"
-	assert "$(cat $tmp/exec.out)" ""
-
 try "exec a command using the first file to change"
 	setup
 	ls $tmp/file* | ./entr -p cat /_ > $tmp/exec.out &

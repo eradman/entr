@@ -100,21 +100,16 @@ void sighandler(int signum) {
 
 int
 fake_stat(const char *path, struct stat *sb) {
-	if (strncmp(path, "prog", 4) == 0)
-		sb->st_mode = S_IFREG | S_IXUSR;
 	if (strncmp(path, "dir", 3) == 0)
-		sb->st_mode = S_IFDIR;
+		sb->st_mode = S_IFDIR | S_IRUSR;
 	else
-		sb->st_mode = S_IFREG;
+		sb->st_mode = S_IFREG | S_IRUSR;
 	return 0;
 }
 
 int
 fake_fstat(int fd, struct stat *sb) {
-	if (fd == 9)
-		sb->st_mode = S_IFREG | S_IXUSR;
-	else
-		sb->st_mode = S_IFREG;
+	sb->st_mode = S_IFREG | S_IRUSR;
 	return 0;
 }
 
@@ -604,7 +599,7 @@ int watch_fd_exec_09() {
 	postpone_opt = 1;
 	strlcpy(files[0]->fn, "main.py", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
-	files[0]->fd = 9; /* executable when fstat(2) is called */
+	files[0]->mode = S_IFREG | S_IRUSR | S_IXUSR;
 
 	ctx.event.nlist = 1;
 	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_ATTRIB, 0, files[0]);

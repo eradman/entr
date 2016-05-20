@@ -244,6 +244,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 				    MEMBER_SIZE(WatchFile, fn));
 				files[n_files]->is_dir = 1;
 				files[n_files]->file_count = xlist_dir(path);
+				files[n_files]->mode = sb.st_mode;
 				n_files++;
 			}
 		}
@@ -504,8 +505,9 @@ main:
 			do_exec = 1;
 		}
 		if (evList[i].fflags & NOTE_ATTRIB &&
+		    S_ISREG(file->mode) != 0 &&
 		    xfstat(file->fd, &sb) == 0 &&
-		    !(file->mode & S_IXUSR) && sb.st_mode & S_IXUSR) {
+		    file->mode != sb.st_mode) {
 			do_exec = 1;
 			file->mode = sb.st_mode;
 		}
