@@ -103,12 +103,10 @@ void sighandler(int signum) {
 
 int
 fake_stat(const char *path, struct stat *sb) {
-	if (strncmp(path, "nosuch", 6) == 0)
-		return -1;
 	if (strncmp(path, "dir", 3) == 0)
-		sb->st_mode = S_IFDIR;
+		sb->st_mode = S_IFDIR | S_IRUSR;
 	else
-		sb->st_mode = S_IFREG;
+		sb->st_mode = S_IFREG | S_IRUSR;
 	return 0;
 }
 
@@ -358,7 +356,6 @@ int watch_fd_exec_02() {
 	ok(ctx.event.Set[0].udata == files[0]);
 
 	ok(ctx.exec.count == 0);
-	ok(ctx.exec.file == 0);
 	ok(ctx.exit.count == 0);
 	return 0;
 }
@@ -613,6 +610,33 @@ int watch_fd_exec_08() {
 }
 
 /*
+ * Make a file executable
+ */
+int watch_fd_exec_09() {
+	int kq = kqueue();
+	static char *argv[] = { "prog", "arg1", "arg2", NULL };
+
+	postpone_opt = 1;
+	strlcpy(files[0]->fn, "main.py", sizeof(files[0]->fn));
+	watch_file(kq, files[0]);
+	files[0]->mode = S_IFREG | S_IRUSR | S_IXUSR;
+
+	ctx.event.nlist = 1;
+	EV_SET(&ctx.event.List[0], files[0]->fd, EVFILT_VNODE, 0, NOTE_ATTRIB, 0, files[0]);
+
+	watch_loop(kq, argv);
+
+	ok(ctx.exec.count == 1);
+	ok(ctx.exec.file != 0);
+	ok(strcmp(ctx.exec.file, "prog") == 0);
+	ok(strcmp(ctx.exec.argv[0], "prog") == 0);
+	ok(strcmp(ctx.exec.argv[1], "arg1") == 0);
+	ok(strcmp(ctx.exec.argv[2], "arg2") == 0);
+	ok(ctx.exit.count == 0);
+	return 0;
+}
+
+/*
  * Parse command line arguments up to but not including the utility to execute
  */
 int set_options_01() {
@@ -844,6 +868,7 @@ int test_main(int argc, char *argv[]) {
 	run(watch_fd_exec_06);
 	run(watch_fd_exec_07);
 	run(watch_fd_exec_08);
+	run(watch_fd_exec_09);
 	run(set_options_01);
 	run(set_options_02);
 	run(set_options_03);
