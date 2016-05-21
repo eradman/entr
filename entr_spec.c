@@ -107,12 +107,6 @@ fake_stat(const char *path, struct stat *sb) {
 	return 0;
 }
 
-int
-fake_fstat(int fd, struct stat *sb) {
-	sb->st_mode = S_IFREG | S_IRUSR;
-	return 0;
-}
-
 pid_t
 fake_waitpid(pid_t wpid, int *status, int options) {
 	ctx.wait.pid = wpid;
@@ -823,7 +817,6 @@ int test_main(int argc, char *argv[]) {
 
 	/* set up pointers to test doubles */
 	xstat = fake_stat;
-	xfstat = fake_fstat;
 	xkevent = fake_kevent;
 	xkillpg = fake_killpg;
 	xwaitpid = fake_waitpid;

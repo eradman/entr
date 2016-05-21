@@ -51,7 +51,6 @@
 
 int (*test_runner_main)(int, char**);
 int (*xstat)(const char *, struct stat *);
-int (*xfstat)(int fd, struct stat *);
 int (*xkillpg)(pid_t, int);
 int (*xexecvp)(const char *, char *const []);
 pid_t (*xwaitpid)(pid_t, int *, int);
@@ -108,7 +107,6 @@ main(int argc, char *argv[]) {
 
 	/* set up pointers to real functions */
 	xstat = stat;
-	xfstat = fstat;
 	xkevent = kevent;
 	xkillpg = killpg;
 	xexecvp = execvp;
@@ -506,7 +504,7 @@ main:
 		}
 		if (evList[i].fflags & NOTE_ATTRIB &&
 		    S_ISREG(file->mode) != 0 &&
-		    xfstat(file->fd, &sb) == 0 &&
+		    xstat(file->fn, &sb) == 0 &&
 		    file->mode != sb.st_mode) {
 			do_exec = 1;
 			file->mode = sb.st_mode;
