@@ -103,6 +103,8 @@ void sighandler(int signum) {
 
 int
 fake_stat(const char *path, struct stat *sb) {
+	if (strncmp(path, "nosuch", 5) == 0)
+		return -1;
 	if (strncmp(path, "dir", 3) == 0)
 		sb->st_mode = S_IFDIR | S_IRUSR;
 	else
