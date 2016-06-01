@@ -15,7 +15,6 @@
 
 #include <sys/inotify.h>
 #include <sys/event.h>
-#include <sys/stat.h>
 #include <sys/types.h>
 
 #include <errno.h>
@@ -134,12 +133,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			if (iev->mask & IN_CLOSE_WRITE) fflags |= NOTE_WRITE;
 			if (iev->mask & IN_CREATE)      fflags |= NOTE_WRITE;
 			if (iev->mask & IN_MOVE_SELF)   fflags |= NOTE_RENAME;
-			if (iev->mask & IN_ATTRIB) {
-				if ((fstat(iev->wd, &sb) == -1) && errno == ENOENT)
-					fflags |= NOTE_DELETE;
-				else
-					fflags |= NOTE_ATTRIB;
-			}
+			if (iev->mask & IN_ATTRIB)      fflags |= NOTE_ATTRIB;
 			if (fflags == 0) continue;
 
 			/* merge events if we're not acting on a new file descriptor */
