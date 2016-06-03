@@ -31,14 +31,6 @@ function zz { sleep 0.25; }
 function setup { rm -f $tmp/*; touch $tmp/file{1,2}; zz; }
 tmp=$(cd $(mktemp -dt entr_system_test.XXXXXXXXXX); pwd -P)
 
-# rebuild
-
-[ -f entr ] || {
-	./configure
-	make clean
-	make
-}
-
 # required utilities
 
 utils="hg vim"
