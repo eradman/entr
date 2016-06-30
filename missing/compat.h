@@ -4,7 +4,7 @@
 #define NOTE_TRUNCATE 0
 #endif
 
-#if defined(_LINUX_PORT)
+#if defined(_LINUX_PORT) && defined(__GLIBC__)
 #include <sys/types.h>
 size_t strlcpy(char *to, const char *from, int l);
 #endif
