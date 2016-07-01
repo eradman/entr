@@ -1,10 +1,10 @@
-= Next Release: 3.6:
+= Release History
+
+== 3.6: July 01, 2016
 
  - Do not print warning if _TTY_PATH cannot be opened (for chroot, docker, ...)
  - Non-existent input files produce a warning instead of an error
  - Trigger run when permissions change on regular files
-
-= Release History
 
 == 3.5: April 01, 2016
 
