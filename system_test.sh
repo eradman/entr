@@ -294,6 +294,23 @@ try "exec an interactive utility when a file changes"
 		assert "$(cat $tmp/exec.out | tr '/pts' '/tty')" "/dev/tty"
 	fi
 
+# extra slow tests that rely on timeouts
+
+try "ensure that all subprocesses are terminated in restart mode when a file is removed"
+	setup
+	cat <<-SCRIPT > $tmp/go.sh
+	#!/bin/sh
+	trap 'echo "caught signal"; exit' TERM
+	echo "running"; sleep 10
+	SCRIPT
+	chmod +x $tmp/go.sh
+	ls $tmp/file2 | ./entr -r sh -c "$tmp/go.sh" 2> /dev/null > $tmp/exec.out &
+	bgpid=$! ; zz
+	rm $tmp/file2; sleep 2
+	pgrep -P $bgpid > /dev/null || assert "$?" "1"
+	assert "$(cat $tmp/exec.out)" "$(printf 'running\ncaught signal')"
+
+
 # cleanup
 rm -r $tmp
 

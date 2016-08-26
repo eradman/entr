@@ -386,8 +386,10 @@ watch_file(int kq, WatchFile *file) {
 		if (file->fd == -1) nanosleep(&delay, NULL);
 		else break;
 	}
-	if (file->fd == -1)
+	if (file->fd == -1) {
+		terminate_utility();
 		err(1, "cannot open '%s'", file->fn);
+	}
 
 	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_ALL, 0,
 	    file);

@@ -1,3 +1,7 @@
+= Next Release: 3.7
+
+ - Terminate subprocess in restart mode if a file under watch disappears
+
 = Release History
 
 == 3.6: July 01, 2016
