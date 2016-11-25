@@ -253,8 +253,7 @@ try "exec a command using the first file to change"
 	ls $tmp/file* | ./entr -p cat /_ > $tmp/exec.out &
 	bgpid=$! ; zz
 	echo 123 > $tmp/file2 ; zz
-	echo 456 > $tmp/file1
-	echo 789 > $tmp/file2 ; zz
+	echo 456 > $tmp/file1 ; zz
 	kill -INT $bgpid
 	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "$(printf '123\n456')"

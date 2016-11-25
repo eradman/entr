@@ -469,11 +469,6 @@ main:
 		file = (WatchFile *)evList[i].udata;
 		if (file->is_dir == 1)
 			dir_modified += compare_dir_contents(file);
-		else if (leading_edge_set == 0)
-			if ((reopen_only == 0) && (collate_only == 0)) {
-				leading_edge = file;
-				leading_edge_set = 1;
-			}
 	}
 
 	collate_only = 0;
@@ -514,6 +509,12 @@ main:
 		    file->mode != sb.st_mode) {
 			do_exec = 1;
 			file->mode = sb.st_mode;
+		}
+		else if (evList[i].fflags & NOTE_ATTRIB)
+			continue;
+		if ((file->is_dir == 0) && (leading_edge_set == 0)) {
+			leading_edge = file;
+			leading_edge_set = 1;
 		}
 	}
 

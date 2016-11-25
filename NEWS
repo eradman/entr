@@ -1,6 +1,7 @@
 = Next Release: 3.7
 
  - Terminate subprocess in restart mode if a file under watch disappears
+ - Allow NOTE_ATTRIB to set '/_' only if file mode changes
 
 = Release History
 
