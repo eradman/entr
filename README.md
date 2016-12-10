@@ -6,8 +6,8 @@ A utility for running arbitrary commands when files change. Uses
 written to make rapid feedback and automated testing natural and completely
 ordinary.
 
-Installation - BSD, Mac OS, and Linux
--------------------------------------
+Source Installation - BSD, Mac OS, and Linux
+--------------------------------------------
 
     ./configure
     make test
@@ -20,15 +20,20 @@ Installation - Mac OS/Homebrew
 
     brew install entr
 
-Installation - Ports
---------------------
+Installation - BSD Ports
+------------------------
 
 Available in OpenBSD ports, FreeBSD ports, and pkgsrc under `sysutils/entr`.
 
-Installation - Debian
+Installation - Debian, Ubuntu
+-----------------------------
+
+    apt install entr
+
+Installation - Fedora
 ---------------------
 
-    apt-get install entr
+    dnf install entr
 
 Examples from `man entr`
 ------------------------
