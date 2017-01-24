@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd May 17, 2016
+.Dd January 24, 2017
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -66,9 +66,9 @@ waits for the
 to exit to ensure that resources such as sockets have been closed.
 .El
 .Pp
-The first occurrence of
+The first argument named
 .Ar /_
-on the command line will be replaced with the absolute path of the first file that was modified.
+is replaced with the absolute path of the file leading a file system event.
 If the restart option is used the first file under watch is treated as the default.
 .Sh ENVIRONMENT
 If
