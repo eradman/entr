@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd January 24, 2017
+.Dd February 13, 2017
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -21,10 +21,9 @@
 .Nd run arbitrary commands when files change
 .Sh SYNOPSIS
 .Nm
-.Op Fl cdpr
+.Op Fl cdprs
 .Ar utility
-.Op Ar argument ...
-.Op Ar /_
+.Op Ar argument /_ ...
 .Sh DESCRIPTION
 A list of files provided on the standard input and the
 .Ar utility
@@ -64,6 +63,13 @@ A process group is created to prevent shell scripts from masking signals.
 waits for the
 .Ar utility
 to exit to ensure that resources such as sockets have been closed.
+.It Fl s
+Evaluate the first argument using the interpreter specified by the
+.Ev SHELL
+environment variable.
+When this flag is set
+.Nm
+also prints the name of the shell and exit code after each invocation.
 .El
 .Pp
 The first argument named
@@ -79,6 +85,13 @@ will assign
 .Pa /bin/cat
 to prevent interactive utilities from waiting for
 keyboard input if output does not fit on the screen.
+.Pp
+If
+.Ev SHELL
+is undefined,
+.Nm entr
+will use
+.Pa /bin/sh .
 .Sh EXIT STATUS
 The
 .Nm
@@ -98,7 +111,7 @@ A file was added to a directory and the directory watch option was specified
 .Sh EXAMPLES
 Rebuild a project if source files change, limiting output to the first 20 lines:
 .Pp
-.Dl $ find src/ | entr sh -c 'make | head -n 20'
+.Dl $ find src/ | entr -s 'make | head -n 20'
 .Pp
 Launch and auto-reload a node.js server:
 .Pp

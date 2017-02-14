@@ -2,6 +2,7 @@
 
  - Terminate subprocess in restart mode if a file under watch disappears
  - Allow NOTE_ATTRIB to set '/_' only if file mode changes
+ - New '-s' option executes commands using $SHELL -c
 
 = Release History
 

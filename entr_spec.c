@@ -84,12 +84,15 @@ void reset_state() {
 	dirwatch_opt = 0;
 	postpone_opt = 0;
 	restart_opt = 0;
+	shell_opt = 0;
 	leading_edge = 0;
 	files = calloc(max_files, sizeof(WatchFile *));
 	for (i=0; i<max_files; i++)
 		files[i] = calloc(1, sizeof(WatchFile));
 	/* initialize test context */
 	memset(&ctx, 0, sizeof(ctx));
+
+	setenv("SHELL", "/bin/Xsh", 1);
 }
 
 void sighandler(int signum) {
@@ -639,6 +642,37 @@ int watch_fd_exec_09() {
 }
 
 /*
+ * In submit mode only the first argment is used
+ */
+int watch_fd_shell_01() {
+	int kq = kqueue();
+	char *argv[] = { "ruby main.rb", NULL };
+
+	shell_opt = 1;
+	strlcpy(files[0]->fn, "main.rb", sizeof(files[0]->fn));
+	watch_file(kq, files[0]);
+
+	ctx.event.nlist = 0;
+	watch_loop(kq, argv);
+
+	ok(strcmp(leading_edge->fn, "main.rb") == 0);
+	ok(ctx.event.nset == 1);
+	ok(ctx.event.Set[0].ident);
+	ok(ctx.event.Set[0].filter == EVFILT_VNODE);
+	ok(ctx.event.Set[0].flags == (EV_CLEAR|EV_ADD)); /* open */
+	ok(ctx.event.Set[0].fflags == (NOTE_ALL));
+	ok(ctx.event.Set[0].udata == files[0]);
+
+	ok(ctx.exec.count == 1);
+	ok(ctx.exec.file != 0);
+	ok(strcmp(ctx.exec.file, "/bin/Xsh") == 0);  /* FIXME */
+	ok(strcmp(ctx.exec.argv[0], "/bin/Xsh") == 0);
+	ok(strcmp(ctx.exec.argv[1], "-c") == 0);
+	ok(strcmp(ctx.exec.argv[2], "ruby main.rb") == 0);
+	return 0;
+}
+
+/*
  * Parse command line arguments up to but not including the utility to execute
  */
 int set_options_01() {
@@ -717,6 +751,23 @@ int set_options_05() {
 	ok(argv_offset == 1);
 	ok(restart_opt == 0);
 	ok(clear_opt == 0);
+	ok(shell_opt == 0);
+	return 0;
+}
+
+/*
+ * Run arguments in a shell
+ */
+int set_options_06() {
+	int argv_offset;
+	char *argv[] = { "entr", "-s", "make test", NULL };
+	
+	argv_offset = set_options(argv);
+
+	ok(argv_offset == 2);
+	ok(restart_opt == 0);
+	ok(clear_opt == 0);
+	ok(shell_opt == 1);
 	return 0;
 }
 
@@ -871,11 +922,13 @@ int test_main(int argc, char *argv[]) {
 	run(watch_fd_exec_07);
 	run(watch_fd_exec_08);
 	run(watch_fd_exec_09);
+	run(watch_fd_shell_01);
 	run(set_options_01);
 	run(set_options_02);
 	run(set_options_03);
 	run(set_options_04);
 	run(set_options_05);
+	run(set_options_06);
 	run(watch_fd_restart_01);
 	run(watch_fd_restart_02);
 	run(run_utility_01);

@@ -252,11 +252,10 @@ try "exec a command using the first file to change"
 	setup
 	ls $tmp/file* | ./entr -p cat /_ > $tmp/exec.out &
 	bgpid=$! ; zz
-	echo 123 > $tmp/file2 ; zz
 	echo 456 > $tmp/file1 ; zz
 	kill -INT $bgpid
 	wait $bgpid || assert "$?" "130"
-	assert "$(cat $tmp/exec.out)" "$(printf '123\n456')"
+	assert "$(cat $tmp/exec.out)" "456"
 
 try "exec single shell utility using utility substitution"
 	setup
@@ -292,6 +291,16 @@ try "exec an interactive utility when a file changes"
 	else
 		assert "$(cat $tmp/exec.out | tr '/pts' '/tty')" "/dev/tty"
 	fi
+
+try "exec a command using shell option"
+	setup
+	ls $tmp/file* | ./entr -ps 'file $0; exit 2' >$tmp/exec.out 2>$tmp/exec.err &
+	bgpid=$! ; zz
+	echo 456 >> $tmp/file2 ; zz
+	kill -INT $bgpid
+	wait $bgpid || assert "$?" "130"
+	assert "$(cat $tmp/exec.err)" ""
+	assert "$(cat $tmp/exec.out)" "$(printf ${tmp}'/file2: ASCII text')"
 
 # extra slow tests that rely on timeouts
 

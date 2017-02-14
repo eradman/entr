@@ -75,6 +75,7 @@ int clear_opt;
 int dirwatch_opt;
 int restart_opt;
 int postpone_opt;
+int shell_opt;
 
 /* forwards */
 
@@ -142,6 +143,9 @@ main(int argc, char *argv[]) {
 	/* prevent interactive utilities from paging output */
 	setenv("PAGER", "/bin/cat", 0);
 
+	/* ensure a shell is available to use */
+	setenv("SHELL", "/bin/sh", 0);
+
 	/* sequential scan may depend on a 0 at the end */
 	files = calloc(rl.rlim_cur+1, sizeof(WatchFile *));
 
@@ -176,7 +180,7 @@ main(int argc, char *argv[]) {
 void
 usage() {
 	fprintf(stderr, "release: %s\n", RELEASE);
-	fprintf(stderr, "usage: entr [-cdpr] utility [args, [/_], ...] < filenames\n");
+	fprintf(stderr, "usage: entr [-cdprs] utility [argument [/_] ...] < filenames\n");
 	exit(1);
 }
 
@@ -281,7 +285,7 @@ set_options(char *argv[]) {
 
 	/* read arguments until we reach a command */
 	for (argc=1; argv[argc] != 0 && argv[argc][0] == '-'; argc++);
-	while ((ch = getopt(argc, argv, "cdpr")) != -1) {
+	while ((ch = getopt(argc, argv, "cdprs")) != -1) {
 		switch (ch) {
 		case 'c':
 			clear_opt = 1;
@@ -294,6 +298,9 @@ set_options(char *argv[]) {
 			break;
 		case 'r':
 			restart_opt = 1;
+			break;
+		case 's':
+			shell_opt = 1;
 			break;
 		default:
 			usage();
@@ -322,21 +329,34 @@ run_utility(char *argv[]) {
 	if (restart_opt == 1)
 		terminate_utility();
 
-	/* clone argv on each invocation to make the implementation of more
-	 * complex subsitution rules possible and easy
-	 */
-	for (argc=0; argv[argc]; argc++);
-	arg_buf = malloc(ARG_MAX);
-	new_argv = calloc(argc+1, sizeof(char *));
-	for (m=0, i=0, p=arg_buf; i<argc; i++) {
-		new_argv[i] = p;
-		if ((m < 1) && (strcmp(argv[i], "/_")) == 0) {
-			p += strlen(xrealpath(leading_edge->fn, p));
-			m++;
+	if (shell_opt == 1) {
+		/* run argv[1] with a shell using the leading edge as $0 */
+		argc = 4;
+		arg_buf = malloc(ARG_MAX);
+		new_argv = calloc(argc+1, sizeof(char *));
+		(void) xrealpath(leading_edge->fn, arg_buf);
+		new_argv[0] = getenv("SHELL");
+		new_argv[1] = "-c";
+		new_argv[2] = argv[0];
+		new_argv[3] = arg_buf;
+	}
+	else {
+		/* clone argv on each invocation to make the implementation of more
+		 * complex subsitution rules possible and easy
+		 */
+		for (argc=0; argv[argc]; argc++);
+		arg_buf = malloc(ARG_MAX);
+		new_argv = calloc(argc+1, sizeof(char *));
+		for (m=0, i=0, p=arg_buf; i<argc; i++) {
+			new_argv[i] = p;
+			if ((m < 1) && (strcmp(argv[i], "/_")) == 0) {
+				p += strlen(xrealpath(leading_edge->fn, p));
+				m++;
+			}
+			else
+				p += strlcpy(p, argv[i], ARG_MAX - (p - arg_buf));
+			p++;
 		}
-		else
-			p += strlcpy(p, argv[i], ARG_MAX - (p - arg_buf));
-		p++;
 	}
 
 	pid = xfork();
@@ -360,8 +380,12 @@ run_utility(char *argv[]) {
 	}
 	child_pid = pid;
 
-	if (restart_opt == 0)
+	if (restart_opt == 0) {
 		xwaitpid(pid, &status, 0);
+		if (shell_opt == 1)
+			fprintf(stdout, "%s returned exit code %d\n",
+			    basename(getenv("SHELL")), WEXITSTATUS(status));
+	}
 
 	xfree(arg_buf);
 	xfree(new_argv);
