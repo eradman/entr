@@ -48,6 +48,10 @@ try "no arguments"
 	./entr 2> /dev/null || code=$?
 	assert $code 1
 
+try "no input"
+	./entr echo "vroom" 2> /dev/null || code=$?
+	assert $code 1
+
 try "reload and clear options with no utility to run"
 	./entr -r -c 2> /dev/null || code=$?
 	assert $code 1

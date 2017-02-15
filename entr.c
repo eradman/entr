@@ -152,6 +152,10 @@ main(int argc, char *argv[]) {
 	if ((kq = kqueue()) == -1)
 		err(1, "cannot create kqueue");
 
+	/* expect file list from a pipe */
+	if (isatty(fileno(stdin)))
+		usage();
+
 	/* read input and populate watch list, skipping non-regular files */
 	n_files = process_input(stdin, files, rl.rlim_cur);
 	if (n_files == 0)
