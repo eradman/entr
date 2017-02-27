@@ -772,6 +772,21 @@ int set_options_06() {
 }
 
 /*
+ * All command must be formatted as a single argument when run in a shell
+ */
+int set_options_07() {
+	int argv_offset;
+	char *argv[] = { "entr", "-s", "make", "test", NULL };
+	
+	argv_offset = set_options(argv);
+
+	ok(argv_offset == 2);
+	ok(shell_opt == 1);
+	ok(ctx.exit.count == 1);
+	return 0;
+}
+
+/*
  * In restart mode the first action should be to start the server
  */
 int watch_fd_restart_01() {
@@ -929,6 +944,7 @@ int test_main(int argc, char *argv[]) {
 	run(set_options_04);
 	run(set_options_05);
 	run(set_options_06);
+	run(set_options_07);
 	run(watch_fd_restart_01);
 	run(watch_fd_restart_02);
 	run(run_utility_01);
