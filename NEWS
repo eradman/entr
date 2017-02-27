@@ -1,11 +1,11 @@
-= Next Release: 3.7
+= Release History
+
+== 3.7: February 27, 2017
 
  - Terminate subprocess in restart mode if a file under watch disappears
  - Allow NOTE_ATTRIB to set '/_' only if file mode changes
  - New '-s' option executes commands using $SHELL -c
  - Print usage and exit if input is from a terminal instead of a pipe
-
-= Release History
 
 == 3.6: July 01, 2016
 
