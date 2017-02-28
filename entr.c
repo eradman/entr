@@ -33,6 +33,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <termios.h>
 
 #include "missing/compat.h"
 
@@ -41,6 +42,7 @@
 /* events to watch for */
 
 #define NOTE_ALL NOTE_DELETE|NOTE_WRITE|NOTE_RENAME|NOTE_TRUNCATE|NOTE_ATTRIB
+#define TRIGGER_CHAR 32  /* space */
 
 /* shortcuts */
 
@@ -63,6 +65,7 @@ void (*xfree)(void *);
 void (*xwarnx)(const char *, ...);
 void (*xerrx)(int, const char *, ...);
 int (*xlist_dir)(char *);
+int (*xtcsetattr)(int fd, int action, const struct termios *tp);
 
 /* globals */
 
@@ -103,6 +106,7 @@ main(int argc, char *argv[]) {
 	short argv_index;
 	int n_files;
 	int i;
+	struct kevent evSet;
 
 	if ((*test_runner_main))
 		return(test_runner_main(argc, argv));
@@ -120,6 +124,7 @@ main(int argc, char *argv[]) {
 	xwarnx = warnx;
 	xerrx = errx;
 	xlist_dir = list_dir;
+	xtcsetattr = tcsetattr;
 
 	/* call usage() if no command is supplied */
 	if (argc < 2) usage();
@@ -173,6 +178,13 @@ main(int argc, char *argv[]) {
 		if (dup2(ttyfd, STDIN_FILENO) != 0)
 			xwarnx("can't dup2 to stdin");
 		close(ttyfd);
+	}
+
+	/* Use keyboard input as a trigger */
+	EV_SET(&evSet, STDIN_FILENO, EVFILT_READ, EV_ADD | EV_CLEAR, 0, 0,
+		NULL);
+	if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1) {
+		err(1, "failed to register stdin");
 	}
 
 	watch_loop(kq, argv+argv_index);
@@ -476,32 +488,50 @@ watch_loop(int kq, char *argv[]) {
 	int dir_modified = 0;
 	int leading_edge_set = 0;
 	struct stat sb;
+	struct termios canonical_tty, character_tty;
+	char c;
 
 	leading_edge = files[0]; /* default */
 	if (postpone_opt == 0)
 		run_utility(argv);
 
+	/* disabling/restore line buffering and local echo */
+	tcgetattr(STDIN_FILENO, &canonical_tty);
+	character_tty = canonical_tty;
+	character_tty.c_lflag &= ~(ICANON|ECHO);
+
 main:
+	xtcsetattr(STDIN_FILENO, TCSADRAIN, &character_tty);
 	if ((reopen_only == 1) || (collate_only == 1))
 		nev = xkevent(kq, NULL, 0, evList, 32, &evTimeout);
 	else {
 		nev = xkevent(kq, NULL, 0, evList, 32, NULL);
 		dir_modified = 0;
 	}
+
 	/* escape for test runner */
 	if ((nev == -2) && (collate_only == 0))
 		return;
 
 	for (i=0; i<nev; i++) {
+		if (evList[i].filter == EVFILT_READ) {
+			if (read(STDIN_FILENO, &c, 1) == 1) {
+				if (c == TRIGGER_CHAR)
+					do_exec = 1;
+			}
+		}
 		if (evList[i].filter != EVFILT_VNODE)
 			continue;
 		file = (WatchFile *)evList[i].udata;
 		if (file->is_dir == 1)
 			dir_modified += compare_dir_contents(file);
 	}
+	xtcsetattr(0, TCSADRAIN, &canonical_tty);
 
 	collate_only = 0;
 	for (i=0; i<nev; i++) {
+		if (evList[i].filter != EVFILT_VNODE)
+			continue;
 		file = (WatchFile *)evList[i].udata;
 		if (evList[i].fflags & NOTE_DELETE ||
 		    evList[i].fflags & NOTE_RENAME) {
@@ -521,6 +551,8 @@ main:
 	}
 
 	for (i=0; i<nev && reopen_only == 0; i++) {
+		if (evList[i].filter != EVFILT_VNODE)
+			continue;
 		file = (WatchFile *)evList[i].udata;
 		if ((file->is_dir == 1) && (dir_modified == 0))
 			continue;

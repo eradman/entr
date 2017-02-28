@@ -142,6 +142,11 @@ void
 fake_free(void *ptr) {
 }
 
+int
+fake_tcsetattr(int fd, int action, const struct termios *tp) {
+    return 0;
+}
+
 /* mock objects */
 
 /*
@@ -922,6 +927,7 @@ int test_main(int argc, char *argv[]) {
 	xerrx = fake_errx;
 	xwarnx = fake_warnx;
 	xlist_dir = fake_list_dir;
+	xtcsetattr = fake_tcsetattr;
 
 	/* all tests */
 	run(process_input_01);
