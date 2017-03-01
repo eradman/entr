@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#define EVFILT_READ		(-1)
 #define EVFILT_VNODE		(-4)	/* attached to vnodes */
 
 /* actions */
