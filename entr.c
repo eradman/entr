@@ -181,11 +181,13 @@ main(int argc, char *argv[]) {
 	}
 
 	/* Use keyboard input as a trigger */
+	#if !defined(_MACOS_PORT) && !defined(_LINUX_PORT)
 	EV_SET(&evSet, STDIN_FILENO, EVFILT_READ, EV_ADD | EV_CLEAR, 0, 0,
 		NULL);
 	if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1) {
 		err(1, "failed to register stdin");
 	}
+	#endif
 
 	watch_loop(kq, argv+argv_index);
 	return 1;
