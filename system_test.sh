@@ -304,7 +304,7 @@ try "exec a command using shell option"
 	kill -INT $bgpid
 	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.err)" ""
-	assert "$(cat $tmp/exec.out)" "$(printf ${tmp}'/file2: ASCII text')"
+	assert "$(head -n1 $tmp/exec.out)" "$(printf ${tmp}'/file2: ASCII text')"
 
 # extra slow tests that rely on timeouts
 
