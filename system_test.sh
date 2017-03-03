@@ -21,6 +21,9 @@ trap 'printf "$0: exit code $? on line $LINENO\nFAIL: $this\n"; exit 1' ERR \
 typeset -i tests=0
 function try { let tests+=1; this="$1"; }
 
+# Restore terminal settings if entr is unable to clean up
+trap 'stty echo icanon' EXIT
+
 function assert {
 	[[ "$1" == "$2" ]] && { printf "."; return; }
 	printf "\nFAIL: $this\n'$1' != '$2'\n"; exit 1
