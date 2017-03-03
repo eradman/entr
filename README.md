@@ -15,25 +15,15 @@ Source Installation - BSD, Mac OS, and Linux
 
 To see available build options run `./configure -h`
 
-Installation - Mac OS/Homebrew
-------------------------------
+Binary Installation
+-------------------
 
-    brew install entr
+The following distributions provide `entr` as part of their main
+package repository:
 
-Installation - BSD Ports
-------------------------
-
-Available in OpenBSD ports, FreeBSD ports, and pkgsrc under `sysutils/entr`.
-
-Installation - Debian, Ubuntu
------------------------------
-
-    apt install entr
-
-Installation - Fedora
----------------------
-
-    dnf install entr
+* OpenBSD and FreeBSD
+* Mac OS using Homebrew or MacPorts
+* Debian, Ubuntu, Fedora, and Alpine Linux
 
 Examples from `man entr`
 ------------------------
