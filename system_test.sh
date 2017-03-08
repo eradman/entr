@@ -29,7 +29,7 @@ function skip { printf "s"; }
 
 function zz { sleep 0.25; }
 function setup { rm -f $tmp/*; touch $tmp/file{1,2}; zz; }
-tmp=$(cd $(mktemp -dt entr-system-test-XXXXXX); pwd -P)
+tmp=$(cd $(mktemp -d ${TMPDIR:-/tmp}/entr-system-test-XXXXXX); pwd -P)
 tsession=$(basename $tmp)
 
 clear_tty='test -t 0 && stty echo icanon'
