@@ -1,10 +1,9 @@
 Event Notify Test Runner
 ========================
 
-A utility for running arbitrary commands when files change. Uses
-[kqueue(2)][kqueue_2] or [inotify(7)][inotify_7] to avoid polling.  `entr` was
-written to make rapid feedback and automated testing natural and completely
-ordinary.
+A utility for running arbitrary commands when files change. Uses [kqueue(2)] or
+[inotify(7)] to avoid polling.  `entr` was written to make rapid feedback and
+automated testing natural and completely ordinary.
 
 Source Installation - BSD, Mac OS, and Linux
 --------------------------------------------
@@ -25,8 +24,8 @@ package repository:
 * Mac OS using Homebrew or MacPorts
 * Debian, Ubuntu, Fedora, and Alpine Linux
 
-Examples from `man entr`
-------------------------
+Man Page Examples
+-----------------
 
 Rebuild a project if source files change, limiting output to the first 20 lines:
 
@@ -48,15 +47,15 @@ News
 ----
 
 A release history as well as features in the upcoming release are covered in the
-[NEWS][NEWS] file.
+[NEWS] file.
 
 License
 -------
 
-Source is under and ISC-style license. See the [LICENSE][LICENSE] file for more
-detailed information on the license used for compatibility libraries.
+Source is under and ISC-style license. See the [LICENSE] file for more detailed
+information on the license used for compatibility libraries.
 
-[kqueue_2]: http://www.openbsd.org/cgi-bin/man.cgi?query=kqueue&manpath=OpenBSD+Current&format=html
-[inotify_7]: http://man.he.net/?section=all&topic=inotify
+[kqueue(2)]: http://man.openbsd.org/OpenBSD-current/man2/kqueue.2
+[inotify(7)]: http://man.he.net/?section=all&topic=inotify
 [NEWS]: http://www.bitbucket.org/eradman/entr/src/default/NEWS
 [LICENSE]: http://www.bitbucket.org/eradman/entr/src/default/LICENSE
