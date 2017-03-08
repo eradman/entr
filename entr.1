@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd February 27, 2017
+.Dd March 7, 2017
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -75,11 +75,24 @@ The first argument named
 .Ar /_
 is replaced with the absolute path of the file leading a file system event.
 If the restart option is used the first file under watch is treated as the default.
+.Sh COMMANDS
+.Nm
+listens for keyboard input and responds to the following commands:
+.Bl -tag -width Ic
+.It SPACE
+Execute the utility immediately.
+If the
+.Ql -r
+option is set this will terminate and restart the child process as if a file
+change event had occurred.
+.It q
+Quit; equivalent pressing Ctrl\-C.
+.El
 .Sh ENVIRONMENT
 If
 .Ev PAGER
 is undefined,
-.Nm entr
+.Nm
 will assign
 .Pa /bin/cat
 to prevent interactive utilities from waiting for

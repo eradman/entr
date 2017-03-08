@@ -29,10 +29,10 @@ function skip { printf "s"; }
 
 function zz { sleep 0.25; }
 function setup { rm -f $tmp/*; touch $tmp/file{1,2}; zz; }
-tmp=$(cd $(mktemp -dt entr_system_test.XXXXXXXXXX); pwd -P)
-tsession=entr-$(echo $tmp | cut -d. -f2)
+tmp=$(cd $(mktemp -dt entr-system-test-XXXXXX); pwd -P)
+tsession=$(basename $tmp)
 
-clear_tty='stty echo icanon'
+clear_tty='test -t 0 && stty echo icanon'
 clear_tmux='tmux kill-session -t $tsession 2>/dev/null || true'
 clear_tmp='rm -r $tmp'
 trap "$clear_tty; $clear_tmux; $clear_tmp" EXIT
@@ -92,7 +92,7 @@ try "spacebar triggers utility"
 	else
 		assert "$(cat $tmp/file1)" "finished"
 	fi
-	tmux send-keys -t $tsession:0 C-c
+	tmux send-keys -t $tsession:0 "q" ; zz
 	tmux kill-session -t $tsession
 
 # file system tests
@@ -316,12 +316,12 @@ try "watch and exec a program that is overwritten"
 
 try "exec an interactive utility when a file changes"
 	setup
-	ls $tmp/file* | ./entr -p sh -c 'tty | colrm 9' 2> /dev/null > $tmp/exec.out &
+	ls $tmp/file* | ./entr -p sh -c 'tty | cut -c1-8' 2> /dev/null > $tmp/exec.out &
 	bgpid=$! ; zz
 	echo 456 >> $tmp/file2 ; zz
 	kill -INT $bgpid
 	wait $bgpid || assert "$?" "130"
-	if ! tty > /dev/null ; then
+	if ! test -t 0 ; then
 		skip "A TTY is not available"
 	else
 		assert "$(cat $tmp/exec.out | tr '/pts' '/tty')" "/dev/tty"

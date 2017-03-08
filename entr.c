@@ -42,7 +42,6 @@
 /* events to watch for */
 
 #define NOTE_ALL NOTE_DELETE|NOTE_WRITE|NOTE_RENAME|NOTE_TRUNCATE|NOTE_ATTRIB
-#define TRIGGER_CHAR 32  /* space */
 
 /* shortcuts */
 
@@ -516,8 +515,10 @@ main:
 	for (i=0; i<nev; i++) {
 		if (evList[i].filter == EVFILT_READ) {
 			if (read(STDIN_FILENO, &c, 1) == 1) {
-				if (c == TRIGGER_CHAR)
+				if (c == ' ')
 					do_exec = 1;
+				if (c == 'q')
+					kill(getpid(), SIGINT);
 			}
 		}
 		if (evList[i].filter != EVFILT_VNODE)
