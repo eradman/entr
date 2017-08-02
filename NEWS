@@ -1,6 +1,7 @@
 = Next Release: 3.8
 
- - Run the utility if the spacebar is pressed (*BSD and Linux)
+ - Run the utility if the spacebar is pressed
+ - 'q' for quit
 
 = Release History
 
