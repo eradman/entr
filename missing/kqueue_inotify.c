@@ -118,11 +118,15 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 		return nchanges - ignored;
 	}
 
-	if (timeout != 0 && (poll(pfd, 2, timeout->tv_nsec/1000000) == 0))
-		return 0;
+	if (timeout == NULL)
+		poll(pfd, 2, -1);
+	else
+		poll(pfd, 2, timeout->tv_nsec/1000000);
 
 	n = 0;
 	do {
+		if ((pfd[0].revents & (POLLERR|POLLNVAL)))
+			errx(1, "bad fd %d", pfd[0].fd);
 		if ((pfd[0].revents & POLLIN)) {
 			pos = 0;
 			len = read(kq /* ifd */, &buf, EVENT_BUF_LEN);
@@ -131,7 +135,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 				if (errno == EINTR)
 					continue;
 				else
-					perror("read");
+					errx(1, "read of fd %d failed", pfd[0].fd);
 			}
 			while ((pos < len) && (n < nevents)) {
 				iev = (struct inotify_event *) &buf[pos];
@@ -160,6 +164,8 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 					n++;
 			}
 		}
+		if ((pfd[1].revents & (POLLERR|POLLNVAL)))
+			errx(1, "bad fd %d", pfd[1].fd);
 		if ((pfd[1].revents & POLLIN)) {
 			fflags = 0;
 			eventlist[n].ident = pfd[1].fd;

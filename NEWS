@@ -1,3 +1,7 @@
+= Next Release: 3.9
+
+ - Fix use of poll(2) to avoid possible busy-loop on Linux
+
 = Release History
 
 == 3.8: August 11, 2017
