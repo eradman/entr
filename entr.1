@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd May 18, 2017
+.Dd September 14, 2017
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -128,6 +128,10 @@ Rebuild a project if source files change, limiting output to the first 20 lines:
 Launch and auto-reload a node.js server:
 .Pp
 .Dl $ ls *.js | entr -r node app.js
+.Pp
+Launch and auto-reload a node.js server as a background task:
+.Pp
+.Dl $ (ls *.js | entr -r node app.js &)
 .Pp
 Clear the screen and run a query after the SQL script is updated:
 .Pp

@@ -35,6 +35,10 @@ Launch and auto-reload a node.js server:
 
     $ ls *.js | entr -r node app.js
 
+Launch and auto-reload a node.js server as a background task:
+
+    $ (ls *.js | entr -r node app.js &)
+
 Clear the screen and run a query after the SQL script is updated:
 
     $ echo my.sql | entr -p psql -f /_
