@@ -87,11 +87,7 @@ try "spacebar triggers utility"
 	tmux send-keys -t $tsession:0 "xyz" C-m ; zz
 	assert "$(cat $tmp/file1)" "waiting"
 	tmux send-keys -t $tsession:0 " " ; zz
-	if [ $(uname | egrep 'Darwin') ]; then
-		skip "EVFILT_READ not supported on STDIN"
-	else
-		assert "$(cat $tmp/file1)" "finished"
-	fi
+	assert "$(cat $tmp/file1)" "finished"
 	tmux send-keys -t $tsession:0 "q" ; zz
 	tmux kill-session -t $tsession
 
