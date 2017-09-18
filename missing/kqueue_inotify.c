@@ -34,6 +34,8 @@
 
 extern WatchFile **files;
 
+int read_stdin;
+
 /* forwards */
 
 static WatchFile * file_by_descriptor(int fd);
@@ -84,6 +86,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	const struct kevent *kev;
 	int ignored;
 	struct pollfd *pfd;
+	int n_read;
 
 	pfd = calloc(2, sizeof(struct pollfd));
 	pfd[0].fd = kq;
@@ -96,6 +99,13 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 		for (n=0; n<nchanges; n++) {
 			kev = changelist + (sizeof(struct kevent)*n);
 			file = (WatchFile *)kev->udata;
+
+			if (kev->filter == EVFILT_READ) {
+				if (kev->flags & EV_ADD)
+					read_stdin = 1;
+				if (kev->flags & EV_DELETE)
+					read_stdin = 0;
+			}
 
 			if (kev->filter != EVFILT_VNODE)
 				continue;
@@ -118,16 +128,20 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 		return nchanges - ignored;
 	}
 
-	if (timeout == NULL)
-		poll(pfd, 2, -1);
+	if (read_stdin == 1)
+		n_read = 2;
 	else
-		poll(pfd, 2, timeout->tv_nsec/1000000);
+		n_read = 1;
+	if (timeout == NULL)
+		poll(pfd, n_read, -1);
+	else
+		poll(pfd, n_read, timeout->tv_nsec/1000000);
 
 	n = 0;
 	do {
-		if ((pfd[0].revents & (POLLERR|POLLNVAL)))
+		if (pfd[0].revents & (POLLERR|POLLNVAL))
 			errx(1, "bad fd %d", pfd[0].fd);
-		if ((pfd[0].revents & POLLIN)) {
+		if (pfd[0].revents & POLLIN) {
 			pos = 0;
 			len = read(kq /* ifd */, &buf, EVENT_BUF_LEN);
 			if (len < 0) {
@@ -164,18 +178,20 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 					n++;
 			}
 		}
-		if ((pfd[1].revents & (POLLERR|POLLNVAL)))
-			errx(1, "bad fd %d", pfd[1].fd);
-		if ((pfd[1].revents & POLLIN)) {
-			fflags = 0;
-			eventlist[n].ident = pfd[1].fd;
-			eventlist[n].filter = EVFILT_READ;
-			eventlist[n].flags = 0;
-			eventlist[n].fflags = fflags;
-			eventlist[n].data = 0;
-			eventlist[n].udata = NULL;
-			n++;
-			break;
+		if (read_stdin == 1) {
+			if (pfd[1].revents & (POLLERR|POLLNVAL))
+				errx(1, "bad fd %d", pfd[1].fd);
+			else if (pfd[1].revents & (POLLHUP|POLLIN)) {
+				fflags = 0;
+				eventlist[n].ident = pfd[1].fd;
+				eventlist[n].filter = EVFILT_READ;
+				eventlist[n].flags = 0;
+				eventlist[n].fflags = fflags;
+				eventlist[n].data = 0;
+				eventlist[n].udata = NULL;
+				n++;
+				break;
+			}
 		}
 	}
 	while ((poll(pfd, 2, 50) > 0));
