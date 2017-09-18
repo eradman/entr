@@ -499,12 +499,16 @@ watch_loop(int kq, char *argv[]) {
 
 main:
 	xtcsetattr(STDIN_FILENO, TCSADRAIN, &character_tty);
-	if ((reopen_only == 1) || (collate_only == 1))
+	if ((reopen_only == 1) || (collate_only == 1)) {
 		nev = xkevent(kq, NULL, 0, evList, 32, &evTimeout);
+	}
 	else {
 		nev = xkevent(kq, NULL, 0, evList, 32, NULL);
 		dir_modified = 0;
 	}
+
+	if (nev == -1)
+		err(1, "kevent failed");
 
 	/* escape for test runner */
 	if ((nev == -2) && (collate_only == 0))
@@ -512,7 +516,13 @@ main:
 
 	for (i=0; i<nev; i++) {
 		if (evList[i].filter == EVFILT_READ) {
-			if (read(STDIN_FILENO, &c, 1) == 1) {
+			if (read(STDIN_FILENO, &c, 1) < 1) {
+				EV_SET(&evSet, STDIN_FILENO, EVFILT_READ,
+				    EV_DELETE, NOTE_LOWAT, 0, NULL);
+				if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+					err(1, "failed to remove READ event");
+			}
+			else {
 				if (c == ' ')
 					do_exec = 1;
 				if (c == 'q')

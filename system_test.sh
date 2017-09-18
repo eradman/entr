@@ -333,6 +333,14 @@ try "exec a command using shell option"
 	assert "$(cat $tmp/exec.err)" ""
 	assert "$(head -n1 $tmp/exec.out)" "$(printf ${tmp}'/file2: ASCII text')"
 
+try "exec a command as a background task"
+	setup
+	(ls $tmp/file* | ./entr -ps 'echo terminating; kill $$' >$tmp/exec.out 2>$tmp/exec.err &)
+	zz
+	echo 456 >> $tmp/file2 ; zz
+	assert "$(cat $tmp/exec.err)" ""
+	assert "$(head -n1 $tmp/exec.out)" "terminating"
+
 # extra slow tests that rely on timeouts
 
 try "ensure that all subprocesses are terminated in restart mode when a file is removed"
