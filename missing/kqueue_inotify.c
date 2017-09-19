@@ -17,6 +17,7 @@
 #include <sys/event.h>
 #include <sys/types.h>
 
+#include <err.h>
 #include <errno.h>
 #include <limits.h>
 #include <poll.h>
@@ -33,7 +34,6 @@
 /* globals */
 
 extern WatchFile **files;
-
 int read_stdin;
 
 /* forwards */
@@ -86,7 +86,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	const struct kevent *kev;
 	int ignored;
 	struct pollfd *pfd;
-	int n_read;
+	int nfds;
 
 	pfd = calloc(2, sizeof(struct pollfd));
 	pfd[0].fd = kq;
@@ -129,13 +129,13 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	}
 
 	if (read_stdin == 1)
-		n_read = 2;
+		nfds = 2; /* inotify and stdin */
 	else
-		n_read = 1;
+		nfds = 1; /* inotify */
 	if (timeout == NULL)
-		poll(pfd, n_read, -1);
+		poll(pfd, nfds, -1);
 	else
-		poll(pfd, n_read, timeout->tv_nsec/1000000);
+		poll(pfd, nfds, timeout->tv_nsec/1000000);
 
 	n = 0;
 	do {
@@ -194,7 +194,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			}
 		}
 	}
-	while ((poll(pfd, 2, 50) > 0));
+	while ((poll(pfd, nfds, 50) > 0));
 	
 	(void) free(pfd);
 	return n;
