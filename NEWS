@@ -1,9 +1,9 @@
-= Next Release: 3.9
+= Release History
+
+== 3.9: September 19, 2017
 
  - Fix use of poll(2) to avoid possible busy-loop on Linux
  - Disable keyboard input if reading STDIN fails
-
-= Release History
 
 == 3.8: August 11, 2017
 
