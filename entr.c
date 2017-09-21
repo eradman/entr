@@ -319,9 +319,9 @@ set_options(char *argv[]) {
 			usage();
 		}
 	}
-	if (argv[optind] == '\0')
+	if (argv[optind] == 0)
 		usage();
-	if ((shell_opt == 1) && (argv[optind+1] != '\0'))
+	if ((shell_opt == 1) && (argv[optind+1] != 0))
 		xerrx(1, "-s requires commands to be formatted as a single argument");
 	return optind;
 }
