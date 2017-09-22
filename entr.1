@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd September 14, 2017
+.Dd September 22, 2017
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -63,6 +63,7 @@ A process group is created to prevent shell scripts from masking signals.
 waits for the
 .Ar utility
 to exit to ensure that resources such as sockets have been closed.
+Control of the TTY is not transferred the child process.
 .It Fl s
 Evaluate the first argument using the interpreter specified by the
 .Ev SHELL
