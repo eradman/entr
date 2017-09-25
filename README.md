@@ -14,6 +14,14 @@ Source Installation - BSD, Mac OS, and Linux
 
 To see available build options run `./configure -h`
 
+Source Installation - Windows Subsystem for Linux
+-------------------------------------------------
+
+    wget http://entrproject.org/patches/entr-3.9-wsl
+    patch -p1 < entr-3.9-wsl
+    ./configure
+    make install
+
 Binary Installation
 -------------------
 
