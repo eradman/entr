@@ -22,6 +22,9 @@ Source Installation - Windows Subsystem for Linux
     ./configure
     make install
 
+The source patch is the current workaround for deformed [inotify
+support on WSL](https://github.com/Microsoft/BashOnWindows/issues/2507).
+
 Binary Installation
 -------------------
 
