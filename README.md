@@ -33,7 +33,7 @@ package repository:
 
 * OpenBSD and FreeBSD
 * Mac OS using Homebrew or MacPorts
-* Debian, Ubuntu, Fedora, and Alpine Linux
+* Debian, Ubuntu, Fedora, Nix/NixOS and Alpine Linux
 
 Man Page Examples
 -----------------
