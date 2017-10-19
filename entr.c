@@ -182,7 +182,7 @@ main(int argc, char *argv[]) {
 	/* Use keyboard input as a trigger */
 	EV_SET(&evSet, STDIN_FILENO, EVFILT_READ, EV_ADD, NOTE_LOWAT, 1, NULL);
 	if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
-		err(1, "failed to register stdin");
+		xwarnx("failed to register stdin");
 
 	watch_loop(kq, argv+argv_index);
 	return 1;

@@ -1,3 +1,7 @@
+= Next Release: 4.0
+
+ - Warn instead of error if kqueue fails to register on STDIN
+
 = Release History
 
 == 3.9: September 19, 2017
