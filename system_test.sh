@@ -93,6 +93,14 @@ try "spacebar triggers utility"
 
 # file system tests
 
+try "exec a command as a background task and ensure stdin is closed"
+	setup
+	ls $tmp/file* | ./entr -r sh -c 'test -t 0; echo $?; kill $$' >$tmp/exec.out &
+	bgpid=$! ; zz
+	kill -INT $bgpid
+	wait $bgpid || assert "$?" "130"
+	assert "$(cat $tmp/exec.out)" "1"
+
 try "exec single shell utility and exit when a file is added to an implicit watch path"
 	setup
 	ls $tmp/file* | ./entr -dp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \

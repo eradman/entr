@@ -381,8 +381,10 @@ run_utility(char *argv[]) {
 		if (clear_opt == 1)
 			(void) system("/usr/bin/clear");
 		/* Set process group so subprocess can be signaled */
-		if (restart_opt == 1)
+		if (restart_opt == 1) {
 			setpgid(0, getpid());
+			(void) close(STDIN_FILENO);
+		}
 		/* wait up to 1 seconds for each file to become available */
 		for (i=0; i < 10; i++) {
 			ret = xexecvp(new_argv[0], new_argv);

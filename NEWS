@@ -1,6 +1,7 @@
 = Next Release: 4.0
 
  - Warn instead of error if kqueue fails to register on STDIN
+ - Close STDIN before running the utility when the restart option is used
 
 = Release History
 
