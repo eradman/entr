@@ -25,16 +25,6 @@ Source Installation - Windows Subsystem for Linux
 The source patch is the current workaround for deformed [inotify
 support on WSL](https://github.com/Microsoft/BashOnWindows/issues/2507).
 
-Binary Installation
--------------------
-
-The following distributions provide `entr` as part of their main
-package repository:
-
-* OpenBSD and FreeBSD
-* Mac OS using Homebrew or MacPorts
-* Debian, Ubuntu, Fedora, Nix/NixOS and Alpine Linux
-
 Man Page Examples
 -----------------
 
