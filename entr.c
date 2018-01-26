@@ -78,6 +78,7 @@ int dirwatch_opt;
 int restart_opt;
 int postpone_opt;
 int shell_opt;
+struct termios canonical_tty;
 
 /* forwards */
 
@@ -179,6 +180,9 @@ main(int argc, char *argv[]) {
 		close(ttyfd);
 	}
 
+	/* remember terminal settings */
+	tcgetattr(STDIN_FILENO, &canonical_tty);
+
 	/* Use keyboard input as a trigger */
 	EV_SET(&evSet, STDIN_FILENO, EVFILT_READ, EV_ADD, NOTE_LOWAT, 1, NULL);
 	if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
@@ -212,6 +216,7 @@ terminate_utility() {
 
 void
 handle_exit(int sig) {
+	xtcsetattr(0, TCSADRAIN, &canonical_tty);
 	terminate_utility();
 	raise(sig);
 }
@@ -487,15 +492,14 @@ watch_loop(int kq, char *argv[]) {
 	int dir_modified = 0;
 	int leading_edge_set = 0;
 	struct stat sb;
-	struct termios canonical_tty, character_tty;
 	char c;
+	struct termios character_tty;
 
 	leading_edge = files[0]; /* default */
 	if (postpone_opt == 0)
 		run_utility(argv);
 
 	/* disabling/restore line buffering and local echo */
-	tcgetattr(STDIN_FILENO, &canonical_tty);
 	character_tty = canonical_tty;
 	character_tty.c_lflag &= ~(ICANON|ECHO);
 

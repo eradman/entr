@@ -2,6 +2,7 @@
 
  - Warn instead of error if kqueue fails to register on STDIN
  - Close STDIN before running the utility when the restart option is used
+ - Restore terminal settings if terminated by a signal
 
 = Release History
 
