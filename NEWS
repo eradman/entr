@@ -1,10 +1,10 @@
-= Next Release: 4.0
+= Release History
+
+== 4.0: February 02, 2018
 
  - Warn instead of error if kqueue fails to register on STDIN
  - Close STDIN before running the utility when the restart option is used
  - Restore terminal settings if terminated by a signal
-
-= Release History
 
 == 3.9: September 19, 2017
 
