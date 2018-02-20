@@ -78,6 +78,7 @@ int dirwatch_opt;
 int restart_opt;
 int postpone_opt;
 int shell_opt;
+int script_opt;
 struct termios canonical_tty;
 
 /* forwards */
@@ -172,21 +173,23 @@ main(int argc, char *argv[]) {
 	for (i=0; i<n_files; i++)
 		watch_file(kq, files[i]);
 
-	/* Attempt to open a tty so that editors don't complain */
-	ttyfd = xopen(_PATH_TTY, O_RDONLY);
-	if (ttyfd > STDIN_FILENO) {
-		if (dup2(ttyfd, STDIN_FILENO) != 0)
-			xwarnx("can't dup2 to stdin");
-		close(ttyfd);
+	if (!script_opt) {
+		/* Attempt to open a tty so that editors don't complain */
+		ttyfd = xopen(_PATH_TTY, O_RDONLY);
+		if (ttyfd > STDIN_FILENO) {
+			if (dup2(ttyfd, STDIN_FILENO) != 0)
+				xwarnx("can't dup2 to stdin");
+			close(ttyfd);
+		}
+
+		/* remember terminal settings */
+		tcgetattr(STDIN_FILENO, &canonical_tty);
+
+		/* Use keyboard input as a trigger */
+		EV_SET(&evSet, STDIN_FILENO, EVFILT_READ, EV_ADD, NOTE_LOWAT, 1, NULL);
+		if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+			xwarnx("failed to register stdin");
 	}
-
-	/* remember terminal settings */
-	tcgetattr(STDIN_FILENO, &canonical_tty);
-
-	/* Use keyboard input as a trigger */
-	EV_SET(&evSet, STDIN_FILENO, EVFILT_READ, EV_ADD, NOTE_LOWAT, 1, NULL);
-	if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
-		xwarnx("failed to register stdin");
 
 	watch_loop(kq, argv+argv_index);
 	return 1;
@@ -197,7 +200,7 @@ main(int argc, char *argv[]) {
 void
 usage() {
 	fprintf(stderr, "release: %s\n", RELEASE);
-	fprintf(stderr, "usage: entr [-cdprs] utility [argument [/_] ...] < filenames\n");
+	fprintf(stderr, "usage: entr [-cdnprs] utility [argument [/_] ...] < filenames\n");
 	exit(1);
 }
 
@@ -216,7 +219,8 @@ terminate_utility() {
 
 void
 handle_exit(int sig) {
-	xtcsetattr(0, TCSADRAIN, &canonical_tty);
+	if (!script_opt)
+		xtcsetattr(0, TCSADRAIN, &canonical_tty);
 	terminate_utility();
 	raise(sig);
 }
@@ -303,13 +307,16 @@ set_options(char *argv[]) {
 
 	/* read arguments until we reach a command */
 	for (argc=1; argv[argc] != 0 && argv[argc][0] == '-'; argc++);
-	while ((ch = getopt(argc, argv, "cdprs")) != -1) {
+	while ((ch = getopt(argc, argv, "cdnprs")) != -1) {
 		switch (ch) {
 		case 'c':
 			clear_opt = 1;
 			break;
 		case 'd':
 			dirwatch_opt = 1;
+			break;
+		case 'n':
+			script_opt = 1;
 			break;
 		case 'p':
 			postpone_opt = 1;
@@ -499,12 +506,15 @@ watch_loop(int kq, char *argv[]) {
 	if (postpone_opt == 0)
 		run_utility(argv);
 
-	/* disabling/restore line buffering and local echo */
-	character_tty = canonical_tty;
-	character_tty.c_lflag &= ~(ICANON|ECHO);
+	if (!script_opt) {
+		/* disabling/restore line buffering and local echo */
+		character_tty = canonical_tty;
+		character_tty.c_lflag &= ~(ICANON|ECHO);
+	}
 
 main:
-	xtcsetattr(STDIN_FILENO, TCSADRAIN, &character_tty);
+	if (!script_opt)
+		xtcsetattr(STDIN_FILENO, TCSADRAIN, &character_tty);
 	if ((reopen_only == 1) || (collate_only == 1)) {
 		nev = xkevent(kq, NULL, 0, evList, 32, &evTimeout);
 	}
@@ -521,7 +531,7 @@ main:
 		return;
 
 	for (i=0; i<nev; i++) {
-		if (evList[i].filter == EVFILT_READ) {
+		if (!script_opt && evList[i].filter == EVFILT_READ) {
 			if (read(STDIN_FILENO, &c, 1) < 1) {
 				EV_SET(&evSet, STDIN_FILENO, EVFILT_READ,
 				    EV_DELETE, NOTE_LOWAT, 0, NULL);
@@ -541,7 +551,8 @@ main:
 		if (file->is_dir == 1)
 			dir_modified += compare_dir_contents(file);
 	}
-	xtcsetattr(0, TCSADRAIN, &canonical_tty);
+	if (!script_opt)
+		xtcsetattr(0, TCSADRAIN, &canonical_tty);
 
 	collate_only = 0;
 	for (i=0; i<nev; i++) {
