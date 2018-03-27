@@ -78,7 +78,7 @@ int dirwatch_opt;
 int restart_opt;
 int postpone_opt;
 int shell_opt;
-int script_opt;
+int noninteractive_opt;
 struct termios canonical_tty;
 
 /* forwards */
@@ -173,7 +173,7 @@ main(int argc, char *argv[]) {
 	for (i=0; i<n_files; i++)
 		watch_file(kq, files[i]);
 
-	if (!script_opt) {
+	if (!noninteractive_opt) {
 		/* Attempt to open a tty so that editors don't complain */
 		ttyfd = xopen(_PATH_TTY, O_RDONLY);
 		if (ttyfd > STDIN_FILENO) {
@@ -219,7 +219,7 @@ terminate_utility() {
 
 void
 handle_exit(int sig) {
-	if (!script_opt)
+	if (!noninteractive_opt)
 		xtcsetattr(0, TCSADRAIN, &canonical_tty);
 	terminate_utility();
 	raise(sig);
@@ -316,7 +316,7 @@ set_options(char *argv[]) {
 			dirwatch_opt = 1;
 			break;
 		case 'n':
-			script_opt = 1;
+			noninteractive_opt = 1;
 			break;
 		case 'p':
 			postpone_opt = 1;
@@ -506,14 +506,14 @@ watch_loop(int kq, char *argv[]) {
 	if (postpone_opt == 0)
 		run_utility(argv);
 
-	if (!script_opt) {
+	if (!noninteractive_opt) {
 		/* disabling/restore line buffering and local echo */
 		character_tty = canonical_tty;
 		character_tty.c_lflag &= ~(ICANON|ECHO);
 	}
 
 main:
-	if (!script_opt)
+	if (!noninteractive_opt)
 		xtcsetattr(STDIN_FILENO, TCSADRAIN, &character_tty);
 	if ((reopen_only == 1) || (collate_only == 1)) {
 		nev = xkevent(kq, NULL, 0, evList, 32, &evTimeout);
@@ -531,7 +531,7 @@ main:
 		return;
 
 	for (i=0; i<nev; i++) {
-		if (!script_opt && evList[i].filter == EVFILT_READ) {
+		if (!noninteractive_opt && evList[i].filter == EVFILT_READ) {
 			if (read(STDIN_FILENO, &c, 1) < 1) {
 				EV_SET(&evSet, STDIN_FILENO, EVFILT_READ,
 				    EV_DELETE, NOTE_LOWAT, 0, NULL);
@@ -551,7 +551,7 @@ main:
 		if (file->is_dir == 1)
 			dir_modified += compare_dir_contents(file);
 	}
-	if (!script_opt)
+	if (!noninteractive_opt)
 		xtcsetattr(0, TCSADRAIN, &canonical_tty);
 
 	collate_only = 0;

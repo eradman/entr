@@ -85,6 +85,7 @@ void reset_state() {
 	postpone_opt = 0;
 	restart_opt = 0;
 	shell_opt = 0;
+	noninteractive_opt = 0;
 	leading_edge = 0;
 	files = calloc(max_files, sizeof(WatchFile *));
 	for (i=0; i<max_files; i++)

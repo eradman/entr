@@ -1,3 +1,7 @@
+= Next Release: 4.1
+
+ - New '-n' non-interactive option disables keyboard input
+
 = Release History
 
 == 4.0: February 02, 2018

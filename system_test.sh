@@ -93,6 +93,14 @@ try "spacebar triggers utility"
 
 # file system tests
 
+try "exec a command in non-intertive mode"
+	setup
+	ls $tmp/file* | ./entr -n tty >$tmp/exec.out &
+	bgpid=$! ; zz
+	kill -INT $bgpid
+	wait $bgpid || assert "$?" "130"
+	assert "$(cat $tmp/exec.out)" "not a tty"
+
 try "exec a command as a background task and ensure stdin is closed"
 	setup
 	ls $tmp/file* | ./entr -r sh -c 'test -t 0; echo $?; kill $$' >$tmp/exec.out &
