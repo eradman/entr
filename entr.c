@@ -547,6 +547,11 @@ main:
 		}
 		if (evList[i].filter != EVFILT_VNODE)
 			continue;
+
+		if (getenv("EV_DEBUG"))
+			fprintf(stderr, "EVFILT_VNODE: %d/%d: flags: 0x%x"
+			    "fflags: 0x%x\n", i, nev, evList[i].flags,
+			    evList[i].fflags);
 		file = (WatchFile *)evList[i].udata;
 		if (file->is_dir == 1)
 			dir_modified += compare_dir_contents(file);
