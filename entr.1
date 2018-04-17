@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd September 22, 2017
+.Dd $Mdocdate: April 17 2018 $
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -50,7 +50,8 @@ Files with names beginning with
 .Ql \&.
 are ignored.
 .It Fl n
-Run in non-interactive mode. In this mode,
+Run in non-interactive mode.
+In this mode
 .Nm entr
 does not attempt to read from the TTY or change its properties.
 .It Fl p
@@ -59,9 +60,14 @@ Postpone the first execution of the
 until a file is modified.
 .It Fl r
 Reload a persistent child process.
+As with the standard mode of operation, a
+.Ar utility
+which terminates is not executed again until a file system or keyboard event is
+processed.
 .Dv SIGTERM
 is used to terminate the
-.Ar utility before it is restarted.
+.Ar utility
+before it is restarted.
 A process group is created to prevent shell scripts from masking signals.
 .Nm
 waits for the
