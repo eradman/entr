@@ -1,7 +1,7 @@
 = Next Release: 4.1
 
  - New '-n' non-interactive option disables keyboard input
- - Set EV_DEBUG variable to enable file system event tracing
+ - EV_TRACE environment variable enables file system event tracing
 
 = Release History
 
