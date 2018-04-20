@@ -605,6 +605,7 @@ main:
 			    file->mode = sb.st_mode;
 			    trace_message = "mode changed";
 			}
+			/* Possible on Linux when a running binary is unlinked */
 			if (file->ino != sb.st_ino) {
 			    do_exec = 1;
 			    file->ino = sb.st_ino;

@@ -2,6 +2,8 @@
 
  - New '-n' non-interactive option disables keyboard input
  - EV_TRACE environment variable enables file system event tracing
+ - Track changes to the inode number as a workaround for missing delete
+   events on the Linux kernel
 
 = Release History
 
