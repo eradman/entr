@@ -255,6 +255,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 			files[n_files]->is_dir = 0;
 			files[n_files]->file_count = 0;
 			files[n_files]->mode = sb.st_mode;
+			files[n_files]->ino = sb.st_ino;
 			n_files++;
 		}
 		/* also watch the directory if it's not already in the list */
@@ -273,6 +274,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 				files[n_files]->is_dir = 1;
 				files[n_files]->file_count = xlist_dir(path);
 				files[n_files]->mode = sb.st_mode;
+				files[n_files]->ino = sb.st_ino;
 				n_files++;
 			}
 		}
@@ -501,6 +503,7 @@ watch_loop(int kq, char *argv[]) {
 	struct stat sb;
 	char c;
 	struct termios character_tty;
+	char *trace_message;
 
 	leading_edge = files[0]; /* default */
 	if (postpone_opt == 0)
@@ -548,10 +551,6 @@ main:
 		if (evList[i].filter != EVFILT_VNODE)
 			continue;
 
-		if (getenv("EV_TRACE"))
-			fprintf(stderr, "EVFILT_VNODE: %d/%d: flags: 0x%x "
-			    "fflags: 0x%x\n", i, nev, evList[i].flags,
-			    evList[i].fflags);
 		file = (WatchFile *)evList[i].udata;
 		if (file->is_dir == 1)
 			dir_modified += compare_dir_contents(file);
@@ -582,11 +581,14 @@ main:
 	}
 
 	for (i=0; i<nev && reopen_only == 0; i++) {
+		trace_message = "";
+
 		if (evList[i].filter != EVFILT_VNODE)
 			continue;
 		file = (WatchFile *)evList[i].udata;
 		if ((file->is_dir == 1) && (dir_modified == 0))
 			continue;
+
 		if (evList[i].fflags & NOTE_DELETE ||
 		    evList[i].fflags & NOTE_WRITE  ||
 		    evList[i].fflags & NOTE_RENAME ||
@@ -595,18 +597,32 @@ main:
 				continue;
 			do_exec = 1;
 		}
+
 		if (evList[i].fflags & NOTE_ATTRIB &&
-		    S_ISREG(file->mode) != 0 &&
-		    xstat(file->fn, &sb) == 0 &&
-		    file->mode != sb.st_mode) {
-			do_exec = 1;
-			file->mode = sb.st_mode;
+		    S_ISREG(file->mode) != 0 && xstat(file->fn, &sb) == 0) {
+			if (file->mode != sb.st_mode) {
+			    do_exec = 1;
+			    file->mode = sb.st_mode;
+			    trace_message = "mode changed";
+			}
+			if (file->ino != sb.st_ino) {
+			    do_exec = 1;
+			    file->ino = sb.st_ino;
+			    trace_message = "inode changed";
+			}
 		}
 		else if (evList[i].fflags & NOTE_ATTRIB)
 			continue;
+
 		if ((file->is_dir == 0) && (leading_edge_set == 0)) {
 			leading_edge = file;
 			leading_edge_set = 1;
+		}
+
+		if (getenv("EV_TRACE")) {
+			fprintf(stderr, "EVFILT_VNODE: %d/%d: "
+			    "fflags: 0x%x %s\n", i, nev, evList[i].fflags,
+			    trace_message);
 		}
 	}
 

@@ -26,6 +26,7 @@ typedef struct {
 	int is_dir;
 	int file_count;
 	mode_t mode;
+	ino_t ino;
 } WatchFile;
 
 /* declare as extern in source */

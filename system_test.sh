@@ -295,6 +295,18 @@ try "exec a command if a file is made executable"
 	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "$tmp/file2"
 
+try "ensure watches operate on a running executable"
+	setup
+	cp /bin/sleep $tmp/
+	ls $tmp/sleep | ./entr -rs "echo 'vroom'; $tmp/sleep 30" \
+	    > $tmp/exec.out 2> /dev/null &
+	bgpid=$! ; zz
+	cp -f /bin/sleep $tmp/ ; zz
+	kill -INT $bgpid
+	wait $bgpid || assert "$?" "130"
+	rm -f $tmp/sleep
+	assert "$(cat $tmp/exec.out)" "$(printf 'vroom\nvroom\n')"
+
 try "exec a command using the first file to change"
 	setup
 	ls $tmp/file* | ./entr -p cat /_ > $tmp/exec.out &
