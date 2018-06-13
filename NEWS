@@ -1,11 +1,11 @@
-= Next Release: 4.1
+= Release History
+
+== 4.1: June 13, 2018
 
  - New '-n' non-interactive option disables keyboard input
  - EV_TRACE environment variable enables file system event tracing
  - Track changes to the inode number as a workaround for missing delete
    events on the Linux kernel
-
-= Release History
 
 == 4.0: February 02, 2018
 
