@@ -1,3 +1,7 @@
+= Next Release: 4.2
+
+ - Use pledge(2) on OpenBSD
+
 = Release History
 
 == 4.1: June 13, 2018

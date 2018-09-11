@@ -127,6 +127,9 @@ main(int argc, char *argv[]) {
 	xlist_dir = list_dir;
 	xtcsetattr = tcsetattr;
 
+	 if (pledge("stdio rpath tty proc exec", NULL) == -1)
+	    err(1, "pledge");
+
 	/* call usage() if no command is supplied */
 	if (argc < 2) usage();
 	argv_index = set_options(argv);
@@ -138,7 +141,7 @@ main(int argc, char *argv[]) {
 	if (sigemptyset(&act.sa_mask) & (sigaction(SIGINT, &act, NULL) != 0))
 		err(1, "Failed to set SIGINT handler");
 	if (sigemptyset(&act.sa_mask) & (sigaction(SIGTERM, &act, NULL) != 0))
-		err(1, "Failed to set TERM handler");
+		err(1, "Failed to set SIGTERM handler");
 
 	/* raise soft limit */
 	getrlimit(RLIMIT_NOFILE, &rl);
