@@ -15,7 +15,7 @@ FILE *fmemopen(void *buf, size_t size, const char *mode);
 #endif
 
 #if !defined(ARG_MAX)
-#define ARG_MAX 2097152
+#define ARG_MAX (256 * 1024)
 #endif
 
 #ifndef __OpenBSD__
