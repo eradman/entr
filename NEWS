@@ -1,6 +1,8 @@
 = Next Release: 4.2
 
  - Use pledge(2) on OpenBSD
+ - New '-a' option enables response to events that occur while the utility is
+   running
 
 = Release History
 

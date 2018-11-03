@@ -73,12 +73,13 @@ extern WatchFile **files;
 WatchFile *leading_edge;
 int child_pid;
 
+int aggressive_opt;
 int clear_opt;
 int dirwatch_opt;
-int restart_opt;
-int postpone_opt;
-int shell_opt;
 int noninteractive_opt;
+int postpone_opt;
+int restart_opt;
+int shell_opt;
 struct termios canonical_tty;
 
 /* forwards */
@@ -203,7 +204,7 @@ main(int argc, char *argv[]) {
 void
 usage() {
 	fprintf(stderr, "release: %s\n", RELEASE);
-	fprintf(stderr, "usage: entr [-cdnprs] utility [argument [/_] ...] < filenames\n");
+	fprintf(stderr, "usage: entr [-acdnprs] utility [argument [/_] ...] < filenames\n");
 	exit(1);
 }
 
@@ -229,9 +230,8 @@ handle_exit(int sig) {
 }
 
 /*
- * Read lines from a file stream (normally STDIN)
- * Returns the number of regular files to be watched or -1 if max_files is
- * exceeded
+ * Read lines from a file stream (normally STDIN).  Returns the number of
+ * regular files to be watched or -1 if max_files is exceeded.
  */
 int
 process_input(FILE *file, WatchFile *files[], int max_files) {
@@ -312,8 +312,11 @@ set_options(char *argv[]) {
 
 	/* read arguments until we reach a command */
 	for (argc=1; argv[argc] != 0 && argv[argc][0] == '-'; argc++);
-	while ((ch = getopt(argc, argv, "cdnprs")) != -1) {
+	while ((ch = getopt(argc, argv, "acdnprs")) != -1) {
 		switch (ch) {
+		case 'a':
+			aggressive_opt = 1;
+			break;
 		case 'c':
 			clear_opt = 1;
 			break;
@@ -498,7 +501,7 @@ watch_loop(int kq, char *argv[]) {
 	WatchFile *file;
 	int i;
 	struct timespec evTimeout = { 0, 1000000 };
-	int reopen_only = 0;
+	int reopen_only = !aggressive_opt;
 	int collate_only = 0;
 	int do_exec = 0;
 	int dir_modified = 0;
@@ -520,7 +523,7 @@ watch_loop(int kq, char *argv[]) {
 
 main:
 	if (!noninteractive_opt)
-		xtcsetattr(STDIN_FILENO, TCSADRAIN, &character_tty);
+		xtcsetattr(0, TCSADRAIN, &character_tty);
 	if ((reopen_only == 1) || (collate_only == 1)) {
 		nev = xkevent(kq, NULL, 0, evList, 32, &evTimeout);
 	}
@@ -635,7 +638,8 @@ main:
 	if (do_exec == 1) {
 		do_exec = 0;
 		run_utility(argv);
-		reopen_only = 1;
+		if (!aggressive_opt)
+			reopen_only = 1;
 		leading_edge_set = 0;
 	}
 	if (dir_modified > 0) {

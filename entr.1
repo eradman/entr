@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd April 17 2018
+.Dd November 3, 2018
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -21,7 +21,7 @@
 .Nd run arbitrary commands when files change
 .Sh SYNOPSIS
 .Nm
-.Op Fl cdprs
+.Op Fl acdprs
 .Ar utility
 .Op Ar argument /_ ...
 .Sh DESCRIPTION
@@ -36,6 +36,16 @@ interactive utilities.
 .Pp
 The arguments are as follows:
 .Bl -tag -width Ds
+.It Fl a
+Respond to all events which occur while the
+.Ar utility
+is running.
+Without this option
+.Nm
+classifies events in order to avoid looping.
+This option has no effect in conjunction with the
+.Fl r
+flag.
 .It Fl c
 Execute
 .Pa /usr/bin/clear

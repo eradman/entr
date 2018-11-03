@@ -371,6 +371,16 @@ try "exec a command as a background task"
 
 # extra slow tests that rely on timeouts
 
+try "respond to events that occur while the utility is running"
+	setup
+	ls $tmp/file* | ./entr -a sh -c 'echo "vroom"; sleep 0.5' > $tmp/exec.out &
+	bgpid=$! ; zz
+	echo "123" > $tmp/file1
+	sleep 1
+	kill -INT $bgpid
+	wait $bgpid || assert "$?" "130"
+	assert "$(cat $tmp/exec.out)" "$(printf 'vroom\nvroom\n')"
+
 try "ensure that all subprocesses are terminated in restart mode when a file is removed"
 	setup
 	cat <<-SCRIPT > $tmp/go.sh

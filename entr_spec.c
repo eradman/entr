@@ -80,16 +80,19 @@ void reset_state() {
 	optind = 1;
 
 	/* initialize global data */
+	aggressive_opt = 1;
 	clear_opt = 0;
 	dirwatch_opt = 0;
+	noninteractive_opt = 0;
 	postpone_opt = 0;
 	restart_opt = 0;
 	shell_opt = 0;
-	noninteractive_opt = 0;
+
 	leading_edge = 0;
 	files = calloc(max_files, sizeof(WatchFile *));
 	for (i=0; i<max_files; i++)
 		files[i] = calloc(1, sizeof(WatchFile));
+
 	/* initialize test context */
 	memset(&ctx, 0, sizeof(ctx));
 
@@ -378,6 +381,7 @@ int watch_fd_exec_03() {
 	int kq = kqueue();
 	static char *argv[] = { "prog", "arg1", "arg2", NULL };
 
+	aggressive_opt = 0;
 	postpone_opt = 1;
 	strlcpy(files[0]->fn, "main.py", sizeof(files[0]->fn));
 	watch_file(kq, files[0]);
