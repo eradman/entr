@@ -173,7 +173,7 @@ main(int argc, char *argv[]) {
 	if (n_files == -1)
 		errx(1, "Too many files listed; the hard limit for your login"
 		    " class is %d. Please consult"
-		    " http://entrproject.org/limits.html", (int)rl.rlim_cur);
+		    " http://eradman.com/entrproject/limits.html", (int)rl.rlim_cur);
 	for (i=0; i<n_files; i++)
 		watch_file(kq, files[i]);
 
@@ -457,7 +457,7 @@ watch_file(int kq, WatchFile *file) {
 		if (errno == ENOSPC)
 			errx(1, "Unable to allocate memory for kernel queue."
 			    " Please consult"
-			    " http://entrproject.org/limits.html");
+			    " http://eradman.com/entrproject/limits.html");
 		else
 			err(1, "failed to register VNODE event");
 	}

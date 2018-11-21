@@ -3,6 +3,7 @@
  - Use pledge(2) on OpenBSD
  - New '-a' option enables response to events that occur while the utility is
    running
+ - Error messages direct users to http://eradman.com/entrproject/limits.html
 
 = Release History
 
