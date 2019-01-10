@@ -447,8 +447,9 @@ watch_file(int kq, WatchFile *file) {
 		else break;
 	}
 	if (file->fd == -1) {
+		warn("cannot open '%s'", file->fn);
 		terminate_utility();
-		err(1, "cannot open '%s'", file->fn);
+		exit(1);
 	}
 
 	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_ALL, 0,
