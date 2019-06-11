@@ -1,3 +1,8 @@
+= Next Release: 4.3
+
+ - Move hosting from bitbucket.org to github.com
+ - Rename tag names from entr-X.Y to X.Y
+
 = Release History
 
 == 4.2: March 28, 2019
