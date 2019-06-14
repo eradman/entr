@@ -34,12 +34,12 @@ tsession=$(basename $tmp)
 
 clear_tty='test -t 0 && stty echo icanon'
 clear_tmux='tmux kill-session -t $tsession 2>/dev/null || true'
-clear_tmp='rm -r $tmp'
+clear_tmp='rm -rf $tmp'
 trap "$clear_tty; $clear_tmux; $clear_tmp" EXIT
 
 # required utilities
 
-utils="hg vim tmux"
+utils="git vim tmux"
 for util in $utils; do
 	p=$(which $util 2> /dev/null) || {
 		echo "ERROR: could not locate the '$util' utility" >&2
@@ -180,9 +180,9 @@ try "exec single utility when an entire stash of files is reverted"
 	setup
 	cp /usr/include/*.h $tmp/
 	cd $tmp
-	hg init
-	hg add *.h
-	hg commit -u "regression" -m "initial checkin"
+	git init -q
+	git add *.h
+	git commit -m "initial checkin" -q
 	for f in `ls *.h`; do
 		chmod 644 $f
 		echo "" >> $f
@@ -191,7 +191,7 @@ try "exec single utility when an entire stash of files is reverted"
 	ls $tmp/*.h | ./entr -p echo "changed" > $tmp/exec.out &
 	bgpid=$! ; zz
 	cd $tmp
-	hg revert *.h
+	git checkout *.h -q
 	cd - > /dev/null ; zz
 	kill -INT $bgpid
 	wait $bgpid || assert "$?" "130"

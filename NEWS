@@ -2,6 +2,7 @@
 
  - Move hosting from bitbucket.org to github.com
  - Rename tag names from entr-X.Y to X.Y
+ - Replace hg with git as a dependency for system-test.sh
 
 = Release History
 
