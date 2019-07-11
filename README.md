@@ -17,13 +17,24 @@ To see available build options run `./configure -h`
 Source Installation - Windows Subsystem for Linux
 -------------------------------------------------
 
-    wget http://entrproject.org/patches/entr-3.9-wsl
+    wget http://eradman.com/entrproject/patches/entr-3.9-wsl
     patch -p1 < entr-3.9-wsl
     ./configure
     make install
 
 The source patch is the current workaround for deformed [inotify
 support on WSL](https://github.com/Microsoft/BashOnWindows/issues/2507).
+
+Source Installation - Docker for Mac
+------------------------------------
+
+    wget http://eradman.com/entrproject/patches/entr-3.9-docker
+    patch -p1 < entr-3.9-docker
+    ./configure
+    make install
+
+The source patch is the current workaround for deformed [inotify
+support on Docker for Mac](https://github.com/docker/for-mac/issues/896).
 
 Man Page Examples
 -----------------
