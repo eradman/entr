@@ -1,10 +1,10 @@
-= Next Release: 4.3
+= Release History
+
+== 4.3: September 25, 2019
 
  - Move hosting from bitbucket.org to github.com
  - Rename tag names from entr-X.Y to X.Y
  - Replace hg with git as a dependency for system-test.sh
-
-= Release History
 
 == 4.2: March 28, 2019
 
