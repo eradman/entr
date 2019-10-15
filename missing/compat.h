@@ -9,6 +9,11 @@
 size_t strlcpy(char *to, const char *from, int l);
 #endif
 
+#if defined(_LINUX_PORT)
+#define INOTIFY_MAX_USER_WATCHES 2
+int fs_sysctl(const int name);
+#endif
+
 #if defined(_MACOS_PORT)
 #include <stdio.h>
 FILE *fmemopen(void *buf, size_t size, const char *mode);

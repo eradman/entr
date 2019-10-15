@@ -53,6 +53,25 @@ file_by_descriptor(int wd) {
 	return NULL; /* lookup failed */
 }
 
+int
+fs_sysctl(const int name) {
+	FILE *file;
+	char line[8];
+	int value = 0;
+
+	switch(name) {
+	case INOTIFY_MAX_USER_WATCHES:
+		file = fopen("/proc/sys/fs/inotify/max_user_watches", "r");
+
+		if (file == NULL || fgets(line, sizeof(line), file) == NULL)
+		    err(1, "max_user_watches");
+		value = atoi(line);
+		fclose(file);
+		break;
+	}
+	return value;
+}
+
 /* interface */
 
 #define EVENT_SIZE (sizeof (struct inotify_event))
@@ -60,11 +79,15 @@ file_by_descriptor(int wd) {
 #define IN_ALL IN_CLOSE_WRITE|IN_DELETE_SELF|IN_MOVE_SELF|IN_ATTRIB|IN_CREATE
 
 /*
- * Conveniently inotify and kqueue ids both have the type `int`
+ * inotify and kqueue ids both have the type `int`
  */
 int
 kqueue(void) {
-	return inotify_init();
+	static int inotify_queue;
+
+	if (inotify_queue == 0)
+		inotify_queue = inotify_init();
+	return inotify_queue;
 }
 
 /*

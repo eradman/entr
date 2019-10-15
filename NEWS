@@ -1,3 +1,8 @@
+= Next Release: 4.4
+
+ - Use a single inotify queue on Linux, limited by
+   /proc/sys/fs/inotify/max_user_watches
+
 = Release History
 
 == 4.3: September 25, 2019
