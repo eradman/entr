@@ -219,6 +219,6 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	}
 	while ((poll(pfd, nfds, 50) > 0));
 	
-	(void) free(pfd);
+	free(pfd);
 	return n;
 }

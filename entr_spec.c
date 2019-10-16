@@ -879,7 +879,7 @@ int run_utility_01() {
 	FILE *fake;
 
 	fake = fmemopen(input, strlen(input), "r");
-	(void) process_input(fake, files, 3);
+	process_input(fake, files, 3);
 	leading_edge = files[1];
 	run_utility(argv);
 
@@ -901,7 +901,7 @@ int run_utility_02() {
 	FILE *fake;
 
 	fake = fmemopen(input, strlen(input), "r");
-	(void) process_input(fake, files, 3);
+	process_input(fake, files, 3);
 	leading_edge = files[0];
 	run_utility(argv);
 

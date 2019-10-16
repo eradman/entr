@@ -372,7 +372,7 @@ run_utility(char *argv[]) {
 		argc = 4;
 		arg_buf = malloc(ARG_MAX);
 		new_argv = calloc(argc+1, sizeof(char *));
-		(void) xrealpath(leading_edge->fn, arg_buf);
+		xrealpath(leading_edge->fn, arg_buf);
 		new_argv[0] = getenv("SHELL");
 		new_argv[1] = "-c";
 		new_argv[2] = argv[0];
@@ -403,11 +403,11 @@ run_utility(char *argv[]) {
 
 	if (pid == 0) {
 		if (clear_opt == 1)
-			(void) system("/usr/bin/clear");
+			system("/usr/bin/clear");
 		/* Set process group so subprocess can be signaled */
 		if (restart_opt == 1) {
 			setpgid(0, getpid());
-			(void) close(STDIN_FILENO);
+			close(STDIN_FILENO);
 		}
 		/* wait up to 1 seconds for each file to become available */
 		for (i=0; i < 10; i++) {
