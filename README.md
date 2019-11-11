@@ -65,6 +65,6 @@ News
 A release history as well as features in the upcoming release are covered in the
 [NEWS] file.
 
-[kqueue(2)]: http://man.openbsd.org/OpenBSD-current/man2/kqueue.2
+[kqueue(2)]: http://man.openbsd.org/kqueue.2
 [inotify(7)]: http://man.he.net/?section=all&topic=inotify
 [NEWS]: https://raw.githubusercontent.com/eradman/entr/master/NEWS
