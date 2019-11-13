@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd November 11, 2019
+.Dd November 13, 2019
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -25,9 +25,13 @@
 .Ar utility
 .Op Ar argument /_ ...
 .Sh DESCRIPTION
-A list of files provided on the standard input and the
+The
+.Nm
+utility reads a list of files from standard input and executes
 .Ar utility
-is executed using the supplied arguments if any of them change.
+using the supplied
+.Ar argument Ns s
+if any of the files change.
 .Nm
 waits for the child process to finish before responding to subsequent file
 system events.
@@ -37,35 +41,30 @@ interactive utilities.
 The arguments are as follows:
 .Bl -tag -width Ds
 .It Fl a
-Respond to all events which occur while the
+Respond to all events which occur while
 .Ar utility
 is running.
-Without this option
+Without this option,
 .Nm
 consolidates events in order to avoid looping.
-This option has no effect in conjunction with the
-.Fl r
-flag.
+Has no effect when used with
+.Fl r .
 .It Fl c
-Execute
+Run
 .Pa /usr/bin/clear
-before invoking the
-.Ar utility
-specified on the command line.
+before executing
+.Ar utility .
 .It Fl d
-Track the directories of regular files provided as input and exit if a new file
-is added.
-This option also enables directories to be specified explicitly.
-Files with names beginning with
+Track the directories of regular files provided and exit if a new file is added.
+Enables directories to be specified explicitly.
+Filenames beginning with
 .Ql \&.
 are ignored.
 .It Fl n
-Run in non-interactive mode.
-In this mode
-.Nm entr
-does not attempt to read from the TTY or change its properties.
+Run in non-interactive mode;
+will not attempt to read from the TTY or change its properties.
 .It Fl p
-Postpone the first execution of the
+Postpone the first execution of
 .Ar utility
 until a file is modified.
 .It Fl r
@@ -83,72 +82,80 @@ A process group is created to prevent shell scripts from masking signals.
 waits for the
 .Ar utility
 to exit to ensure that resources such as sockets have been closed.
-Control of the TTY is not transferred the child process.
+Control of the TTY is not transferred to the child process.
 .It Fl s
-Evaluate the first argument using the interpreter specified by the
-.Ev SHELL
-environment variable.
-If stdout is a TTY, the name of the shell and exit code is printed after each
-invocation.
+Evaluate the first argument using the interpreter specified by
+.Ev SHELL .
+If standard output is a TTY, the name of the interpreter and exit code is
+printed after each invocation.
 .El
 .Pp
 The first argument named
-.Ar /_
+.Dq Ar /_
 is replaced with the absolute path of the first file to trigger an event.
 The first file under watch is used as the default.
 If the
 .Fl s
-option is used, the name of the first file to triggler an event can be read from
+option is used, the name of the first file to trigger an event can be read from
 .Va $0 .
-.Sh COMMANDS
+.Ss Commands
 .Nm
 listens for keyboard input and responds to the following commands:
-.Bl -tag -width Ic
-.It SPACE
-Execute the utility immediately.
+.Bl -tag -width <space>
+.It Aq Cm space
+Execute
+.Ar utility
+immediately.
 If the
 .Fl r
 option is set this will terminate and restart the child process as if a file
 change event had occurred.
-.It q
-Quit; equivalent pressing Ctrl\-C.
+.It Cm q
+Quit
+.Nm .
+Equivalent to pressing
+.Aq Cm control-c
+or sending
+.Dv SIGINT .
 .El
 .Sh ENVIRONMENT
-If
-.Ev PAGER
-is undefined,
+.Bl -tag -width PAGER
+.It Ev PAGER
+If undefined,
 .Nm
-will assign
-.Pa /bin/cat
-to prevent interactive utilities from waiting for
+assigns it to
+.Pa /bin/cat .
+This prevents interactive utilities from waiting for
 keyboard input if output does not fit on the screen.
-.Pp
-If
-.Ev SHELL
-is undefined,
-.Nm entr
-will use
+.It Ev PAGER
+Execute
+.Ar utility
+with the current shell.
+If undefined,
+.Nm
+assigns it to
 .Pa /bin/sh .
+.El
 .Sh EXIT STATUS
 The
 .Nm
 utility exits with one of the following values:
 .Pp
-.Bl -tag -width Ds -offset indent -compact
-.It Li 0
+.Bl -tag -width 2n -offset indent -compact
+.It 0
 .Dv SIGINT
 or
 .Dv SIGTERM
-was received
-.It Li 1
-No regular files were provided as input or an error occurred
-.It Li 2
-A file was added to a directory and the directory watch option was specified
+was received.
+.It 1
+No regular files were provided as input or an error occurred.
+.It 2
+A file was added to a directory and the directory watch option was specified.
 .El
 .Sh EXAMPLES
 Rebuild a project if source files change, limiting output to the first 20 lines:
 .Pp
-.Dl $ find src/ | entr -s 'make | head -n 20'
+.Dl $ find src/ | entr -s 'make | sed 20q'
 .Pp
 Launch and auto-reload a node.js server:
 .Pp
