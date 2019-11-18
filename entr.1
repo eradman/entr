@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd November 11, 2019
+.Dd November 18, 2019
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -25,7 +25,7 @@
 .Ar utility
 .Op Ar argument /_ ...
 .Sh DESCRIPTION
-A list of files provided on the standard input and the
+A list of files provided on standard input, and the
 .Ar utility
 is executed using the supplied arguments if any of them change.
 .Nm
@@ -40,7 +40,7 @@ The arguments are as follows:
 Respond to all events which occur while the
 .Ar utility
 is running.
-Without this option
+Without this option,
 .Nm
 consolidates events in order to avoid looping.
 This option has no effect in conjunction with the
@@ -83,13 +83,13 @@ A process group is created to prevent shell scripts from masking signals.
 waits for the
 .Ar utility
 to exit to ensure that resources such as sockets have been closed.
-Control of the TTY is not transferred the child process.
+Control of the TTY is not transferred to the child process.
 .It Fl s
 Evaluate the first argument using the interpreter specified by the
 .Ev SHELL
 environment variable.
-If stdout is a TTY, the name of the shell and exit code is printed after each
-invocation.
+If standard output is a TTY, the name of the shell and exit code is printed
+after each invocation.
 .El
 .Pp
 The first argument named
@@ -98,20 +98,21 @@ is replaced with the absolute path of the first file to trigger an event.
 The first file under watch is used as the default.
 If the
 .Fl s
-option is used, the name of the first file to triggler an event can be read from
+option is used, the name of the first file to trigger an event can be read from
 .Va $0 .
 .Sh COMMANDS
 .Nm
 listens for keyboard input and responds to the following commands:
-.Bl -tag -width Ic
-.It SPACE
+.Bl -tag -width <space>
+.It Aq Cm space
 Execute the utility immediately.
 If the
-.Fl r
+.Fl Cm r
 option is set this will terminate and restart the child process as if a file
 change event had occurred.
-.It q
-Quit; equivalent pressing Ctrl\-C.
+.It Cm q
+Quit; equivalent pressing
+.Aq Cm control-C .
 .El
 .Sh ENVIRONMENT
 If
@@ -120,8 +121,8 @@ is undefined,
 .Nm
 will assign
 .Pa /bin/cat
-to prevent interactive utilities from waiting for
-keyboard input if output does not fit on the screen.
+to prevent interactive utilities from waiting for keyboard input if output does
+not fit on the screen.
 .Pp
 If
 .Ev SHELL
@@ -135,20 +136,20 @@ The
 utility exits with one of the following values:
 .Pp
 .Bl -tag -width Ds -offset indent -compact
-.It Li 0
+.It 0
 .Dv SIGINT
 or
 .Dv SIGTERM
 was received
-.It Li 1
+.It 1
 No regular files were provided as input or an error occurred
-.It Li 2
+.It 2
 A file was added to a directory and the directory watch option was specified
 .El
 .Sh EXAMPLES
 Rebuild a project if source files change, limiting output to the first 20 lines:
 .Pp
-.Dl $ find src/ | entr -s 'make | head -n 20'
+.Dl $ find src/ | entr -s 'make | sed 20q'
 .Pp
 Launch and auto-reload a node.js server:
 .Pp
