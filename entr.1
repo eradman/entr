@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd November 18, 2019
+.Dd November 27, 2019
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -155,14 +155,14 @@ Launch and auto-reload a node.js server:
 .Pp
 .Dl $ ls *.js | entr -r node app.js
 .Pp
-Launch and auto-reload a node.js server as a background task:
-.Pp
-.Dl $ (ls *.js | entr -r node app.js &)
-.Pp
 Clear the screen and run a query after the SQL script is updated:
 .Pp
-.Dl $ echo my.sql | entr -p psql -f /_
+.Dl $ echo my.sql | entr -cp psql -f /_
 .Pp
 Rebuild project if a source file is modified or added to the src/ directory:
 .Pp
 .Dl $ while true; do ls src/*.rb | entr -d make; done
+.Pp
+Self-terminate after a file is updated
+.Pp
+.Dl $ ls * | entr -p 'kill $PPID'
