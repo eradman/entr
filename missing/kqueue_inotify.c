@@ -87,6 +87,8 @@ kqueue(void) {
 
 	if (inotify_queue == 0)
 		inotify_queue = inotify_init();
+	if (getenv("ENTR_INOTIFY_WORKAROUND"))
+		warnx("broken inotify workaround enabled");
 	return inotify_queue;
 }
 
@@ -138,8 +140,10 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 				file->fd = -1; /* invalidate */
 			}
 			else if (kev->flags & EV_ADD) {
-				wd = inotify_add_watch(kq /* ifd */, file->fn,
-				    IN_ALL);
+				if (getenv("ENTR_INOTIFY_WORKAROUND"))
+					wd = inotify_add_watch(kq, file->fn, IN_ALL|IN_MODIFY);
+				else
+					wd = inotify_add_watch(kq, file->fn, IN_ALL);
 				if (wd < 0)
 					return -1;
 				close(file->fd);
@@ -185,6 +189,8 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 				if (iev->mask & IN_CREATE)      fflags |= NOTE_WRITE;
 				if (iev->mask & IN_MOVE_SELF)   fflags |= NOTE_RENAME;
 				if (iev->mask & IN_ATTRIB)      fflags |= NOTE_ATTRIB;
+				if (getenv("ENTR_INOTIFY_WORKAROUND"))
+					if (iev->mask & IN_MODIFY)  fflags |= NOTE_WRITE;
 				if (fflags == 0) continue;
 
 				/* merge events if we're not acting on a new file descriptor */
