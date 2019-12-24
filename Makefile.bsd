@@ -50,4 +50,4 @@ uninstall:
 versioncheck:
 	@head -n3 NEWS | egrep -q "^= Next Release: ${RELEASE}|^== ${RELEASE}: "
 
-.PHONY: all env test gcc-lint clean distclean install uninstall versioncheck
+.PHONY: all env test gcc-lint regress clean distclean install uninstall versioncheck
