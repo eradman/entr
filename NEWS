@@ -1,11 +1,11 @@
-= Next Release: 4.4
+= Release History
+
+== 4.4: January 02, 2019
 
  - Use a single inotify queue on Linux, limited by
    /proc/sys/fs/inotify/max_user_watches
  - Set the environment variable `ENTR_INOTIFY_WORKAROUND` to enable a
    compatibility mode for platforms with deformed inotify support
-
-= Release History
 
 == 4.3: September 25, 2019
 
