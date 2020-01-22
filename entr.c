@@ -69,7 +69,7 @@ int (*xtcsetattr)(int fd, int action, const struct termios *tp);
 /* globals */
 
 extern int optind;
-extern WatchFile **files;
+WatchFile **files;
 WatchFile *leading_edge;
 int child_pid;
 

@@ -29,5 +29,5 @@ typedef struct {
 	ino_t ino;
 } WatchFile;
 
-/* declare as extern in source */
-WatchFile **files;
+/* defined in entr.c */
+extern WatchFile **files;
