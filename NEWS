@@ -1,6 +1,6 @@
 = Next Release: 4.5
 
- -
+ - New '-z' "one-shot" option self-terminates after the utility exits
 
 = Release History
 

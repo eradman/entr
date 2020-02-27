@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd November 27, 2019
+.Dd February 28, 2020
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -90,6 +90,12 @@ Evaluate the first argument using the interpreter specified by the
 environment variable.
 If standard output is a TTY, the name of the shell and exit code is printed
 after each invocation.
+.It Fl z
+Exit after the utility completes.
+When combined with
+.Fl r
+the utility will be restarted agin only in response to commands or file system
+events.
 .El
 .Pp
 The first argument named
@@ -137,10 +143,12 @@ utility exits with one of the following values:
 .Pp
 .Bl -tag -width Ds -offset indent -compact
 .It 0
-.Dv SIGINT
-or
+Normal termination after receiving
+.Dv SIGINT /
 .Dv SIGTERM
-was received
+or the
+.Fl z
+flag was set
 .It 1
 No regular files were provided as input or an error occurred
 .It 2
@@ -163,6 +171,6 @@ Rebuild project if a source file is modified or added to the src/ directory:
 .Pp
 .Dl $ while true; do ls src/*.rb | entr -d make; done
 .Pp
-Self-terminate after a file is updated
+Auto-reload a web server, or terminate if the server exits
 .Pp
-.Dl $ ls * | entr -p 'kill $PPID'
+.Dl $ ls * | entr -rz ./httpd

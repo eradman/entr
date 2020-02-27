@@ -93,6 +93,30 @@ try "spacebar triggers utility"
 
 # file system tests
 
+try "exec a command an exit using one-shot option"
+	setup
+	ls $tmp/file* | ./entr -zp cat $tmp/file2 >$tmp/exec.out 2>$tmp/exec.err &
+	bgpid=$! ; zz
+	echo 456 >> $tmp/file2 ; zz
+	wait $bgpid || assert "$?" "0"
+	assert "$(cat $tmp/exec.err)" ""
+	assert "$(head -n1 $tmp/exec.out)" "$(printf '456\n')"
+
+try "restart a server when a file is modified using one-shot option"
+	setup
+	if [ $(uname -a | egrep 'GNU') ]; then
+		skip "GNU nc spins while retrying SELECT(2)"
+	else
+		ls $tmp/file2 | ./entr -rz nc -l -U $tmp/nc.s >> $tmp/exec.out &
+		bgpid=$! ; zz
+		echo "123" | nc -NU $tmp/nc.s 2> /dev/null || {
+			echo "123" | nc -U $tmp/nc.s
+		} ; zz
+		echo 456 >> $tmp/file2 ; zz
+		wait $bgpid || assert "$?" "130"
+		assert "$(cat $tmp/exec.out)" "123"
+	fi
+
 try "exec a command in non-intertive mode"
 	setup
 	ls $tmp/file* | ./entr -n tty >$tmp/exec.out &

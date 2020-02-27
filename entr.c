@@ -72,6 +72,7 @@ extern int optind;
 WatchFile **files;
 WatchFile *leading_edge;
 int child_pid;
+int terminating;
 
 int aggressive_opt;
 int clear_opt;
@@ -80,6 +81,7 @@ int noninteractive_opt;
 int postpone_opt;
 int restart_opt;
 int shell_opt;
+int oneshot_opt;
 struct termios canonical_tty;
 
 /* forwards */
@@ -87,6 +89,7 @@ struct termios canonical_tty;
 static void usage();
 static void terminate_utility();
 static void handle_exit(int sig);
+static void proc_exit(int sig);
 static int process_input(FILE *, WatchFile *[], int);
 static int set_options(char *[]);
 static int list_dir(char *);
@@ -135,14 +138,21 @@ main(int argc, char *argv[]) {
 	if (argc < 2) usage();
 	argv_index = set_options(argv);
 
+	sigemptyset(&act.sa_mask);
+
 	/* normally a user will exit this utility by do_execting Ctrl-C */
-	act.sa_flags = 0;
 	act.sa_flags = SA_RESETHAND;
 	act.sa_handler = handle_exit;
-	if (sigemptyset(&act.sa_mask) & (sigaction(SIGINT, &act, NULL) != 0))
+	if (sigaction(SIGINT, &act, NULL) != 0)
 		err(1, "Failed to set SIGINT handler");
-	if (sigemptyset(&act.sa_mask) & (sigaction(SIGTERM, &act, NULL) != 0))
+	if (sigaction(SIGTERM, &act, NULL) != 0)
 		err(1, "Failed to set SIGTERM handler");
+
+	/* notification used to combine the one-shot and restart options */
+	act.sa_flags = 0;
+	act.sa_handler = proc_exit;
+	if (sigaction(SIGCHLD, &act, NULL) != 0)
+		err(1, "Failed to set SIGCHLD handler");
 
 	getrlimit(RLIMIT_NOFILE, &rl);
 #if defined(_LINUX_PORT)
@@ -216,11 +226,15 @@ void
 terminate_utility() {
 	int status;
 
+	terminating = 1;
+
 	if (child_pid > 0) {
 		xkillpg(child_pid, SIGTERM);
 		xwaitpid(child_pid, &status, 0);
 		child_pid = 0;
 	}
+
+	terminating = 0;
 }
 
 /* Callbacks */
@@ -232,6 +246,13 @@ handle_exit(int sig) {
 	terminate_utility();
 	raise(sig);
 }
+
+void
+proc_exit(int sig) {
+	if ((oneshot_opt == 1) && (terminating == 0))
+	    exit(0);
+}
+
 
 /*
  * Read lines from a file stream (normally STDIN).  Returns the number of
@@ -246,7 +267,6 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 	int i, matches;
 
 	while (fgets(buf, sizeof(buf), file) != NULL) {
-		buf[PATH_MAX-1] = '\0';
 		if ((p = strchr(buf, '\n')) != NULL)
 			*p = '\0';
 		if (buf[0] == '\0')
@@ -316,7 +336,7 @@ set_options(char *argv[]) {
 
 	/* read arguments until we reach a command */
 	for (argc=1; argv[argc] != 0 && argv[argc][0] == '-'; argc++);
-	while ((ch = getopt(argc, argv, "acdnprs")) != -1) {
+	while ((ch = getopt(argc, argv, "acdnprsz")) != -1) {
 		switch (ch) {
 		case 'a':
 			aggressive_opt = 1;
@@ -338,6 +358,9 @@ set_options(char *argv[]) {
 			break;
 		case 's':
 			shell_opt = 1;
+			break;
+		case 'z':
+			oneshot_opt = 1;
 			break;
 		default:
 			usage();
@@ -425,6 +448,9 @@ run_utility(char *argv[]) {
 		if (shell_opt == 1)
 			fprintf(stdout, "%s returned exit code %d\n",
 			    basename(getenv("SHELL")), WEXITSTATUS(status));
+
+		if (oneshot_opt == 1)
+			exit(0);
 	}
 
 	xfree(arg_buf);
@@ -537,8 +563,8 @@ main:
 		dir_modified = 0;
 	}
 
-	if (nev == -1)
-		err(1, "kevent failed");
+	if ((nev == -1) && (errno != EINTR))
+		warn("kevent failed");
 
 	/* escape for test runner */
 	if ((nev == -2) && (collate_only == 0))
