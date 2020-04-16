@@ -104,8 +104,8 @@ try "exec a command an exit using one-shot option"
 
 try "restart a server when a file is modified using one-shot option"
 	setup
-	if [ $(uname -a | egrep 'GNU') ]; then
-		skip "GNU nc spins while retrying SELECT(2)"
+	if [ $(uname) == 'Linux' ]; then
+		skip "GNU nc spins while retrying SELECT(2); busybox does not support domain sockets"
 	else
 		ls $tmp/file2 | ./entr -rz nc -l -U $tmp/nc.s >> $tmp/exec.out &
 		bgpid=$! ; zz
