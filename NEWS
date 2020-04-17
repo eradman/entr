@@ -1,6 +1,7 @@
 = Next Release: 4.5
 
  - New '-z' "one-shot" option self-terminates after the utility exits
+ - Termination by 'q' or 'SIGINT' results in an exit status of 0
 
 = Release History
 

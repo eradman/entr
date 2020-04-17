@@ -102,6 +102,12 @@ try "exec a command an exit using one-shot option"
 	assert "$(cat $tmp/exec.err)" ""
 	assert "$(head -n1 $tmp/exec.out)" "$(printf '456\n')"
 
+try "fail to exec an command using one-shot option"
+	setup
+	ls $tmp/file* | ./entr -z /usr/bin/false_X >$tmp/exec.out 2>$tmp/exec.err &
+	bgpid=$! ; zz
+	wait $bgpid || assert "$?" "1"
+
 try "restart a server when a file is modified using one-shot option"
 	setup
 	if [ $(uname) == 'Linux' ]; then
@@ -207,7 +213,7 @@ try "exec single utility when an entire stash of files is reverted"
 	git init -q
 	git add *.h
 	git commit -m "initial checkin" -q
-	for f in `ls *.h`; do
+	for f in `ls *.h | head`; do
 		chmod 644 $f
 		echo "" >> $f
 	done

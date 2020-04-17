@@ -244,13 +244,23 @@ handle_exit(int sig) {
 	if (!noninteractive_opt)
 		xtcsetattr(0, TCSADRAIN, &canonical_tty);
 	terminate_utility();
-	raise(sig);
+	if (sig == SIGINT)
+	    exit(0);
+	else
+	    raise(sig);
 }
 
 void
 proc_exit(int sig) {
-	if ((oneshot_opt == 1) && (terminating == 0))
-	    exit(0);
+	int status;
+
+	if ((oneshot_opt == 1) && (terminating == 0)) {
+		xwaitpid(child_pid, &status, 0);
+		if (WEXITSTATUS(status) == 99)
+			exit(1);
+		else
+			exit(0);
+	}
 }
 
 
@@ -435,11 +445,12 @@ run_utility(char *argv[]) {
 		/* wait up to 1 seconds for each file to become available */
 		for (i=0; i < 10; i++) {
 			ret = xexecvp(new_argv[0], new_argv);
-			if (errno == ETXTBSY) nanosleep(&delay, NULL);
+			if (errno == ETXTBSY)
+				nanosleep(&delay, NULL);
 			else break;
 		}
 		if (ret != 0)
-			err(1, "exec %s", new_argv[0]);
+			err(99, "exec %s", new_argv[0]);
 	}
 	child_pid = pid;
 
