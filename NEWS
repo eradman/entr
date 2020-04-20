@@ -1,9 +1,9 @@
-= Next Release: 4.5
+= Release History
+
+== 4.5: April 20, 2020
 
  - New '-z' "one-shot" option self-terminates after the utility exits
  - Termination by 'q' or 'SIGINT' results in an exit status of 0
-
-= Release History
 
 == 4.4: January 02, 2020
 
