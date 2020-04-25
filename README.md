@@ -17,13 +17,13 @@ To see available build options run `./configure -h`
 Docker and Windows Subsystem for Linux
 --------------------------------------
 
-Incomplete inotify support on WSL and Docker for Mac can cause entr
-to respond inconsistently. Since version 4.4, entr includes a workaround:
+Incomplete inotify support on WSL and Docker for Mac can cause `entr`
+to respond inconsistently. Since version 4.4, `entr` includes a workaround:
 Set the environment variable `ENTR_INOTIFY_WORKAROUND`.
 
-entr will confirm the workaround is enabled:
+`entr` will confirm the workaround is enabled:
 
-```bash
+```
 entr: broken inotify workaround enabled
 ```
 
