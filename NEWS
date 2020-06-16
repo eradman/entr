@@ -1,3 +1,7 @@
+= Next Release: 4.6
+
+ - Always call waitpid(2) to avoid dead processes
+
 = Release History
 
 == 4.5: April 20, 2020
@@ -227,7 +231,7 @@
 
 == 1.8: May 12, 2013
 
- - Ensure that loosing a file under watch is results in an error
+ - Ensure that losing a file under watch is results in an error
 
 == 1.7: November 20, 2012
 
