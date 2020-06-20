@@ -36,7 +36,7 @@ Rebuild a project if source files change, limiting output to the first 20 lines:
 
 Launch and auto-reload a node.js server:
 
-    $ find *.js | entr -r node app.js
+    $ find . -name '*.js' | entr -r node app.js
 
 Clear the screen and run a query after the SQL script is updated:
 
@@ -44,11 +44,11 @@ Clear the screen and run a query after the SQL script is updated:
 
 Rebuild project if a source file is modified or added to the src/ directory:
 
-    $ while true; do find src/*.rb | entr -d make; done
+    $ while true; do find . -name 'src/*.rb' | entr -d make; done
 
 Self-terminate after a file is updated
 
-    $ find * | entr -p 'kill $PPID'
+    $ find . -type f | entr -p 'kill $PPID'
 
 News
 ----
