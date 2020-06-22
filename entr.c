@@ -405,8 +405,7 @@ run_utility(char *argv[]) {
 	if (restart_opt == 1) {
 		terminate_utility();
 
-		ret = pipe(stdin_pipe);
-		if (ret != 0)
+		if (pipe(stdin_pipe); != 0)
 			err(1, "Failed to create stdin pipe");
 		close(stdin_pipe[1]);
 	}
