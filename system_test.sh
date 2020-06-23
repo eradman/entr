@@ -139,6 +139,14 @@ try "exec a command as a background task and ensure stdin is closed"
 	wait $bgpid || assert "$?" "130"
 	assert "$(cat $tmp/exec.out)" "1"
 
+try "exec a command as a background task, and verify that read from stdin doesn't complain"
+	setup
+	ls $tmp/file* | ./entr -r sh -c 'read X' 2>$tmp/exec.err &
+	bgpid=$! ; zz
+	kill -INT $bgpid
+	wait $bgpid || assert "$?" "130"
+	assert "$(cat $tmp/exec.err)" ""
+
 try "exec single shell utility and exit when a file is added to an implicit watch path"
 	setup
 	ls $tmp/file* | ./entr -dp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \

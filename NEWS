@@ -1,7 +1,7 @@
 = Next Release: 4.6
 
- - Fix STDIN with -r being broken
  - Always call waitpid(2) to avoid dead processes
+ - Duplicate STDIN file descriptor before closing; for the '-r' option
 
 = Release History
 
