@@ -1,5 +1,6 @@
 = Next Release: 4.6
 
+ - Fix STDIN with -r being broken
  - Always call waitpid(2) to avoid dead processes
 
 = Release History
