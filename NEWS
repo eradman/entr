@@ -1,9 +1,9 @@
-= Next Release: 4.6
+= Release History
+
+== 4.6: July 1, 2020
 
  - Always call waitpid(2) to avoid dead processes
  - Duplicate STDIN file descriptor before closing; for the '-r' option
-
-= Release History
 
 == 4.5: April 20, 2020
 
