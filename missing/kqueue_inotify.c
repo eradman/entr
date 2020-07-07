@@ -57,16 +57,21 @@ int
 fs_sysctl(const int name) {
 	FILE *file;
 	char line[8];
-	int value = 0;
+	int value;
 
 	switch(name) {
 	case INOTIFY_MAX_USER_WATCHES:
 		file = fopen("/proc/sys/fs/inotify/max_user_watches", "r");
 
-		if (file == NULL || fgets(line, sizeof(line), file) == NULL)
-		    err(1, "max_user_watches");
-		value = atoi(line);
-		fclose(file);
+		if (file == NULL || fgets(line, sizeof(line), file) == NULL) {
+			/* failed to read max_user_watches, which is sometimes inaccessible on Android */
+            value = 0;
+        }
+        else
+			value = atoi(line);
+
+		if (file)
+			fclose(file);
 		break;
 	}
 	return value;

@@ -105,6 +105,7 @@ static void watch_loop(int, char *[]);
 int
 main(int argc, char *argv[]) {
 	struct rlimit rl;
+	rlim_t max_watches;
 	int kq;
 	struct sigaction act;
 	int ttyfd;
@@ -155,14 +156,20 @@ main(int argc, char *argv[]) {
 		err(1, "Failed to set SIGCHLD handler");
 
 	getrlimit(RLIMIT_NOFILE, &rl);
+
 #if defined(_LINUX_PORT)
-	rl.rlim_cur = (rlim_t)fs_sysctl(INOTIFY_MAX_USER_WATCHES);
-#else
+	max_watches = (rlim_t)fs_sysctl(INOTIFY_MAX_USER_WATCHES);
+	if(max_watches > 0) {
+		rl.rlim_cur = max_watches;
+		goto rlim_set;
+	}
+#endif
 	/* raise soft limit */
 	rl.rlim_cur = min((rlim_t)sysconf(_SC_OPEN_MAX), rl.rlim_max);
 	if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
 		err(1, "setrlimit cannot set rlim_cur to %d", (int)rl.rlim_cur);
-#endif
+
+rlim_set:
 
 	/* prevent interactive utilities from paging output */
 	setenv("PAGER", "/bin/cat", 0);
