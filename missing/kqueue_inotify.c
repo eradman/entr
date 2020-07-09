@@ -64,10 +64,10 @@ fs_sysctl(const int name) {
 		file = fopen("/proc/sys/fs/inotify/max_user_watches", "r");
 
 		if (file == NULL || fgets(line, sizeof(line), file) == NULL) {
-			/* failed to read max_user_watches, which is sometimes inaccessible on Android */
-            value = 0;
-        }
-        else
+			/* failed to read max_user_watches; sometimes inaccessible on Android */
+			value = 0;
+		}
+		else
 			value = atoi(line);
 
 		if (file)

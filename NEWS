@@ -1,3 +1,7 @@
+= Next Release: 4.7
+
+ - Use system file descriptor limits when max_user_watches is not accessible
+
 = Release History
 
 == 4.6: July 1, 2020
