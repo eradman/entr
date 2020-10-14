@@ -57,7 +57,7 @@ int (*xexecvp)(const char *, char *const []);
 pid_t (*xwaitpid)(pid_t, int *, int);
 pid_t (*xfork)();
 int (*xkevent)(int, const struct kevent *, int, struct kevent *, int , const
-    struct timespec *);
+	struct timespec *);
 int (*xopen)(const char *path, int flags, ...);
 char * (*xrealpath)(const char *, char *);
 void (*xfree)(void *);
@@ -83,10 +83,6 @@ int restart_opt;
 int shell_opt;
 int oneshot_opt;
 struct termios canonical_tty;
-
-// in exitcode mode, reserve code 100 for problems with entr
-// (as opposed to problems with the utility)
-int reserved_error_exit_code = 100;
 
 /* forwards */
 
@@ -137,7 +133,7 @@ main(int argc, char *argv[]) {
 	xtcsetattr = tcsetattr;
 
 	 if (pledge("stdio rpath tty proc exec", NULL) == -1)
-	    err(1, "pledge");
+		err(1, "pledge");
 
 	/* call usage() if no command is supplied */
 	if (argc < 2) usage();
@@ -197,8 +193,8 @@ rlim_set:
 		errx(1, "No regular files to watch");
 	if (n_files == -1)
 		errx(1, "Too many files listed; the hard limit for your login"
-		    " class is %d. Please consult"
-		    " http://eradman.com/entrproject/limits.html", (int)rl.rlim_cur);
+			" class is %d. Please consult"
+			" http://eradman.com/entrproject/limits.html", (int)rl.rlim_cur);
 	for (i=0; i<n_files; i++)
 		watch_file(kq, files[i]);
 
@@ -256,9 +252,9 @@ handle_exit(int sig) {
 		xtcsetattr(0, TCSADRAIN, &canonical_tty);
 	terminate_utility();
 	if (sig == SIGINT)
-	    exit(0);
+		exit(0);
 	else
-	    raise(sig);
+		raise(sig);
 }
 
 void
@@ -269,13 +265,13 @@ proc_exit(int sig) {
 	if ((oneshot_opt == 1) && (terminating == 0)) {
 		if ((shell_opt == 1) && (restart_opt == 0)) {
 			fprintf(stdout, "%s returned exit code %d\n",
-			    basename(getenv("SHELL")), WEXITSTATUS(status));
+				basename(getenv("SHELL")), WEXITSTATUS(status));
 		}
 		if (WEXITSTATUS(status) == 99)
 			exit(1);
 		else
-		    // in one-shot mode, exit with same status code as the utility
-            exit(WEXITSTATUS(status));
+			// in one-shot mode, exit with same status code as the utility
+			exit(WEXITSTATUS(status));
 	}
 }
 
@@ -323,7 +319,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 			if (matches == 0) {
 				files[n_files] = malloc(sizeof(WatchFile));
 				strlcpy(files[n_files]->fn, path,
-				    MEMBER_SIZE(WatchFile, fn));
+					MEMBER_SIZE(WatchFile, fn));
 				files[n_files]->is_dir = 1;
 				files[n_files]->file_count = xlist_dir(path);
 				files[n_files]->mode = sb.st_mode;
@@ -387,7 +383,7 @@ set_options(char *argv[]) {
 			break;
 		case 'z':
 			oneshot_opt = 1;
-            break;
+			break;
 		default:
 			usage();
 		}
@@ -480,7 +476,7 @@ run_utility(char *argv[]) {
 		xwaitpid(pid, &status, 0);
 		if (shell_opt == 1)
 			fprintf(stdout, "%s returned exit code %d\n",
-			    basename(getenv("SHELL")), WEXITSTATUS(status));
+				basename(getenv("SHELL")), WEXITSTATUS(status));
 
 		if (oneshot_opt == 1)
 			exit(0);
@@ -516,12 +512,12 @@ watch_file(int kq, WatchFile *file) {
 	}
 
 	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_ALL, 0,
-	    file);
+		file);
 	if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1) {
 		if (errno == ENOSPC)
 			errx(1, "Unable to allocate memory for kernel queue."
-			    " Please consult"
-			    " http://eradman.com/entrproject/limits.html");
+				" Please consult"
+				" http://eradman.com/entrproject/limits.html");
 		else
 			err(1, "failed to register VNODE event");
 	}
@@ -607,7 +603,7 @@ main:
 		if (!noninteractive_opt && evList[i].filter == EVFILT_READ) {
 			if (read(STDIN_FILENO, &c, 1) < 1) {
 				EV_SET(&evSet, STDIN_FILENO, EVFILT_READ,
-				    EV_DELETE, NOTE_LOWAT, 0, NULL);
+					EV_DELETE, NOTE_LOWAT, 0, NULL);
 				if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 					err(1, "failed to remove READ event");
 			}
@@ -634,9 +630,9 @@ main:
 			continue;
 		file = (WatchFile *)evList[i].udata;
 		if (evList[i].fflags & NOTE_DELETE ||
-		    evList[i].fflags & NOTE_RENAME) {
+			evList[i].fflags & NOTE_RENAME) {
 			EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_DELETE,
-			    NOTE_ALL, 0, file);
+				NOTE_ALL, 0, file);
 			if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 				err(1, "failed to remove VNODE event");
 #if !defined(_LINUX_PORT)
@@ -663,26 +659,26 @@ main:
 			continue;
 
 		if (evList[i].fflags & NOTE_DELETE ||
-		    evList[i].fflags & NOTE_WRITE  ||
-		    evList[i].fflags & NOTE_RENAME ||
-		    evList[i].fflags & NOTE_TRUNCATE) {
+			evList[i].fflags & NOTE_WRITE  ||
+			evList[i].fflags & NOTE_RENAME ||
+			evList[i].fflags & NOTE_TRUNCATE) {
 			if ((dir_modified > 0) && (restart_opt == 1))
 				continue;
 			do_exec = 1;
 		}
 
 		if (evList[i].fflags & NOTE_ATTRIB &&
-		    S_ISREG(file->mode) != 0 && xstat(file->fn, &sb) == 0) {
+			S_ISREG(file->mode) != 0 && xstat(file->fn, &sb) == 0) {
 			if (file->mode != sb.st_mode) {
-			    do_exec = 1;
-			    file->mode = sb.st_mode;
-			    trace_message = "mode changed";
+				do_exec = 1;
+				file->mode = sb.st_mode;
+				trace_message = "mode changed";
 			}
 			/* Possible on Linux when a running binary is unlinked */
 			if (file->ino != sb.st_ino) {
-			    do_exec = 1;
-			    file->ino = sb.st_ino;
-			    trace_message = "inode changed";
+				do_exec = 1;
+				file->ino = sb.st_ino;
+				trace_message = "inode changed";
 			}
 		}
 		else if (evList[i].fflags & NOTE_ATTRIB)
@@ -695,8 +691,8 @@ main:
 
 		if (getenv("EV_TRACE")) {
 			fprintf(stderr, "EVFILT_VNODE: %d/%d: "
-			    "fflags: 0x%x %s\n", i, nev, evList[i].fflags,
-			    trace_message);
+				"fflags: 0x%x %s\n", i, nev, evList[i].fflags,
+				trace_message);
 		}
 	}
 
