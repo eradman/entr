@@ -84,6 +84,10 @@ int shell_opt;
 int oneshot_opt;
 struct termios canonical_tty;
 
+// in exitcode mode, reserve code 100 for problems with entr
+// (as opposed to problems with the utility)
+int reserved_error_exit_code = 100;
+
 /* forwards */
 
 static void usage();
@@ -270,7 +274,8 @@ proc_exit(int sig) {
 		if (WEXITSTATUS(status) == 99)
 			exit(1);
 		else
-			exit(0);
+		    // in one-shot mode, exit with same status code as the utility
+            exit(WEXITSTATUS(status));
 	}
 }
 
@@ -382,7 +387,7 @@ set_options(char *argv[]) {
 			break;
 		case 'z':
 			oneshot_opt = 1;
-			break;
+            break;
 		default:
 			usage();
 		}

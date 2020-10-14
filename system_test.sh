@@ -93,7 +93,7 @@ try "spacebar triggers utility"
 
 # file system tests
 
-try "exec a command an exit using one-shot option"
+try "exec a command and exit using one-shot option"
 	setup
 	ls $tmp/file* | ./entr -zp cat $tmp/file2 >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
@@ -102,11 +102,17 @@ try "exec a command an exit using one-shot option"
 	assert "$(cat $tmp/exec.err)" ""
 	assert "$(head -n1 $tmp/exec.out)" "$(printf '456\n')"
 
-try "fail to exec an command using one-shot option"
+try "fail to exec a command using one-shot option"
 	setup
 	ls $tmp/file* | ./entr -z /usr/bin/false_X >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
 	wait $bgpid || assert "$?" "1"
+
+try "fail to exec a command using one-shot option and exit with its status code"
+	setup
+	ls $tmp/file* | ./entr -z sh -c 'exit 123' >$tmp/exec.out 2>$tmp/exec.err &
+	bgpid=$! ; zz
+	wait $bgpid || assert "$?" "123"
 
 try "restart a server when a file is modified using one-shot option"
 	setup
