@@ -1,6 +1,7 @@
 = Next Release: 4.7
 
  - Use system file descriptor limits when max_user_watches is not accessible
+ - Return the exit status of the child process when the '-z' option is used
 
 = Release History
 

@@ -267,10 +267,7 @@ proc_exit(int sig) {
 			fprintf(stdout, "%s returned exit code %d\n",
 			    basename(getenv("SHELL")), WEXITSTATUS(status));
 		}
-		if (WEXITSTATUS(status) == 99)
-			exit(1);
-		else
-			exit(0);
+		exit(WEXITSTATUS(status));
 	}
 }
 
@@ -467,7 +464,7 @@ run_utility(char *argv[]) {
 			else break;
 		}
 		if (ret != 0)
-			err(99, "exec %s", new_argv[0]);
+			err(1, "exec %s", new_argv[0]);
 	}
 	child_pid = pid;
 
@@ -478,7 +475,7 @@ run_utility(char *argv[]) {
 			    basename(getenv("SHELL")), WEXITSTATUS(status));
 
 		if (oneshot_opt == 1)
-			exit(0);
+			exit(WEXITSTATUS(status));
 	}
 
 	xfree(arg_buf);
