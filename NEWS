@@ -2,6 +2,7 @@
 
  - Use system file descriptor limits when max_user_watches is not accessible
  - Return the exit status of the child process when the '-z' option is used
+ - Handle SIGHUP so child process are terminated when a terminal is closed
 
 = Release History
 

@@ -148,6 +148,8 @@ main(int argc, char *argv[]) {
 		err(1, "Failed to set SIGINT handler");
 	if (sigaction(SIGTERM, &act, NULL) != 0)
 		err(1, "Failed to set SIGTERM handler");
+	if (sigaction(SIGHUP, &act, NULL) != 0)
+		err(1, "Failed to set SIGHUP handler");
 
 	/* notification used to combine the one-shot and restart options */
 	act.sa_flags = 0;

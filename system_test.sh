@@ -300,6 +300,19 @@ try "ensure that all shell subprocesses are terminated in restart mode"
 	kill -INT $bgpid ; zz
 	assert "$(cat $tmp/exec.out)" "$(printf 'running\ncaught signal')"
 
+try "ensure that all shell subprocesses are terminated when terminal is closed"
+	setup
+	cat <<-SCRIPT > $tmp/go.sh
+	#!/bin/sh
+	trap 'echo "caught signal"; exit' TERM
+	echo "running"; sleep 10
+	SCRIPT
+	chmod +x $tmp/go.sh
+	ls $tmp/file2 | ./entr -r sh -c "$tmp/go.sh" 2> /dev/null > $tmp/exec.out &
+	bgpid=$! ; zz
+	kill -HUP $bgpid ; zz
+	assert "$(cat $tmp/exec.out)" "$(printf 'running\ncaught signal')"
+
 try "exit with no action when restart and dirwatch flags are combined"
 	setup
 	echo "started." > $tmp/file1
