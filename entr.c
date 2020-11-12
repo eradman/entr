@@ -253,7 +253,7 @@ handle_exit(int sig) {
 	if (!noninteractive_opt)
 		xtcsetattr(0, TCSADRAIN, &canonical_tty);
 	terminate_utility();
-	if (sig == SIGINT)
+	if ((sig == SIGINT || sig == SIGHUP))
 	    exit(0);
 	else
 	    raise(sig);
