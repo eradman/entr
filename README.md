@@ -8,6 +8,8 @@ automated testing natural and completely ordinary.
 Source Installation - BSD, Mac OS, and Linux
 --------------------------------------------
 
+Install make and build-essential, if not already installed. Then:
+
     ./configure
     make test
     make install
