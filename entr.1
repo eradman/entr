@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd October 16, 2020
+.Dd December 23, 2020
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -175,7 +175,7 @@ Clear the screen and run a query after the SQL script is updated:
 .Pp
 Rebuild project if a source file is modified or added to the src/ directory:
 .Pp
-.Dl $ while true; do ls src/*.rb | entr -d make; done
+.Dl $ while sleep 0.1; do ls src/*.rb | entr -d make; done
 .Pp
 Auto-reload a web server, or terminate if the server exits
 .Pp

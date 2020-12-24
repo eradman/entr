@@ -44,7 +44,7 @@ Clear the screen and run a query after the SQL script is updated:
 
 Rebuild project if a source file is modified or added to the src/ directory:
 
-    $ while true; do find src -name '*.rb' | entr -d make; done
+    $ while sleep 0.1; do find src -name '*.rb' | entr -d make; done
 
 Self-terminate after a file is updated
 
