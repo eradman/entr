@@ -227,7 +227,7 @@ rlim_set:
 void
 usage() {
 	fprintf(stderr, "release: %s\n", RELEASE);
-	fprintf(stderr, "usage: entr [-acdnprs] utility [argument [/_] ...] < filenames\n");
+	fprintf(stderr, "usage: entr [-acdnprsz] utility [argument [/_] ...] < filenames\n");
 	exit(1);
 }
 
