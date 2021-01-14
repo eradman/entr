@@ -72,6 +72,7 @@ extern int optind;
 WatchFile **files;
 WatchFile *leading_edge;
 int child_pid;
+int child_exitstatus;
 int terminating;
 
 int aggressive_opt;
@@ -239,7 +240,8 @@ terminate_utility() {
 
 	if (child_pid > 0) {
 		xkillpg(child_pid, SIGTERM);
-		xwaitpid(child_pid, &status, 0);
+		if (xwaitpid(child_pid, &status, 0) > 0)
+			child_exitstatus = WEXITSTATUS(status);
 		child_pid = 0;
 	}
 
@@ -263,13 +265,14 @@ void
 proc_exit(int sig) {
 	int status;
 
-	xwaitpid(child_pid, &status, 0);
+	if (wait(&status) > 0)
+		child_exitstatus = WEXITSTATUS(status);
 	if ((oneshot_opt == 1) && (terminating == 0)) {
 		if ((shell_opt == 1) && (restart_opt == 0)) {
 			fprintf(stdout, "%s returned exit code %d\n",
-			    basename(getenv("SHELL")), WEXITSTATUS(status));
+			    basename(getenv("SHELL")), child_exitstatus);
 		}
-		exit(WEXITSTATUS(status));
+		exit(child_exitstatus);
 	}
 }
 
@@ -471,13 +474,14 @@ run_utility(char *argv[]) {
 	child_pid = pid;
 
 	if (restart_opt == 0) {
-		xwaitpid(pid, &status, 0);
+		if (xwaitpid(pid, &status, 0) > 0)
+			child_exitstatus = WEXITSTATUS(status);
 		if (shell_opt == 1)
 			fprintf(stdout, "%s returned exit code %d\n",
-			    basename(getenv("SHELL")), WEXITSTATUS(status));
+			    basename(getenv("SHELL")), child_exitstatus);
 
 		if (oneshot_opt == 1)
-			exit(WEXITSTATUS(status));
+			exit(child_exitstatus);
 	}
 
 	xfree(arg_buf);
