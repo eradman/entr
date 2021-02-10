@@ -1,3 +1,7 @@
+= Next Release: 4.8
+
+ - Set a maximum of 2^19 watches to guard against absurd file open limits
+
 = Release History
 
 == 4.7: January 29, 2021
