@@ -372,7 +372,7 @@ set_options(char *argv[]) {
 			aggressive_opt = 1;
 			break;
 		case 'c':
-			clear_opt = 1;
+			clear_opt = clear_opt ? 2 : 1;
 			break;
 		case 'd':
 			dirwatch_opt = 1;
@@ -461,8 +461,16 @@ run_utility(char *argv[]) {
 		err(1, "can't fork");
 
 	if (pid == 0) {
+		/* 2J - erase the entire display
+		 * 3J - clear scrollback buffer
+		 * H  - set cursor position to the default
+		 */
 		if (clear_opt == 1)
-			system("/usr/bin/clear");
+			printf("\033[2J\033[H");
+		if (clear_opt == 2)
+			printf("\033[2J\033[3J\033[H");
+		fflush(stdout);
+
 		/* Set process group so subprocess can be signaled */
 		if (restart_opt == 1) {
 			setpgid(0, getpid());

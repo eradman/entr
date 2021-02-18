@@ -798,6 +798,19 @@ int set_options_07() {
 }
 
 /*
+ * Parse command line arguments with the clear scrollback option
+ */
+int set_options_08() {
+	int argv_offset;
+	char *argv[] = { "entr", "-cc", "echo", NULL };
+
+	argv_offset = set_options(argv);
+
+	ok(clear_opt == 2);
+	return 0;
+}
+
+/*
  * In restart mode the first action should be to start the server
  */
 int watch_fd_restart_01() {
@@ -957,6 +970,7 @@ int test_main(int argc, char *argv[]) {
 	run(set_options_05);
 	run(set_options_06);
 	run(set_options_07);
+	run(set_options_08);
 	run(watch_fd_restart_01);
 	run(watch_fd_restart_02);
 	run(run_utility_01);

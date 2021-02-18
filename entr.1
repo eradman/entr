@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd January 02, 2021
+.Dd February 18, 2021
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -47,11 +47,10 @@ This option has no effect in conjunction with the
 .Fl r
 flag.
 .It Fl c
-Execute
-.Pa /usr/bin/clear
-before invoking the
+Clear the screen before invoking the
 .Ar utility
 specified on the command line.
+Specify twice to erase the scrollback buffer.
 .It Fl d
 Track the directories of regular files provided as input and exit if a new file
 is added.

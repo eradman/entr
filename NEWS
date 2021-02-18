@@ -1,6 +1,8 @@
 = Next Release: 4.8
 
  - Set a maximum of 2^19 watches to guard against absurd file open limits
+ - Use control sequences to clear the display and specify '-c' twice to erase
+   the scrollback buffer
 
 = Release History
 
