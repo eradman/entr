@@ -165,6 +165,7 @@ main(int argc, char *argv[]) {
 	max_watches = (rlim_t)fs_sysctl(INOTIFY_MAX_USER_WATCHES);
 	if(max_watches > 0) {
 		rl.rlim_cur = max_watches;
+		open_max = max_watches;
 		goto rlim_set;
 	}
 #endif
