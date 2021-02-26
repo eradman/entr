@@ -106,7 +106,6 @@ static void watch_loop(int, char *[]);
 int
 main(int argc, char *argv[]) {
 	struct rlimit rl;
-	rlim_t max_watches;
 	int kq;
 	struct sigaction act;
 	int ttyfd;
@@ -114,7 +113,7 @@ main(int argc, char *argv[]) {
 	int n_files;
 	int i;
 	struct kevent evSet;
-	long open_max;
+	unsigned open_max;
 
 	if ((*test_runner_main))
 		return(test_runner_main(argc, argv));
@@ -159,28 +158,26 @@ main(int argc, char *argv[]) {
 	if (sigaction(SIGCHLD, &act, NULL) != 0)
 		err(1, "Failed to set SIGCHLD handler");
 
-	getrlimit(RLIMIT_NOFILE, &rl);
-
 #if defined(_LINUX_PORT)
-	max_watches = (rlim_t)fs_sysctl(INOTIFY_MAX_USER_WATCHES);
-	if(max_watches > 0) {
-		rl.rlim_cur = max_watches;
-		open_max = max_watches;
-		goto rlim_set;
+	/* attempt to read inotify limits */
+	open_max = (unsigned)fs_sysctl(INOTIFY_MAX_USER_WATCHES);
+	if (!open_max > 0) {
+		open_max = 65536;
 	}
-#endif
-	/* raise soft limit */
-	open_max = min(sysconf(_SC_OPEN_MAX), (long)rl.rlim_max);
-	if (open_max == -1)
-		err(1, "_SC_OPEN_MAX");
-
-	open_max = min(524288, open_max);  /* guard against unrealistic replies */
-
+#elif defined(_MACOS_PORT)
+	/* guard against unrealistic replies */
+	open_max = min(65536, (unsigned)rl.rlim_cur);
+#else /* BSD */
+	if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
+		err(1, "getrlimit");
+	open_max = (unsigned)rl.rlim_max;
 	rl.rlim_cur = (rlim_t)open_max;
 	if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
-		err(1, "setrlimit cannot set rlim_cur to %ld", open_max);
+		err(1, "setrlimit cannot set rlim_cur to %u", open_max);
+#endif
 
-rlim_set:
+	if (getenv("EV_TRACE"))
+		fprintf(stderr, "open_max: %d\n", open_max);
 
 	/* prevent interactive utilities from paging output */
 	setenv("PAGER", "/bin/cat", 0);
@@ -204,7 +201,7 @@ rlim_set:
 		errx(1, "No regular files to watch");
 	if (n_files == -1)
 		errx(1, "Too many files listed; the hard limit for your login"
-		    " class is %ld. Please consult"
+		    " class is %u. Please consult"
 		    " http://eradman.com/entrproject/limits.html", open_max);
 	for (i=0; i<n_files; i++)
 		watch_file(kq, files[i]);
