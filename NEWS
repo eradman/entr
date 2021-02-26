@@ -1,3 +1,9 @@
+= Next Release: 4.9
+
+ - EV_TRACE also prints file/notify descriptor limit
+ - Don't raise rlim_cur on MacOS
+ - Set 2^16 watches if inotify limits cannot be read
+
 = Release History
 
 == 4.8: February 26, 2021
