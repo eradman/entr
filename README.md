@@ -40,7 +40,7 @@ Launch and auto-reload a node.js server:
 
 Clear the screen and run a query after the SQL script is updated:
 
-    $ echo my.sql | entr -p psql -f /_
+    $ echo my.sql | entr -cp psql -f /_
 
 Rebuild project if a source file is modified or added to the src/ directory:
 
