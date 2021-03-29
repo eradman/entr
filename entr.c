@@ -161,12 +161,13 @@ main(int argc, char *argv[]) {
 #if defined(_LINUX_PORT)
 	/* attempt to read inotify limits */
 	open_max = (unsigned)fs_sysctl(INOTIFY_MAX_USER_WATCHES);
-	if (!open_max > 0) {
+	if (open_max == 0)
 		open_max = 65536;
-	}
 #elif defined(_MACOS_PORT)
 	/* guard against unrealistic replies */
 	open_max = min(65536, (unsigned)rl.rlim_cur);
+	if (open_max == 0)
+		open_max = 65536;
 #else /* BSD */
 	if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
 		err(1, "getrlimit");
