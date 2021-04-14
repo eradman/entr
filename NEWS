@@ -3,6 +3,7 @@
  - EV_TRACE also prints file/notify descriptor limit
  - Don't raise rlim_cur on MacOS
  - Set 2^16 watches if inotify limits cannot be read
+ - Raise an error and suggest '-n' if terminal attributes cannot be read
 
 = Release History
 

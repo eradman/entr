@@ -217,7 +217,8 @@ main(int argc, char *argv[]) {
 		}
 
 		/* remember terminal settings */
-		tcgetattr(STDIN_FILENO, &canonical_tty);
+		if (tcgetattr(STDIN_FILENO, &canonical_tty) == -1)
+			errx(1, "unable to get terminal attributes, use '-n' to run non-interactively");
 
 		/* Use keyboard input as a trigger */
 		EV_SET(&evSet, STDIN_FILENO, EVFILT_READ, EV_ADD, NOTE_LOWAT, 1, NULL);
@@ -259,7 +260,7 @@ terminate_utility() {
 void
 handle_exit(int sig) {
 	if (!noninteractive_opt)
-		xtcsetattr(0, TCSADRAIN, &canonical_tty);
+		xtcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
 	terminate_utility();
 	if ((sig == SIGINT || sig == SIGHUP))
 	    exit(0);
@@ -599,7 +600,7 @@ watch_loop(int kq, char *argv[]) {
 
 main:
 	if (!noninteractive_opt)
-		xtcsetattr(0, TCSADRAIN, &character_tty);
+		xtcsetattr(STDIN_FILENO, TCSADRAIN, &character_tty);
 	if ((reopen_only == 1) || (collate_only == 1)) {
 		nev = xkevent(kq, NULL, 0, evList, 32, &evTimeout);
 	}
@@ -638,7 +639,7 @@ main:
 			dir_modified += compare_dir_contents(file);
 	}
 	if (!noninteractive_opt)
-		xtcsetattr(0, TCSADRAIN, &canonical_tty);
+		xtcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
 
 	collate_only = 0;
 	for (i=0; i<nev; i++) {
