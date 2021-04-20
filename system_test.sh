@@ -221,25 +221,29 @@ try "exec utility when a file is opened for write and then closed"
 	fi
 
 try "exec single utility when an entire stash of files is reverted"
-	setup
-	cp /usr/include/*.h $tmp/
-	cd $tmp
-	git init -q
-	git add *.h
-	git commit -m "initial checkin" -q
-	for f in `ls *.h | head`; do
-		chmod 644 $f
-		echo "" >> $f
-	done
-	cd - > /dev/null ; zz
-	ls $tmp/*.h | ./entr -p echo "changed" > $tmp/exec.out &
-	bgpid=$! ; zz
-	cd $tmp
-	git checkout *.h -q
-	cd - > /dev/null ; zz
-	kill -INT $bgpid
-	wait $bgpid || assert "$?" "130"
-	assert "$(cat $tmp/exec.out)" "changed"
+	if [ ! -d /usr/include ]; then
+		skip "Operating system does not include files in a standard location"
+	else
+		setup
+		cp /usr/include/*.h $tmp/
+		cd $tmp
+		git init -q
+		git add *.h
+		git commit -m "initial checkin" -q
+		for f in `ls *.h | head`; do
+			chmod 644 $f
+			echo "" >> $f
+		done
+		cd - > /dev/null ; zz
+		ls $tmp/*.h | ./entr -p echo "changed" > $tmp/exec.out &
+		bgpid=$! ; zz
+		cd $tmp
+		git checkout *.h -q
+		cd - > /dev/null ; zz
+		kill -INT $bgpid
+		wait $bgpid || assert "$?" "130"
+		assert "$(cat $tmp/exec.out)" "changed"
+	fi
 
 try "exec utility when a file is written by Vim"
 	setup
