@@ -17,10 +17,10 @@ regress:
 	@./system_test.sh
 
 entr: entr.c ${EXTRA_SRC}
-	${CC} ${CFLAGS} ${CPPFLAGS} ${EXTRA_SRC} entr.c -o $@ ${LDFLAGS}
+	${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} ${EXTRA_SRC} entr.c -o $@
 
 entr_spec: entr_spec.c entr.c ${EXTRA_SRC}
-	${CC} ${CFLAGS} ${CPPFLAGS} ${EXTRA_SRC} entr_spec.c -o $@ ${LDFLAGS}
+	${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} ${EXTRA_SRC} entr_spec.c -o $@
 
 clean:
 	rm -f entr entr_spec *.o
