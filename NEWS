@@ -1,3 +1,7 @@
+= Next Release: 5.0
+
+ - Add missing call to getrlimit(3) on MacOS
+
 = Release History
 
 == 4.9: May 3, 2021

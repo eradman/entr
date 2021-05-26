@@ -164,6 +164,8 @@ main(int argc, char *argv[]) {
 	if (open_max == 0)
 		open_max = 65536;
 #elif defined(_MACOS_PORT)
+	if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
+		err(1, "getrlimit");
 	/* guard against unrealistic replies */
 	open_max = min(65536, (unsigned)rl.rlim_cur);
 	if (open_max == 0)
