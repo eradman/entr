@@ -57,7 +57,7 @@ int
 fs_sysctl(const int name) {
 	FILE *file;
 	char line[8];
-	int value;
+	int value = 0;
 
 	switch(name) {
 	case INOTIFY_MAX_USER_WATCHES:
@@ -114,18 +114,17 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	struct inotify_event *iev;
 	u_int fflags;
 	const struct kevent *kev;
-	int ignored;
-	struct pollfd *pfd;
 	int nfds;
 
-	pfd = calloc(2, sizeof(struct pollfd));
+	int ignored = 0;
+	struct pollfd pfd[2];
+
 	pfd[0].fd = kq;
 	pfd[0].events = POLLIN;
 	pfd[1].fd = STDIN_FILENO;
 	pfd[1].events = POLLIN;
 
 	if (nchanges > 0) {
-		ignored = 0;
 		for (n=0; n<nchanges; n++) {
 			kev = changelist + (sizeof(struct kevent)*n);
 			file = (WatchFile *)kev->udata;
@@ -230,6 +229,5 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	}
 	while ((poll(pfd, nfds, 50) > 0));
 	
-	free(pfd);
 	return n;
 }

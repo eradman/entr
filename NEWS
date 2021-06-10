@@ -1,6 +1,7 @@
 = Next Release: 5.0
 
  - Add missing call to getrlimit(3) on MacOS
+ - Eliminate possible memory leak warnings on Linux
 
 = Release History
 
