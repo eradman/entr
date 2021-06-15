@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd February 18, 2021
+.Dd June 15, 2021
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -124,21 +124,22 @@ Quit; equivalent pressing
 .Aq Cm control-C .
 .El
 .Sh ENVIRONMENT
-If
-.Ev PAGER
-is undefined,
-.Nm
-will assign
+.Bl -tag -width "ENTR_ENVIRON"
+.It Ev PAGER
+Set to
 .Pa /bin/cat
+by default
 to prevent interactive utilities from waiting for keyboard input if output does
 not fit on the screen.
-.Pp
-If
-.Ev SHELL
-is undefined,
-.Nm entr
-will use
+.It Ev SHELL
+Specify the shell to use with the
+.Fl s
+flag.
+The default is
 .Pa /bin/sh .
+.It Ev EV_TRACE
+Print file system event messages.
+.El
 .Sh EXIT STATUS
 If the
 .Fl z

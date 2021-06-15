@@ -588,7 +588,6 @@ watch_loop(int kq, char *argv[]) {
 	struct stat sb;
 	char c;
 	struct termios character_tty;
-	char *trace_message;
 
 	leading_edge = files[0]; /* default */
 	if (postpone_opt == 0)
@@ -669,7 +668,6 @@ main:
 	}
 
 	for (i=0; i<nev && reopen_only == 0; i++) {
-		trace_message = "";
 
 		if (evList[i].filter != EVFILT_VNODE)
 			continue;
@@ -691,13 +689,11 @@ main:
 			if (file->mode != sb.st_mode) {
 			    do_exec = 1;
 			    file->mode = sb.st_mode;
-			    trace_message = "mode changed";
 			}
 			/* Possible on Linux when a running binary is unlinked */
 			if (file->ino != sb.st_ino) {
 			    do_exec = 1;
 			    file->ino = sb.st_ino;
-			    trace_message = "inode changed";
 			}
 		}
 		else if (evList[i].fflags & NOTE_ATTRIB)
@@ -709,9 +705,12 @@ main:
 		}
 
 		if (getenv("EV_TRACE")) {
-			fprintf(stderr, "EVFILT_VNODE: %d/%d: "
-			    "fflags: 0x%x %s\n", i, nev, evList[i].fflags,
-			    trace_message);
+			fprintf(stderr, "%d/%d: fflags: 0x%x %s %o %s\n",
+			    i, nev,
+			    evList[i].fflags,
+			    file->is_dir ? "d" : "r",
+			    file->mode,
+			    file->fn);
 		}
 	}
 

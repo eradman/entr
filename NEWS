@@ -1,7 +1,8 @@
 = Next Release: 5.0
 
  - Add missing call to getrlimit(3) on MacOS
- - Eliminate possible memory leak warnings on Linux
+ - Eliminate memory management warnings on Linux
+ - EV_TRACE prints file mode and file name
 
 = Release History
 
