@@ -41,7 +41,7 @@
 
  - Use a single inotify queue on Linux, limited by
    /proc/sys/fs/inotify/max_user_watches
- - Set the environment variable `ENTR_INOTIFY_WORKAROUND` to enable a
+ - Set the environment variable 'ENTR_INOTIFY_WORKAROUND' to enable a
    compatibility mode for platforms with deformed inotify support
 
 == 4.3: September 25, 2019
@@ -122,7 +122,7 @@
  - Relocated 'reload-browser' to http://entrproject.org/scripts/reload-browser
  - Drop FIFO support to further simply code and documentation. FIFO mode was
    conceptually good, but EXEC mode is intelligent hand easily handles the vast
-   majority of use cases.
+   majority of use cases
  - Remove kFreeBSD as a target platform
 
 == 3.1: March 4, 2015
@@ -145,7 +145,6 @@
 
 == 2.9: June 10, 2014
 
- - RPM package by @funollet
  - Moved alternate Makefiles to contrib/
  - Trigger actions when a file is truncated on BSD
  - Improved format of DEBUG messages
@@ -153,7 +152,7 @@
  - No longer register NOTE_EXTEND; this event is not always merged with
    NOTE_WRITE on MacOS
  - New directory-watch option ('-d'). In this mode a shell while-loop can be
-   used to track the addition of new files.
+   used to track the addition of new files
 
 
 == 2.8: March 15, 2014
@@ -161,20 +160,18 @@
  - Iteratively check for new file system events using a 1ms timeout after a file
    has been renamed or removed in order to prevent the utility from being
    executed before successive changes from a version control system have
-   completed.
- - Regression tests are now system tests that depend on and use Vim and
-   Mercurial
+   completed
+ - Regression tests use Vim and Mercurial
  - Timing on regression tests has been tightened to only support real hardware;
-   they are not expected to pass in emulated environments.
+   they are not expected to pass in emulated environments
  - More correctly identify the first file to trigger a file change notification
- - Regression tests no longer require ksh
- - Renamed regress.sh to system_test.sh
+ - Renamed regress.sh to system_test.sh, and drop dependency on ksh
 
 == 2.7: February 12, 2014
 
  - Changed function pointer prefixes from '_' to 'x' to avoid runtime symbol
    collisions in libc. Required to build on DragonFlyBSD
- - Added this NEWS file to provide detailed release history for port maintainers
+ - Add this NEWS file to provide detailed release history for port maintainers
  - Subsitute '/_' argument with the first file that changed
  - Man page formatted with more semantically correct markup
  - Multiple events on the same file are merged on Linux to prevent duplicate
@@ -190,13 +187,13 @@
  - Raise ARG_MAX from 4K to 2MB on Linux, since _SC_ARG_MAX returns an incorrect
    value on Linux
  - Handle RENAME events that are not followed by DELETE. This enables us to cope
-   with the backup option in Vim.
+   with the backup option in Vim
 
 == 2.5: December 30, 2013
 
  - Restore full 50ms period for consolidating events on Linux. Required for the
    Geany editor
- - Remove use of setproctitle(3), no plans to implement this on Linux and MacOS.
+ - Remove use of setproctitle(3), no plans to implement this on Linux and MacOS
    This also eliminates use of the 3-clause license
  - New feature: the first occurrence of '{}' on the command line will be
    replaced with the name of the first file under watch
@@ -229,7 +226,7 @@
  - Exit non-zero if list of regular files exceeds the hard limit set by the
    current login class
  - Ignore directories and special files; exit with error code 1 if no regular
-   files are provided as input.
+   files are provided as input
 
 == 2.1: July 01, 2013
 
@@ -251,7 +248,7 @@
 
 == 1.9: April 13, 2013
 
- - New auto-reload option ('-r'). Thanks for Kevin Cox for the idea
+ - New auto-reload option ('-r')
  - Add a simple configure script, BSD is the default
  - Do not install directories...they should already exist
  - Man page installation path can be set with MANPATH. MacOS expects it to be
@@ -286,8 +283,8 @@
 
 == 1.3: May 17, 2012
 
- - Added FIFO support. Thanks to James K. Lowden for the idea
- - Use min(OPEN_MAX, rl.rlim_max) to be more compatible of Mac OS.
+ - Added FIFO support
+ - Use min(OPEN_MAX, rl.rlim_max) to be more compatible of Mac OS
  - More correct use of fgets(3) when reading STDIN
 
 == 1.2: April 26, 2012
