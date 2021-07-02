@@ -699,7 +699,9 @@ main:
 		else if (evList[i].fflags & NOTE_ATTRIB)
 			continue;
 
-		if ((file->is_dir == 0) && (leading_edge_set == 0)) {
+		if ((leading_edge_set == 0) &&
+			    (file->is_dir == 0) &&
+			    (do_exec == 1)) {
 			leading_edge = file;
 			leading_edge_set = 1;
 		}
