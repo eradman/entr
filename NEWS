@@ -1,11 +1,11 @@
-= Next Release: 5.0
+= Release History
+
+== 5.0: July 2, 2021
 
  - Add missing call to getrlimit(3) on MacOS
  - Eliminate memory management warnings on Linux
  - EV_TRACE prints file mode and file name
  - Ignore asynchronous attribute changes on MacOS 11
-
-= Release History
 
 == 4.9: May 3, 2021
 

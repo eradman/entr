@@ -418,7 +418,7 @@ run_utility(char *argv[]) {
 	char **new_argv;
 	char *p, *arg_buf;
 	int argc;
-	int stdin_pipe[2];
+	int stdin_pipe[2] = {0, 0};
 
 	if (restart_opt == 1) {
 		terminate_utility();
