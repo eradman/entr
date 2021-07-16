@@ -1,3 +1,7 @@
+= Next Release: 5.1
+
+ - Detect files moved to or from directories on Linux
+
 = Release History
 
 == 5.0: July 2, 2021
