@@ -174,6 +174,17 @@ try "exec single shell utility and exit when a subdirectory is added"
 	assert "$(cat $tmp/exec.err)" "entr: directory altered"
 	rmdir $tmp/newdir
 
+try "exec single shell utility and exit when a hidden subdirectory is added"
+	setup
+	ls -d $tmp | ./entr -ddp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
+	    || true &
+	bgpid=$! ; zz
+	mkdir $tmp/.newdir
+	wait $bgpid || assert "$?" "130"
+	assert "$(cat $tmp/exec.out)" "ping"
+	assert "$(cat $tmp/exec.err)" "entr: directory altered"
+	rmdir $tmp/.newdir
+
 try "exec single shell utility and exit when a file is added to a specific path"
 	setup
 	ls -d $tmp | ./entr -dp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \

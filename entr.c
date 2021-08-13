@@ -318,7 +318,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 			n_files++;
 		}
 		/* also watch the directory if it's not already in the list */
-		if (dirwatch_opt == 1) {
+		if (dirwatch_opt > 0) {
 			if (S_ISDIR(sb.st_mode) != 0)
 				path = &buf[0];
 			else
@@ -351,7 +351,7 @@ int list_dir(char *dir) {
 	if (dfd == NULL)
 		errx(1, "unable to open directory: '%s'", dir);
 	while((dp = readdir(dfd)) != NULL)
-		if (dp->d_name[0] != '.')
+		if ((dirwatch_opt == 2) || (dp->d_name[0] != '.'))
 			count++;
 	closedir(dfd);
 	return count;
@@ -377,7 +377,7 @@ set_options(char *argv[]) {
 			clear_opt = clear_opt ? 2 : 1;
 			break;
 		case 'd':
-			dirwatch_opt = 1;
+			dirwatch_opt = dirwatch_opt ? 2 : 1;
 			break;
 		case 'n':
 			noninteractive_opt = 1;

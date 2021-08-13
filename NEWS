@@ -1,6 +1,7 @@
 = Next Release: 5.1
 
  - Detect files moved to or from directories on Linux
+ - Allow detection of directory entries beginning with '.' by specifying '-d' twice
 
 = Release History
 
