@@ -84,10 +84,10 @@ void reset_state() {
 	clear_opt = 0;
 	dirwatch_opt = 0;
 	noninteractive_opt = 0;
+	oneshot_opt = 0;
 	postpone_opt = 0;
 	restart_opt = 0;
 	shell_opt = 0;
-	oneshot_opt = 0;
 
 	leading_edge = 0;
 	files = calloc(max_files, sizeof(WatchFile *));
@@ -934,19 +934,19 @@ int test_main(int argc, char *argv[]) {
 	 signal(SIGSEGV, sighandler);
 
 	/* set up pointers to test doubles */
-	xstat = fake_stat;
-	xkevent = fake_kevent;
-	xkillpg = fake_killpg;
-	xwaitpid = fake_waitpid;
+	xerrx = fake_errx;
 	xexecvp = fake_execvp;
 	xfork = fake_fork;
+	xfree = fake_free;
+	xkevent = fake_kevent;
+	xkillpg = fake_killpg;
+	xlist_dir = fake_list_dir;
 	xopen = fake_open;
 	xrealpath = fake_realpath;
-	xfree = fake_free;
-	xerrx = fake_errx;
-	xwarnx = fake_warnx;
-	xlist_dir = fake_list_dir;
+	xstat = fake_stat;
 	xtcsetattr = fake_tcsetattr;
+	xwaitpid = fake_waitpid;
+	xwarnx = fake_warnx;
 
 	/* all tests */
 	run(process_input_01);

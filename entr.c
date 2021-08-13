@@ -31,9 +31,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
 #include <time.h>
 #include <unistd.h>
-#include <termios.h>
 
 #include "missing/compat.h"
 
@@ -79,10 +79,10 @@ int aggressive_opt;
 int clear_opt;
 int dirwatch_opt;
 int noninteractive_opt;
+int oneshot_opt;
 int postpone_opt;
 int restart_opt;
 int shell_opt;
-int oneshot_opt;
 struct termios canonical_tty;
 
 /* forwards */
