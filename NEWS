@@ -2,6 +2,7 @@
 
  - Detect files moved to or from directories on Linux
  - Allow detection of directory entries beginning with '.' by specifying '-d' twice
+ - Only reset terminal settings in exit handler if settings were changed
 
 = Release History
 

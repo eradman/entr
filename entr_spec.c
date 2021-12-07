@@ -885,7 +885,7 @@ int watch_fd_restart_02() {
 	return 0;
 }
 /*
- * Substitue '/_' with the first file that leading_edge
+ * Substitute '/_' with the first file that leading_edge
  */
 int run_utility_01() {
 	static char *argv[] = { "psql", "-f", "/_", NULL };
@@ -907,7 +907,7 @@ int run_utility_01() {
 }
 
 /*
- * Substitue only the first occurance of '/_'
+ * Substitute only the first occurrence of '/_'
  */
 int run_utility_02() {
 	static char *argv[] = { "/_", "/_", NULL };

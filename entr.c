@@ -83,6 +83,8 @@ int oneshot_opt;
 int postpone_opt;
 int restart_opt;
 int shell_opt;
+
+int termios_set;
 struct termios canonical_tty;
 
 /* forwards */
@@ -261,7 +263,7 @@ terminate_utility() {
 
 void
 handle_exit(int sig) {
-	if (!noninteractive_opt)
+	if ((!noninteractive_opt) && (termios_set))
 		xtcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
 	terminate_utility();
 	if ((sig == SIGINT || sig == SIGHUP))
@@ -600,8 +602,11 @@ watch_loop(int kq, char *argv[]) {
 	}
 
 main:
-	if (!noninteractive_opt)
+	if (!noninteractive_opt) {
 		xtcsetattr(STDIN_FILENO, TCSADRAIN, &character_tty);
+		termios_set = 1;
+	}
+
 	if ((reopen_only == 1) || (collate_only == 1)) {
 		nev = xkevent(kq, NULL, 0, evList, 32, &evTimeout);
 	}
