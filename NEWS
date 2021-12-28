@@ -1,10 +1,10 @@
-= Next Release: 5.1
+= Release History
+
+== 5.1: December 28, 2021
 
  - Detect files moved to or from directories on Linux
  - Allow detection of directory entries beginning with '.' by specifying '-d' twice
  - Only reset terminal settings in exit handler if settings were changed
-
-= Release History
 
 == 5.0: July 2, 2021
 
