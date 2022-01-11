@@ -6,7 +6,7 @@
 
 #if defined(_LINUX_PORT) && defined(__GLIBC__)
 #include <sys/types.h>
-size_t strlcpy(char *to, const char *from, int l);
+size_t strlcpy(char *to, const char *from, size_t l);
 #endif
 
 #if defined(_LINUX_PORT)
