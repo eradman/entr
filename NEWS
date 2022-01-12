@@ -1,3 +1,7 @@
+= Next Release: 5.2
+
+ - Update copy of strlcpy(3) for Linux
+
 = Release History
 
 == 5.1: December 28, 2021
