@@ -1,6 +1,7 @@
 = Next Release: 5.2
 
  - Update copy of strlcpy(3) for Linux
+ - Detect file deletion from directories on Linux
 
 = Release History
 
