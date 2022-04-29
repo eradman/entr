@@ -265,7 +265,9 @@ void
 handle_exit(int sig) {
 	if ((!noninteractive_opt) && (termios_set))
 		xtcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
+
 	terminate_utility();
+
 	if ((sig == SIGINT || sig == SIGHUP))
 	    exit(0);
 	else
@@ -275,6 +277,9 @@ handle_exit(int sig) {
 void
 proc_exit(int sig) {
 	int status;
+
+	if ((!noninteractive_opt) && (termios_set))
+		xtcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
 
 	if (wait(&status) != -1)
 		child_status = status;

@@ -4,6 +4,7 @@
  - Detect file deletion from directories on Linux
  - Print the signal that terminated a child when using '-s'
  - Return 128+signal that terminated a child when using '-z'
+ - Ensure terminal settings are reset when '-z' is set
 
 = Release History
 
