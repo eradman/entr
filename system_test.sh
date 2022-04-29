@@ -99,6 +99,19 @@ try "exec a command using one-shot option"
 	assert "$(cat $tmp/exec.err)" ""
 	assert "$(head -n1 $tmp/exec.out)" "$(printf '456\n')"
 
+try "exec a command using one-shot option and return signal number"
+	setup
+	ls $tmp/file2 | ./entr -z sh -c 'kill -9 $$' >$tmp/exec.out 2>$tmp/exec.err
+	assert "$?" "137"
+	assert "$(cat $tmp/exec.err)" ""
+	assert "$(cat $tmp/exec.out)" ""
+
+try "exec a command using one-shot and shell options and return signal"
+	setup
+	ls $tmp/file2 | ./entr -z -s 'kill -9 $$' >$tmp/exec.out 2>$tmp/exec.err
+	assert "$?" "137"
+	assert "$(tail -c23  $tmp/exec.out)" "$(printf "terminated by signal 9\n")"
+
 try "fail to exec a command using one-shot option"
 	setup
 	ls $tmp/file* | ./entr -z /usr/bin/false_X 2>$tmp/exec.err

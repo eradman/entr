@@ -72,7 +72,7 @@ extern int optind;
 WatchFile **files;
 WatchFile *leading_edge;
 int child_pid;
-int child_exitstatus;
+int child_status;
 int terminating;
 
 int aggressive_opt;
@@ -93,6 +93,7 @@ static void usage();
 static void terminate_utility();
 static void handle_exit(int sig);
 static void proc_exit(int sig);
+static void print_child_status(int status);
 static int process_input(FILE *, WatchFile *[], int);
 static int set_options(char *[]);
 static int list_dir(char *);
@@ -251,8 +252,7 @@ terminate_utility() {
 
 	if (child_pid > 0) {
 		xkillpg(child_pid, SIGTERM);
-		if (xwaitpid(child_pid, &status, 0) > 0)
-			child_exitstatus = WEXITSTATUS(status);
+		xwaitpid(child_pid, &status, 0);
 		child_pid = 0;
 	}
 
@@ -276,17 +276,29 @@ void
 proc_exit(int sig) {
 	int status;
 
-	if (wait(&status) > 0)
-		child_exitstatus = WEXITSTATUS(status);
+	if (wait(&status) != -1)
+		child_status = status;
+
 	if ((oneshot_opt == 1) && (terminating == 0)) {
-		if ((shell_opt == 1) && (restart_opt == 0)) {
-			fprintf(stdout, "%s returned exit code %d\n",
-			    basename(getenv("SHELL")), child_exitstatus);
-		}
-		exit(child_exitstatus);
+		if ((shell_opt == 1) && (restart_opt == 0))
+			print_child_status(child_status);
+
+		if WIFSIGNALED(child_status)
+			exit(128 + WTERMSIG(child_status));
+		else
+			exit(WEXITSTATUS(child_status));
 	}
 }
 
+void
+print_child_status(int status) {
+	if WIFSIGNALED(status)
+		fprintf(stdout, "%s terminated by signal %d\n",
+		    basename(getenv("SHELL")), WTERMSIG(status));
+	else
+		fprintf(stdout, "%s returned exit code %d\n",
+		    basename(getenv("SHELL")), WEXITSTATUS(status));
+}
 
 /*
  * Read lines from a file stream (normally STDIN).  Returns the number of
@@ -492,15 +504,12 @@ run_utility(char *argv[]) {
 	}
 	child_pid = pid;
 
-	if (restart_opt == 0) {
-		if (xwaitpid(pid, &status, 0) > 0)
-			child_exitstatus = WEXITSTATUS(status);
-		if (shell_opt == 1)
-			fprintf(stdout, "%s returned exit code %d\n",
-			    basename(getenv("SHELL")), child_exitstatus);
+	if (restart_opt == 0 && oneshot_opt == 0) {
+		if (wait(&status) != -1)
+			child_status = status;
 
-		if (oneshot_opt == 1)
-			exit(child_exitstatus);
+		if (shell_opt == 1)
+			print_child_status(child_status);
 	}
 
 	xfree(arg_buf);

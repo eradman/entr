@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd August 13, 2021
+.Dd April 28, 2022
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -146,9 +146,10 @@ If the
 .Fl z
 flag is set and the
 .Ar utility
-is successfully executed, the status of the child process is
-returned.
-Otherwise
+is successfully executed, the status of the child process is returned.
+If the child process was terminated by a signal, the exit status is the signal
+number plus 128.
+.Pp
 .Nm
 normally returns one of the following values:
 .Pp

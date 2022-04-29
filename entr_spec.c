@@ -806,6 +806,7 @@ int set_options_08() {
 
 	argv_offset = set_options(argv);
 
+	ok(argv_offset == 2);
 	ok(clear_opt == 2);
 	return 0;
 }
