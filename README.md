@@ -14,18 +14,18 @@ Source Installation - BSD, Mac OS, and Linux
 
 To see available build options run `./configure -h`
 
-Docker and Windows Subsystem for Linux
---------------------------------------
+Docker and WSL
+--------------
 
-Incomplete inotify support on WSL and Docker for Mac can cause `entr`
-to respond inconsistently. Since version 4.4, `entr` includes a workaround:
-Set the environment variable `ENTR_INOTIFY_WORKAROUND`.
+Incomplete inotify support on Windows Subsystem for Linux and Docker for Mac can
+cause `entr` to respond inconsistently. Setting the environment variable
+`ENTR_INOTIFY_WORKAROUND` will enable `entr` to operate in these environments.
 
-`entr` will confirm the workaround is enabled:
+Linux Features
+--------------
 
-```
-entr: broken inotify workaround enabled
-```
+Symlinks can be monitored for changes by setting the environment variable
+`ENTR_INOTIFY_SYMLINK`.
 
 Man Page Examples
 -----------------

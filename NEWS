@@ -1,3 +1,7 @@
+= Next Release: 5.3
+
+ - Symlink changes detected on Linux by setting 'ENTR_INOTIFY_SYMLINK'
+
 = Release History
 
 == 5.2: May 05, 2022

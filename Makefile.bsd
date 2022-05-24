@@ -1,6 +1,6 @@
 PREFIX ?= /usr/local
 MANPREFIX ?= ${PREFIX}/man
-RELEASE = 5.2
+RELEASE = 5.3
 CPPFLAGS += -DRELEASE=\"${RELEASE}\"
 
 all: versioncheck entr
