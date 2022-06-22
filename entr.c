@@ -496,6 +496,7 @@ run_utility(char *argv[]) {
 		if (restart_opt == 1) {
 			setpgid(0, getpid());
 			dup2(stdin_pipe[0], STDIN_FILENO);
+			close(stdin_pipe[0]);
 		}
 		/* wait up to 1 seconds for each file to become available */
 		for (i=0; i < 10; i++) {
@@ -508,6 +509,9 @@ run_utility(char *argv[]) {
 			err(1, "exec %s", new_argv[0]);
 	}
 	child_pid = pid;
+
+	if (restart_opt == 1)
+		close(stdin_pipe[0]);
 
 	if (restart_opt == 0 && oneshot_opt == 0) {
 		if (wait(&status) != -1)
