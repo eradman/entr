@@ -540,9 +540,9 @@ watch_file(int kq, WatchFile *file) {
 	/* wait up to 1 second for file to become available */
 	for (i=0; i < 10; i++) {
 		#ifdef O_EVTONLY
-		file->fd = xopen(file->fn, O_RDONLY|O_EVTONLY);
+		file->fd = xopen(file->fn, O_RDONLY|O_CLOEXEC|O_EVTONLY);
 		#else
-		file->fd = xopen(file->fn, O_RDONLY);
+		file->fd = xopen(file->fn, O_RDONLY|O_CLOEXEC);
 		#endif
 		if (file->fd == -1) nanosleep(&delay, NULL);
 		else break;
