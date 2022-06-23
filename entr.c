@@ -161,9 +161,6 @@ main(int argc, char *argv[]) {
 	if ((kq = kqueue()) == -1)
 		err(1, "cannot create kqueue");
 
-	if (fcntl(kq, F_SETFD, FD_CLOEXEC) == -1)
-		warn("failed to set FD_CLOEXEC to kqueue descriptor");
-
 	/* expect file list from a pipe */
 	if (isatty(fileno(stdin)))
 		usage();
