@@ -1,8 +1,7 @@
 = Next Release: 5.3
 
  - Symlink changes detected on Linux by setting 'ENTR_INOTIFY_SYMLINK'
- - Close read end of the pipe when it is no longer needed in -r mode, which
-   prevents file descriptors exhaustion.
+ - Use /dev/null rather then closed pipe for stdin in -r mode
  - Utilize {O,FD}_CLOEXEC flag for unintentional leaks of descriptors to
    executed utilities
 

@@ -440,15 +440,9 @@ run_utility(char *argv[]) {
 	char **new_argv;
 	char *p, *arg_buf;
 	int argc;
-	int stdin_pipe[2] = {0, 0};
 
-	if (restart_opt == 1) {
+	if (restart_opt == 1)
 		terminate_utility();
-
-		if (pipe(stdin_pipe) != 0)
-			err(1, "Failed to create stdin pipe");
-		close(stdin_pipe[1]);
-	}
 
 	if (shell_opt == 1) {
 		/* run argv[1] with a shell using the leading edge as $0 */
@@ -498,8 +492,8 @@ run_utility(char *argv[]) {
 		/* Set process group so subprocess can be signaled */
 		if (restart_opt == 1) {
 			setpgid(0, getpid());
-			dup2(stdin_pipe[0], STDIN_FILENO);
-			close(stdin_pipe[0]);
+			close(STDIN_FILENO);
+			open(_PATH_DEVNULL, O_RDONLY);
 		}
 		/* wait up to 1 seconds for each file to become available */
 		for (i=0; i < 10; i++) {
@@ -512,9 +506,6 @@ run_utility(char *argv[]) {
 			err(1, "exec %s", new_argv[0]);
 	}
 	child_pid = pid;
-
-	if (restart_opt == 1)
-		close(stdin_pipe[0]);
 
 	if (restart_opt == 0 && oneshot_opt == 0) {
 		if (wait(&status) != -1)
