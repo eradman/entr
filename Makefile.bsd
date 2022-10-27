@@ -5,16 +5,8 @@ CPPFLAGS += -DRELEASE=\"${RELEASE}\"
 
 all: versioncheck entr
 
-test: entr_spec entr
-	@echo "Running unit tests"
-	@./entr_spec
-
-gcc-lint: clean
-	@CPPFLAGS="-std=c89 -pedantic -Wall -Wpointer-arith -Wbad-function-cast" make test
-
-regress:
-	@echo "Running functional tests"
-	@./system_test.sh
+test: entr
+	./system_test.sh
 
 entr: entr.c ${EXTRA_SRC}
 	${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} ${EXTRA_SRC} entr.c -o $@

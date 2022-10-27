@@ -4,6 +4,7 @@
  - Use /dev/null rather then closed pipe for stdin in -r mode
  - Utilize {O,FD}_CLOEXEC flag for unintentional leaks of descriptors to
    executed utilities
+ - Remove C unit tests
 
 = Release History
 

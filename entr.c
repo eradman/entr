@@ -48,24 +48,6 @@
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #define MEMBER_SIZE(S, M) sizeof(((S *)0)->M)
 
-/* function pointers */
-
-int (*test_runner_main)(int, char**);
-int (*xstat)(const char *, struct stat *);
-int (*xkillpg)(pid_t, int);
-int (*xexecvp)(const char *, char *const []);
-pid_t (*xwaitpid)(pid_t, int *, int);
-pid_t (*xfork)();
-int (*xkevent)(int, const struct kevent *, int, struct kevent *, int , const
-    struct timespec *);
-int (*xopen)(const char *path, int flags, ...);
-char * (*xrealpath)(const char *, char *);
-void (*xfree)(void *);
-void (*xwarnx)(const char *, ...);
-void (*xerrx)(int, const char *, ...);
-int (*xlist_dir)(char *);
-int (*xtcsetattr)(int fd, int action, const struct termios *tp);
-
 /* globals */
 
 extern int optind;
@@ -117,24 +99,6 @@ main(int argc, char *argv[]) {
 	int i;
 	struct kevent evSet;
 	unsigned open_max;
-
-	if ((*test_runner_main))
-		return(test_runner_main(argc, argv));
-
-	/* set up pointers to real functions */
-	xstat = stat;
-	xkevent = kevent;
-	xkillpg = killpg;
-	xexecvp = execvp;
-	xwaitpid = waitpid;
-	xfork = fork;
-	xopen = open;
-	xrealpath = realpath;
-	xfree = free;
-	xwarnx = warnx;
-	xerrx = errx;
-	xlist_dir = list_dir;
-	xtcsetattr = tcsetattr;
 
 	 if (pledge("stdio rpath tty proc exec", NULL) == -1)
 	    err(1, "pledge");
@@ -217,10 +181,10 @@ main(int argc, char *argv[]) {
 
 	if (!noninteractive_opt) {
 		/* Attempt to open a tty so that editors don't complain */
-		ttyfd = xopen(_PATH_TTY, O_RDONLY);
+		ttyfd = open(_PATH_TTY, O_RDONLY);
 		if (ttyfd > STDIN_FILENO) {
 			if (dup2(ttyfd, STDIN_FILENO) != 0)
-				xwarnx("can't dup2 to stdin");
+				warnx("can't dup2 to stdin");
 			close(ttyfd);
 		}
 
@@ -230,8 +194,8 @@ main(int argc, char *argv[]) {
 
 		/* Use keyboard input as a trigger */
 		EV_SET(&evSet, STDIN_FILENO, EVFILT_READ, EV_ADD, NOTE_LOWAT, 1, NULL);
-		if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
-			xwarnx("failed to register stdin");
+		if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+			warnx("failed to register stdin");
 	}
 
 	watch_loop(kq, argv+argv_index);
@@ -254,8 +218,8 @@ terminate_utility() {
 	terminating = 1;
 
 	if (child_pid > 0) {
-		xkillpg(child_pid, SIGTERM);
-		xwaitpid(child_pid, &status, 0);
+		killpg(child_pid, SIGTERM);
+		waitpid(child_pid, &status, 0);
 		child_pid = 0;
 	}
 
@@ -267,7 +231,7 @@ terminate_utility() {
 void
 handle_exit(int sig) {
 	if ((!noninteractive_opt) && (termios_set))
-		xtcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
+		tcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
 
 	terminate_utility();
 
@@ -282,7 +246,7 @@ proc_exit(int sig) {
 	int status;
 
 	if ((!noninteractive_opt) && (termios_set))
-		xtcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
+		tcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
 
 	if (wait(&status) != -1)
 		child_status = status;
@@ -326,8 +290,8 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 		if (buf[0] == '\0')
 			continue;
 
-		if (xstat(buf, &sb) == -1) {
-			xwarnx("unable to stat '%s'", buf);
+		if (stat(buf, &sb) == -1) {
+			warnx("unable to stat '%s'", buf);
 			continue;
 		}
 		if (S_ISREG(sb.st_mode) != 0) {
@@ -353,7 +317,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 				strlcpy(files[n_files]->fn, path,
 				    MEMBER_SIZE(WatchFile, fn));
 				files[n_files]->is_dir = 1;
-				files[n_files]->file_count = xlist_dir(path);
+				files[n_files]->file_count = list_dir(path);
 				files[n_files]->mode = sb.st_mode;
 				files[n_files]->ino = sb.st_ino;
 				n_files++;
@@ -423,7 +387,7 @@ set_options(char *argv[]) {
 	if (argv[optind] == 0)
 		usage();
 	if ((shell_opt == 1) && (argv[optind+1] != 0))
-		xerrx(1, "-s requires commands to be formatted as a single argument");
+		errx(1, "-s requires commands to be formatted as a single argument");
 	return optind;
 }
 
@@ -449,7 +413,7 @@ run_utility(char *argv[]) {
 		argc = 4;
 		arg_buf = malloc(ARG_MAX);
 		new_argv = calloc(argc+1, sizeof(char *));
-		xrealpath(leading_edge->fn, arg_buf);
+		realpath(leading_edge->fn, arg_buf);
 		new_argv[0] = getenv("SHELL");
 		new_argv[1] = "-c";
 		new_argv[2] = argv[0];
@@ -465,7 +429,7 @@ run_utility(char *argv[]) {
 		for (m=0, i=0, p=arg_buf; i<argc; i++) {
 			new_argv[i] = p;
 			if ((m < 1) && (strcmp(argv[i], "/_")) == 0) {
-				p += strlen(xrealpath(leading_edge->fn, p));
+				p += strlen(realpath(leading_edge->fn, p));
 				m++;
 			}
 			else
@@ -474,7 +438,7 @@ run_utility(char *argv[]) {
 		}
 	}
 
-	pid = xfork();
+	pid = fork();
 	if (pid == -1)
 		err(1, "can't fork");
 
@@ -497,7 +461,7 @@ run_utility(char *argv[]) {
 		}
 		/* wait up to 1 seconds for each file to become available */
 		for (i=0; i < 10; i++) {
-			ret = xexecvp(new_argv[0], new_argv);
+			ret = execvp(new_argv[0], new_argv);
 			if (errno == ETXTBSY)
 				nanosleep(&delay, NULL);
 			else break;
@@ -515,8 +479,8 @@ run_utility(char *argv[]) {
 			print_child_status(child_status);
 	}
 
-	xfree(arg_buf);
-	xfree(new_argv);
+	free(arg_buf);
+	free(new_argv);
 }
 
 /*
@@ -531,9 +495,9 @@ watch_file(int kq, WatchFile *file) {
 	/* wait up to 1 second for file to become available */
 	for (i=0; i < 10; i++) {
 		#ifdef O_EVTONLY
-		file->fd = xopen(file->fn, O_RDONLY|O_CLOEXEC|O_EVTONLY);
+		file->fd = open(file->fn, O_RDONLY|O_CLOEXEC|O_EVTONLY);
 		#else
-		file->fd = xopen(file->fn, O_RDONLY|O_CLOEXEC);
+		file->fd = open(file->fn, O_RDONLY|O_CLOEXEC);
 		#endif
 		if (file->fd == -1) nanosleep(&delay, NULL);
 		else break;
@@ -546,7 +510,7 @@ watch_file(int kq, WatchFile *file) {
 
 	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_ALL, 0,
 	    file);
-	if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1) {
+	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1) {
 		if (errno == ENOSPC)
 			errx(1, "Unable to allocate memory for kernel queue."
 			    " Please consult"
@@ -566,7 +530,7 @@ compare_dir_contents(WatchFile *file) {
 
 	/* wait up to 0.5 seconds for file to become available */
 	for (i=0; i < 5; i++) {
-		if (xlist_dir(file->fn) == file->file_count)
+		if (list_dir(file->fn) == file->file_count)
 			return 0;
 		nanosleep(&delay, NULL);
 	}
@@ -615,15 +579,15 @@ watch_loop(int kq, char *argv[]) {
 
 main:
 	if (!noninteractive_opt) {
-		xtcsetattr(STDIN_FILENO, TCSADRAIN, &character_tty);
+		tcsetattr(STDIN_FILENO, TCSADRAIN, &character_tty);
 		termios_set = 1;
 	}
 
 	if ((reopen_only == 1) || (collate_only == 1)) {
-		nev = xkevent(kq, NULL, 0, evList, 32, &evTimeout);
+		nev = kevent(kq, NULL, 0, evList, 32, &evTimeout);
 	}
 	else {
-		nev = xkevent(kq, NULL, 0, evList, 32, NULL);
+		nev = kevent(kq, NULL, 0, evList, 32, NULL);
 		dir_modified = 0;
 	}
 
@@ -639,7 +603,7 @@ main:
 			if (read(STDIN_FILENO, &c, 1) < 1) {
 				EV_SET(&evSet, STDIN_FILENO, EVFILT_READ,
 				    EV_DELETE, NOTE_LOWAT, 0, NULL);
-				if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 					err(1, "failed to remove READ event");
 			}
 			else {
@@ -657,7 +621,7 @@ main:
 			dir_modified += compare_dir_contents(file);
 	}
 	if (!noninteractive_opt)
-		xtcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
+		tcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
 
 	collate_only = 0;
 	for (i=0; i<nev; i++) {
@@ -668,7 +632,7 @@ main:
 		    evList[i].fflags & NOTE_RENAME) {
 			EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_DELETE,
 			    NOTE_ALL, 0, file);
-			if (xkevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
+			if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 				err(1, "failed to remove VNODE event");
 #if !defined(_LINUX_PORT)
 			/* free file descriptor no longer monitored by kqueue */
@@ -702,7 +666,7 @@ main:
 		}
 
 		if (evList[i].fflags & NOTE_ATTRIB &&
-		    S_ISREG(file->mode) != 0 && xstat(file->fn, &sb) == 0) {
+		    S_ISREG(file->mode) != 0 && stat(file->fn, &sb) == 0) {
 			if (file->mode != sb.st_mode) {
 			    do_exec = 1;
 			    file->mode = sb.st_mode;
@@ -744,7 +708,7 @@ main:
 	}
 	if (dir_modified > 0) {
 		terminate_utility();
-		xerrx(2, "directory altered");
+		errx(2, "directory altered");
 	}
 
 	goto main;
