@@ -14,6 +14,8 @@
 # ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+trap '' ERR 2> /dev/null || exec bash $0 "$@"
+
 # test runner
 
 function try { let tests+=1; this="$1"; }
