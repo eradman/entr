@@ -38,7 +38,7 @@ trap "$clear_tty; $clear_tmux; $clear_tmp" EXIT
 
 # required utilities
 
-utils="git vim tmux"
+utils="file pgrep git vim tmux"
 for util in $utils; do
 	p=$(which $util 2> /dev/null) || {
 		echo "ERROR: could not locate the '$util' utility" >&2
