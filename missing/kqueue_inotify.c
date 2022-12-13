@@ -210,7 +210,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 
 				eventlist[n].ident = iev->wd;
 				eventlist[n].filter = EVFILT_VNODE;
-				eventlist[n].flags = 0; 
+				eventlist[n].flags = 0;
 				eventlist[n].fflags = fflags;
 				eventlist[n].data = 0;
 				eventlist[n].udata = file_by_descriptor(iev->wd);
@@ -235,6 +235,6 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 		}
 	}
 	while ((poll(pfd, nfds, 50) > 0));
-	
+
 	return n;
 }

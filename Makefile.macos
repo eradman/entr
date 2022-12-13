@@ -3,4 +3,3 @@ MANPREFIX ?= ${PREFIX}/share/man
 EXTRA_SRC = missing/fmemopen.c
 
 include Makefile.bsd
-
