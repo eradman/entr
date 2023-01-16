@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd May 5, 2022
+.Dd January 16, 2023
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -39,7 +39,8 @@ The arguments are as follows:
 .It Fl a
 Respond to all events which occur while the
 .Ar utility
-is running.
+is running
+and trigger events when an inode change is detected.
 Without this option,
 .Nm
 consolidates events in order to avoid looping.

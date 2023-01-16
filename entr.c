@@ -671,10 +671,10 @@ main:
 			    do_exec = 1;
 			    file->mode = sb.st_mode;
 			}
-			/* Possible on Linux when a running binary is unlinked */
 			if (file->ino != sb.st_ino) {
-			    do_exec = 1;
-			    file->ino = sb.st_ino;
+				if (aggressive_opt)
+					do_exec = 1;
+				file->ino = sb.st_ino;
 			}
 		}
 		else if (evList[i].fflags & NOTE_ATTRIB)
