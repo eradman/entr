@@ -14,11 +14,6 @@ size_t strlcpy(char *dst, const char *src, size_t dsize);
 int fs_sysctl(const int name);
 #endif
 
-#if defined(_MACOS_PORT)
-#include <stdio.h>
-FILE *fmemopen(void *buf, size_t size, const char *mode);
-#endif
-
 #if !defined(ARG_MAX)
 #define ARG_MAX (256 * 1024)
 #endif
