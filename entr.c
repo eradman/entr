@@ -672,8 +672,9 @@ main:
 			    file->mode = sb.st_mode;
 			}
 			if (file->ino != sb.st_ino) {
-				if (aggressive_opt)
-					do_exec = 1;
+#if defined(_LINUX_PORT)
+				do_exec = 1;
+#endif
 				file->ino = sb.st_ino;
 			}
 		}

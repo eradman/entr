@@ -236,7 +236,7 @@ try "exec utility when a file is opened for write and then closed"
 	: > $tmp/file1 ; zz
 	kill -INT $bgpid
 	wait $bgpid; assert "$?" "0"
-	if [ $(uname | egrep 'Darwin|FreeBSD|DragonFly') ]; then
+	if [ $(uname | grep -E 'Darwin|FreeBSD|DragonFly') ]; then
 		skip "NOTE_TRUNCATE not supported"
 	else
 		assert "$(cat $tmp/exec.out)" "changed"

@@ -5,7 +5,7 @@
  - Utilize {O,FD}_CLOEXEC flag for unintentional leaks of descriptors to
    executed utilities
  - Remove C unit tests
- - Ignore NOTE_ATTRIB event indicating inode changes unless '-a' is specified
+ - Respond to attribute events indicating an inode changes on Linux only
 
 = Release History
 
