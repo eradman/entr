@@ -1,11 +1,14 @@
 PREFIX ?= /usr/local
 MANPREFIX ?= ${PREFIX}/man
-RELEASE = 5.3
+RELEASE = 5.4
 CPPFLAGS += -DRELEASE=\"${RELEASE}\"
 
 all: versioncheck entr
 
 test: entr
+	ls entr.1 | ./entr -zns 'wc $$0'
+
+check: entr
 	./system_test.sh
 
 entr: entr.c ${EXTRA_SRC}

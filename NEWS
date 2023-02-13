@@ -1,3 +1,7 @@
+= Next Release: 5.4
+
+ - 'make test' runs a quick smoketest, 'make check' runs regressions
+
 = Release History
 
 == 5.3: January 20, 2023
