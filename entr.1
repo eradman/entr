@@ -165,7 +165,7 @@ A file was added to a directory and the directory watch option was specified
 .Sh EXAMPLES
 Rebuild a project if source files change, limiting output to the first 20 lines:
 .Pp
-.Dl $ find src/ | entr -s 'make | sed 20q'
+.Dl $ find src/ | entr -s 'make | head -n 20'
 .Pp
 Launch and auto-reload a node.js server:
 .Pp

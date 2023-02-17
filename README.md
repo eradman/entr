@@ -32,7 +32,7 @@ Man Page Examples
 
 Rebuild a project if source files change, limiting output to the first 20 lines:
 
-    $ find src/ | entr sh -c 'make | head -n 20'
+    $ find src/ | entr -s 'make | head -n 20'
 
 Launch and auto-reload a node.js server:
 
