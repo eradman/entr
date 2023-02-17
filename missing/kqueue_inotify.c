@@ -91,7 +91,7 @@ kqueue(void) {
 	static int inotify_queue;
 
 	if (inotify_queue == 0)
-		inotify_queue = inotify_init();
+		inotify_queue = inotify_init1(IN_CLOEXEC);
 	if (getenv("ENTR_INOTIFY_WORKAROUND"))
 		warnx("broken inotify workaround enabled");
 	else if (getenv("ENTR_INOTIFY_SYMLINK"))

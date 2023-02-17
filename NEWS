@@ -1,6 +1,7 @@
 = Next Release: 5.4
 
  - 'make test' runs a quick smoketest, 'make check' runs regressions
+ - Set IN_CLOEXEC only for inotify_init, kqueue uses similar setting by default
 
 = Release History
 
