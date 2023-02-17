@@ -37,8 +37,6 @@
 
 #include "missing/compat.h"
 
-#include "data.h"
-
 /* events to watch for */
 
 #define NOTE_ALL NOTE_DELETE|NOTE_WRITE|NOTE_RENAME|NOTE_TRUNCATE|NOTE_ATTRIB
@@ -47,6 +45,17 @@
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #define MEMBER_SIZE(S, M) sizeof(((S *)0)->M)
+
+/* data types */
+
+typedef struct {
+	char fn[PATH_MAX];
+	int fd;
+	int is_dir;
+	int file_count;
+	mode_t mode;
+	ino_t ino;
+} WatchFile;
 
 /* globals */
 
