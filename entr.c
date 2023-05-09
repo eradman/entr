@@ -135,12 +135,11 @@ main(int argc, char *argv[]) {
 		err(1, "getrlimit");
 	/* guard against unrealistic replies */
 	open_max = min(65536, (unsigned)rl.rlim_cur);
-	/* try to increase the limit */
+	/* maxfiles is ulimited on modern MacOS */
 	if (open_max < 65536) {
 		rl.rlim_cur = (rlim_t)65536;
-		if (setrlimit(RLIMIT_NOFILE, &rl) == 0 || open_max == 0) {
+		if (setrlimit(RLIMIT_NOFILE, &rl) == 0 || open_max == 0)
 			open_max = 65536;
-		}
 	}
 #else /* BSD */
 	if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
