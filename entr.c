@@ -245,6 +245,7 @@ handle_exit(int sig) {
 void
 proc_exit(int sig) {
 	int status;
+	int saved_errno = errno;
 
 	if ((!noninteractive_opt) && (termios_set))
 		tcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
@@ -261,6 +262,8 @@ proc_exit(int sig) {
 		else
 			exit(WEXITSTATUS(child_status));
 	}
+	/* restore errno so that the resuming code is unimpacted. */
+	errno = saved_errno;
 }
 
 void
