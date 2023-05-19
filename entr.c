@@ -219,6 +219,8 @@ terminate_utility() {
 	terminating = 1;
 
 	if (child_pid > 0) {
+		/* NOTE: killpg not listed as async-signal-safe, but should be
+		 * OK in practice */
 		killpg(child_pid, SIGTERM);
 		waitpid(child_pid, &status, 0);
 		child_pid = 0;
@@ -237,7 +239,7 @@ handle_exit(int sig) {
 	terminate_utility();
 
 	if ((sig == SIGINT || sig == SIGHUP))
-	    exit(0);
+	    _exit(0);
 	else
 	    raise(sig);
 }
@@ -258,9 +260,9 @@ proc_exit(int sig) {
 			print_child_status(child_status);
 
 		if WIFSIGNALED(child_status)
-			exit(128 + WTERMSIG(child_status));
+			_exit(128 + WTERMSIG(child_status));
 		else
-			exit(WEXITSTATUS(child_status));
+			_exit(WEXITSTATUS(child_status));
 	}
 	/* restore errno so that the resuming code is unimpacted. */
 	errno = saved_errno;
