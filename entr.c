@@ -69,6 +69,8 @@ int shell_opt;
 int termios_set;
 struct termios canonical_tty;
 
+static char *shell, *shell_base;
+
 /* forwards */
 
 static void usage();
@@ -158,6 +160,12 @@ main(int argc, char *argv[]) {
 
 	/* ensure a shell is available to use */
 	setenv("SHELL", "/bin/sh", 0);
+
+	shell = getenv("SHELL");
+	shell_base = strdup(shell);
+	if (shell_base == NULL)
+		err(1, "cannot duplicate string");
+	shell_base = basename(shell_base);
 
 	/* sequential scan may depend on a 0 at the end */
 	files = calloc(open_max+1, sizeof(WatchFile *));
@@ -270,12 +278,18 @@ proc_exit(int sig) {
 
 void
 print_child_status(int status) {
+	int n;
+	char buf[2048];
+
+	/* NOTE: technically, snprintf isn't async-signal-safe, as it depends
+	 * on locale, but it should work out OK in practice. */
 	if WIFSIGNALED(status)
-		fprintf(stdout, "%s terminated by signal %d\n",
-		    basename(getenv("SHELL")), WTERMSIG(status));
+		n = snprintf(buf, sizeof(buf), "%s terminated by signal %d\n",
+		    shell_base, WTERMSIG(status));
 	else
-		fprintf(stdout, "%s returned exit code %d\n",
-		    basename(getenv("SHELL")), WEXITSTATUS(status));
+		n = snprintf(buf, sizeof(buf), "%s returned exit code %d\n",
+		    shell_base, WEXITSTATUS(status));
+	write(1, buf, n);
 }
 
 /*
@@ -420,7 +434,7 @@ run_utility(char *argv[]) {
 		arg_buf = malloc(ARG_MAX);
 		new_argv = calloc(argc+1, sizeof(char *));
 		realpath(leading_edge->fn, arg_buf);
-		new_argv[0] = getenv("SHELL");
+		new_argv[0] = shell;
 		new_argv[1] = "-c";
 		new_argv[2] = argv[0];
 		new_argv[3] = arg_buf;
