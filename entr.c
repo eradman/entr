@@ -227,8 +227,6 @@ terminate_utility() {
 	terminating = 1;
 
 	if (child_pid > 0) {
-		/* NOTE: killpg not listed as async-signal-safe, but should be
-		 * OK in practice */
 		killpg(child_pid, SIGTERM);
 		waitpid(child_pid, &status, 0);
 		child_pid = 0;
@@ -278,18 +276,16 @@ proc_exit(int sig) {
 
 void
 print_child_status(int status) {
-	int n;
+	int len;
 	char buf[2048];
 
-	/* NOTE: technically, snprintf isn't async-signal-safe, as it depends
-	 * on locale, but it should work out OK in practice. */
 	if WIFSIGNALED(status)
-		n = snprintf(buf, sizeof(buf), "%s terminated by signal %d\n",
+		len = snprintf(buf, sizeof(buf), "%s terminated by signal %d\n",
 		    shell_base, WTERMSIG(status));
 	else
-		n = snprintf(buf, sizeof(buf), "%s returned exit code %d\n",
+		len = snprintf(buf, sizeof(buf), "%s returned exit code %d\n",
 		    shell_base, WEXITSTATUS(status));
-	write(1, buf, n);
+	write(STDOUT_FILENO, buf, len);
 }
 
 /*
