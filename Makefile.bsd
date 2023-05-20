@@ -14,11 +14,8 @@ check: entr
 entr: entr.c ${EXTRA_SRC}
 	${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} ${EXTRA_SRC} entr.c -o $@
 
-entr_spec: entr_spec.c entr.c ${EXTRA_SRC}
-	${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} ${EXTRA_SRC} entr_spec.c -o $@
-
 clean:
-	rm -f entr entr_spec *.o
+	rm -f entr
 
 distclean: clean
 	rm -f Makefile
@@ -36,4 +33,4 @@ uninstall:
 versioncheck:
 	@head -n3 NEWS | egrep -q "^= Next Release: ${RELEASE}|^== ${RELEASE}: "
 
-.PHONY: all test gcc-lint regress clean distclean install uninstall versioncheck
+.PHONY: all test check clean distclean install uninstall versioncheck
