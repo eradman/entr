@@ -5,7 +5,7 @@ copy_mk() {
     echo "$cmd"; $cmd
 }
 
-case `uname` in
+case "${TARGET_OS:-`uname`}" in
     Darwin) copy_mk macos ;;
     Linux)  copy_mk linux ;;
     *)      copy_mk bsd ;;
