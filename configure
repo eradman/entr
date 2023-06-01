@@ -1,28 +1,32 @@
 #!/bin/sh
 
 copy_mk() {
-    cmd="cp Makefile.$1 Makefile"
-    echo "$cmd"; $cmd
+	cmd="cp Makefile.$1 Makefile"
+	echo "+ $cmd"; $cmd
 }
 
+usage() {
+	cat <<-HELP
+	Usage: configure [-h]
+	Example: build a static binary and install to your home directory
+
+	./configure
+	CFLAGS="-static" make
+	PREFIX=\$HOME/local make install
+	HELP
+	exit 1
+}
+
+while [ $# -gt 0 ]; do
+	case $1 in
+		-h) usage ;;
+		 *) echo "configure: unused argument: $1" ;;
+	esac
+	shift
+done
+
 case "${TARGET_OS:-`uname`}" in
-    Darwin) copy_mk macos ;;
-    Linux)  copy_mk linux ;;
-    *)      copy_mk bsd ;;
+	Darwin) copy_mk macos ;;
+	Linux)  copy_mk linux ;;
+	*)      copy_mk bsd ;;
 esac
-
-[ $# = 0 ] && exit 0
-
-cat <<HELP
-Adjust build options by setting the following environment variables:
-
-`make env`
-
-Example: build a static binary and install to your home directory
-
-./configure
-CFLAGS="-static" make
-PREFIX=\$HOME/local make install
-
-HELP
-exit 1

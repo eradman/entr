@@ -4,6 +4,7 @@
  - Set IN_CLOEXEC only for inotify_init, kqueue uses similar setting by default
  - Unconditionally try to set soft file limit to 2^16 on MacOS
  - Use non-reentrant calls sparingly in signal handlers
+ - configure: use TARGET_OS to override the output of uname(1)
 
 = Release History
 
