@@ -1,12 +1,12 @@
-= Next Release: 5.4
+= Release History
+
+== 5.4: August 1, 2023
 
  - 'make test' runs a quick smoketest, 'make check' runs regressions
  - Set IN_CLOEXEC only for inotify_init, kqueue uses similar setting by default
  - Unconditionally try to set soft file limit to 2^16 on MacOS
  - Use non-reentrant calls sparingly in signal handlers
  - configure: use TARGET_OS to override the output of uname(1)
-
-= Release History
 
 == 5.3: January 20, 2023
 
