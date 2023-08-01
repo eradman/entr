@@ -35,6 +35,7 @@ clear_tty='test -t 0 && stty echo icanon'
 clear_tmux='tmux kill-session -t $tsession 2>/dev/null || true'
 clear_tmp='rm -rf $tmp'
 trap "$clear_tty; $clear_tmux; $clear_tmp" EXIT
+trap 'printf "\nTerminated by SIGINT at line $LINENO\n"; exit 1' INT
 
 # required utilities
 
