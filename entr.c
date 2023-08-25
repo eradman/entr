@@ -102,8 +102,8 @@ main(int argc, char *argv[]) {
 	struct kevent evSet;
 	unsigned open_max;
 
-	 if (pledge("stdio rpath tty proc exec", NULL) == -1)
-	    err(1, "pledge");
+	if (pledge("stdio rpath tty proc exec", NULL) == -1)
+		err(1, "pledge");
 
 	/* call usage() if no command is supplied */
 	if (argc < 2) usage();
@@ -245,9 +245,9 @@ handle_exit(int sig) {
 	terminate_utility();
 
 	if ((sig == SIGINT || sig == SIGHUP))
-	    _exit(0);
+		_exit(0);
 	else
-	    raise(sig);
+		raise(sig);
 }
 
 void
