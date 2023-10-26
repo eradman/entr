@@ -505,23 +505,28 @@ run_utility(char *argv[]) {
 void
 watch_file(int kq, WatchFile *file) {
 	struct kevent evSet;
-	int i;
+	int i = 0;
 	struct timespec delay = { 0, 100 * 1000000 };
 
 	/* wait up to 1 second for file to become available */
-	for (i=0; i < 10; i++) {
+	for (;;) {
 		#ifdef O_EVTONLY
 		file->fd = open(file->fn, O_RDONLY|O_CLOEXEC|O_EVTONLY);
 		#else
 		file->fd = open(file->fn, O_RDONLY|O_CLOEXEC);
 		#endif
-		if (file->fd == -1) nanosleep(&delay, NULL);
-		else break;
-	}
-	if (file->fd == -1) {
-		warn("cannot open '%s'", file->fn);
-		terminate_utility();
-		exit(1);
+		if (file->fd == -1) {
+			if (i < 10)
+				nanosleep(&delay, NULL);
+			else {
+				warn("cannot open '%s'", file->fn);
+				terminate_utility();
+				exit(1);
+			}
+		}
+		else
+			break;
+		i++;
 	}
 
 	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_ALL, 0,

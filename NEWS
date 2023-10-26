@@ -1,3 +1,7 @@
+= Next Release: 5.5
+
+ - Report correct error if open(3) fails
+
 = Release History
 
 == 5.4: August 1, 2023
