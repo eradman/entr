@@ -18,6 +18,7 @@
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <sys/sysctl.h>
 #include <sys/event.h>
 
 #include <dirent.h>
@@ -135,14 +136,11 @@ main(int argc, char *argv[]) {
 #elif defined(_MACOS_PORT)
 	if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
 		err(1, "getrlimit");
-	/* guard against unrealistic replies */
-	open_max = min(65536, (unsigned)rl.rlim_cur);
-	/* maxfiles is ulimited on modern MacOS */
-	if (open_max < 65536) {
-		rl.rlim_cur = (rlim_t)65536;
-		if (setrlimit(RLIMIT_NOFILE, &rl) == 0 || open_max == 0)
-			open_max = 65536;
-	}
+	size_t len = sizeof(open_max);
+	sysctlbyname("kern.maxfilesperproc", &open_max, &len, NULL, 0);
+	rl.rlim_cur = (rlim_t)open_max;
+	if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
+		err(1, "setrlimit cannot set rlim_cur to %u", open_max);
 #else /* BSD */
 	if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
 		err(1, "getrlimit");
