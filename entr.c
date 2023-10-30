@@ -18,8 +18,11 @@
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
-#include <sys/sysctl.h>
 #include <sys/event.h>
+
+#if defined(_MACOS_PORT)
+#include <sys/sysctl.h>
+#endif
 
 #include <dirent.h>
 #include <err.h>

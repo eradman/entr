@@ -1,7 +1,7 @@
 = Next Release: 5.5
 
  - Report correct error if open(3) fails
- - Use kern.maxfilesperproc as the open_max limit on MacOS
+ - Use kern.maxfilesperproc to determine file open limit on MacOS
 
 = Release History
 
