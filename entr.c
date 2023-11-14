@@ -160,9 +160,12 @@ main(int argc, char *argv[]) {
 	setenv("PAGER", "/bin/cat", 0);
 
 	/* ensure a shell is available to use */
-	setenv("SHELL", "/bin/sh", 0);
+	if (0 != setenv("SHELL", "/bin/sh", 0))
+		err(1, "cannot set SHELL environment variable to /bin/sh");
 
 	shell = getenv("SHELL");
+	if (shell == NULL)
+		err(1, "cannot get SHELL environment variable");
 	shell_base = strdup(shell);
 	if (shell_base == NULL)
 		err(1, "cannot duplicate string");
