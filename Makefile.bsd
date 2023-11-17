@@ -3,7 +3,7 @@ MANPREFIX ?= ${PREFIX}/man
 RELEASE = 5.5
 CPPFLAGS += -DRELEASE=\"${RELEASE}\"
 
-all: versioncheck entr
+all: entr
 
 test: entr
 	ls entr.1 | ./entr -zns 'wc $$0'
@@ -30,7 +30,4 @@ uninstall:
 	rm ${DESTDIR}${PREFIX}/bin/entr
 	rm ${DESTDIR}${MANPREFIX}/man1/entr.1
 
-versioncheck:
-	@head -n3 NEWS | egrep -q "^= Next Release: ${RELEASE}|^== ${RELEASE}: "
-
-.PHONY: all test check clean distclean install uninstall versioncheck
+.PHONY: all test check clean distclean install uninstall

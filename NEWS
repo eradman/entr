@@ -1,9 +1,9 @@
-= Next Release: 5.5
+= Release History
+
+== 5.5: November 17, 2023
 
  - Report correct error if open(3) fails
  - Use kern.maxfilesperproc to determine file open limit on MacOS
-
-= Release History
 
 == 5.4: August 1, 2023
 

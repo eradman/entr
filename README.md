@@ -53,5 +53,6 @@ Auto-reload a web server, or terminate if the server exits
 News
 ----
 
-A release history as well as features in the upcoming release are covered in the
-[NEWS](NEWS) file.
+Notification of new releases are provided by an
+[Atom feed](https://github.com/eradman/entr/releases.atom),
+and release history is covered in the [NEWS](NEWS) file.
