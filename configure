@@ -1,7 +1,9 @@
 #!/bin/sh
 
 test_libc_features() {
-	2>/dev/null gcc -xc - <<-EOF
+	CFLAGS="-D_GNU_SOURCE"
+	: ${CC:=cc}
+	2>/dev/null $CC -xc $CFLAGS -o /dev/null - <<-EOF
 	#include <string.h>
 	int main(void) {
 		char dst[4];
