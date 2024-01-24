@@ -68,6 +68,7 @@ int noninteractive_opt;
 int oneshot_opt;
 int postpone_opt;
 int restart_opt;
+int no_exit_status_opt;
 int shell_opt;
 
 int termios_set;
@@ -217,7 +218,7 @@ main(int argc, char *argv[]) {
 void
 usage() {
 	fprintf(stderr, "release: %s\n", RELEASE);
-	fprintf(stderr, "usage: entr [-acdnprsz] utility [argument [/_] ...] < filenames\n");
+	fprintf(stderr, "usage: entr [-acdnprsqz] utility [argument [/_] ...] < filenames\n");
 	exit(1);
 }
 
@@ -371,7 +372,7 @@ set_options(char *argv[]) {
 
 	/* read arguments until we reach a command */
 	for (argc=1; argv[argc] != 0 && argv[argc][0] == '-'; argc++);
-	while ((ch = getopt(argc, argv, "acdnprsz")) != -1) {
+	while ((ch = getopt(argc, argv, "acdnprsqz")) != -1) {
 		switch (ch) {
 		case 'a':
 			aggressive_opt = 1;
@@ -393,6 +394,9 @@ set_options(char *argv[]) {
 			break;
 		case 's':
 			shell_opt = 1;
+			break;
+		case 'q':
+			no_exit_status_opt = 1;
 			break;
 		case 'z':
 			oneshot_opt = 1;
@@ -492,7 +496,7 @@ run_utility(char *argv[]) {
 		if (wait(&status) != -1)
 			child_status = status;
 
-		if (shell_opt == 1)
+		if ((shell_opt == 1) && (no_exit_status_opt == 0))
 			print_child_status(child_status);
 	}
 
