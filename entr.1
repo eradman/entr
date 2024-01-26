@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd November 17, 2023
+.Dd January 26, 2024
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -126,6 +126,11 @@ Quit; equivalent pressing
 .El
 .Sh ENVIRONMENT
 .Bl -tag -width "ENTR_ENVIRON"
+.It ENTR_STATUS_COMMAND
+A command be be executed by after the the utility terminates.
+The exit status of the utility is available in the
+.Ev EXIT_STATUS
+environment variable.
 .It Ev PAGER
 Set to
 .Pa /bin/cat

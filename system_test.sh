@@ -115,6 +115,14 @@ try "exec a command using one-shot and shell options and return signal"
 	assert "$?" "137"
 	assert "$(tail -c23  $tmp/exec.out)" "$(printf "terminated by signal 9\n")"
 
+try "exec a command using one-shot and custom shell status"
+	export ENTR_STATUS_COMMAND='echo "== $EXIT_STATUS =="'
+	setup
+	ls $tmp/file2 | ./entr -z -s 'exit 2' >$tmp/exec.out 2>$tmp/exec.err
+	assert "$?" "2"
+	assert "$(tail -c23  $tmp/exec.out)" "$(printf "== 2 ==\n")"
+	unset ENTR_STATUS_COMMAND
+
 try "fail to exec a command using one-shot option"
 	setup
 	ls $tmp/file* | ./entr -z /usr/bin/false_X 2>$tmp/exec.err

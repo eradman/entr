@@ -81,7 +81,7 @@ static void usage();
 static void terminate_utility();
 static void handle_exit(int sig);
 static void proc_exit(int sig);
-static void print_child_status(int status);
+static void print_child_status(int exit_status);
 static int process_input(FILE *, WatchFile *[], int);
 static int set_options(char *[]);
 static int list_dir(char *);
@@ -263,7 +263,7 @@ proc_exit(int sig) {
 		child_status = status;
 
 	if ((oneshot_opt == 1) && (terminating == 0)) {
-		if ((shell_opt == 1) && (restart_opt == 0))
+		if (restart_opt == 0)
 			print_child_status(child_status);
 
 		if WIFSIGNALED(child_status)
@@ -276,17 +276,40 @@ proc_exit(int sig) {
 }
 
 void
-print_child_status(int status) {
+print_child_status(int exit_status) {
 	int len;
+	int pid;
+	int status;
+	char *status_cmd;
+	char *status_argv[4];
 	char buf[2048];
+	char exit_repr[32];
 
-	if WIFSIGNALED(status)
-		len = snprintf(buf, sizeof(buf), "%s terminated by signal %d\n",
-		    shell_base, WTERMSIG(status));
-	else
-		len = snprintf(buf, sizeof(buf), "%s returned exit code %d\n",
-		    shell_base, WEXITSTATUS(status));
-	write(STDOUT_FILENO, buf, len);
+	status_cmd = getenv("ENTR_STATUS_COMMAND");
+	if (status_cmd) {
+		status_argv[0] = shell;
+		status_argv[1] = "-c";
+		status_argv[2] = status_cmd;
+		status_argv[3] = NULL;
+
+		pid = fork();
+		if (pid == 0) {
+			snprintf(exit_repr, sizeof exit_repr, "EXIT_STATUS=%d", WEXITSTATUS(exit_status));
+			putenv(exit_repr);
+			execv(status_argv[0], status_argv);
+			err(1, "%s", shell);
+		}
+		waitpid(pid, &status, 0);
+	}
+	else if (shell_opt == 1) {
+		if WIFSIGNALED(exit_status)
+			len = snprintf(buf, sizeof(buf), "%s terminated by signal %d\n",
+			    shell_base, WTERMSIG(exit_status));
+		else
+			len = snprintf(buf, sizeof(buf), "%s returned exit code %d\n",
+			    shell_base, WEXITSTATUS(exit_status));
+		write(STDOUT_FILENO, buf, len);
+	}
 }
 
 /*
@@ -488,12 +511,11 @@ run_utility(char *argv[]) {
 	}
 	child_pid = pid;
 
-	if (restart_opt == 0 && oneshot_opt == 0) {
+	if (restart_opt == 0) {
 		if (wait(&status) != -1)
 			child_status = status;
 
-		if (shell_opt == 1)
-			print_child_status(child_status);
+		print_child_status(child_status);
 	}
 
 	free(arg_buf);
