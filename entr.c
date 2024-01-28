@@ -438,7 +438,7 @@ run_utility(char *argv[]) {
 	}
 	else {
 		/* clone argv on each invocation to make the implementation of more
-		 * complex subsitution rules possible and easy
+		 * complex substitution rules possible and easy
 		 */
 		for (argc=0; argv[argc]; argc++);
 		arg_buf = malloc(ARG_MAX);
