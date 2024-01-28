@@ -22,7 +22,13 @@ function try { let tests+=1; this="$1"; }
 
 function assert {
 	[[ "$1" == "$2" ]] && { printf "."; return; }
-	printf "\nFAIL: $this\n'$1' != '$2'\n"; exit 1
+	printf "\nFAIL: $this\n'$1' != '$2'\n"
+
+	echo "*************************************"
+	echo "All files in temporary directory and and a peek of their contents:"
+	head -n 50 $(find $tmp -type f)
+	echo "*************************************"
+  exit 1
 }
 function skip { printf "s"; }
 
