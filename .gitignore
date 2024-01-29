@@ -1,2 +1,4 @@
+*.o
 Makefile
+compat.c
 entr

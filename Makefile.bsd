@@ -1,9 +1,18 @@
 PREFIX ?= /usr/local
 MANPREFIX ?= ${PREFIX}/man
 RELEASE = 5.5
-CPPFLAGS += -DRELEASE=\"${RELEASE}\"
+COMPONENTS = compat.o entr.o
 
 all: entr
+
+compat.c: missing/*
+	cat /dev/null ${EXTRA_SRC} > compat.c
+
+.c.o:
+	${CC} ${CFLAGS} ${CPPFLAGS} -DRELEASE=\"${RELEASE}\" -c $<
+
+entr: ${COMPONENTS}
+	${CC} ${CFLAGS} ${CPPFLAGS} -o $@ ${COMPONENTS} ${LDFLAGS}
 
 test: entr
 	ls entr.1 | ./entr -zns 'wc $$0'
@@ -11,11 +20,8 @@ test: entr
 check: entr
 	./system_test.sh
 
-entr: entr.c ${EXTRA_SRC}
-	${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} ${EXTRA_SRC} entr.c -o $@
-
 clean:
-	rm -f entr
+	rm -f *.o compat.c entr
 
 distclean: clean
 	rm -f Makefile
