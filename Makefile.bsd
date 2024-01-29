@@ -1,7 +1,7 @@
 PREFIX ?= /usr/local
 MANPREFIX ?= ${PREFIX}/man
 RELEASE = 5.5
-COMPONENTS = compat.o entr.o
+COMPONENTS = compat.o status.o entr.o
 
 all: entr
 
