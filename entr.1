@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd November 17, 2023
+.Dd February 2, 2024
 .Dt ENTR 1
 .Os
 .Sh NAME
@@ -21,7 +21,7 @@
 .Nd run arbitrary commands when files change
 .Sh SYNOPSIS
 .Nm
-.Op Fl acdnprsz
+.Op Fl acdnprsxz
 .Ar utility
 .Op Ar argument /_ ...
 .Sh DESCRIPTION
@@ -88,8 +88,19 @@ Control of the TTY is not transferred to the child process.
 Evaluate the first argument using the interpreter specified by the
 .Ev SHELL
 environment variable.
-If standard output is a TTY, the name of the shell and exit code is printed
-after each invocation.
+.It Fl x
+Format custom exit status messages using a persistent
+.Xr awk 1
+process.
+The path to the status script is defined by the environment variable
+.Ev ENTR_STATUS_SCRIPT .
+If the status script does not exist,
+.Nm
+will create an example.
+Shell commands and file redirection is not permitted by default, but may be
+enabled by specifying
+.Fl x
+twice.
 .It Fl z
 Exit after the
 .Ar utility
@@ -126,6 +137,13 @@ Quit; equivalent pressing
 .El
 .Sh ENVIRONMENT
 .Bl -tag -width "ENTR_ENVIRON"
+.It Ev ENTR_STATUS_SCRIPT
+The path to the exit status script enabled by the
+.Fl x
+option.
+By default
+.Pa $HOME/.entr/status.awk
+is evaluated.
 .It Ev PAGER
 Set to
 .Pa /bin/cat

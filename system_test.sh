@@ -25,10 +25,10 @@ function assert {
 	printf "\nFAIL: $this\n'$1' != '$2'\n"
 
 	echo "*************************************"
-	echo "All files in temporary directory and and a peek of their contents:"
+	echo "System test directory contents:"
 	head -n 50 $(find $tmp -type f)
 	echo "*************************************"
-  exit 1
+	exit 1
 }
 function skip { printf "s"; }
 
@@ -36,6 +36,7 @@ function zz { sleep 0.25; }
 function setup {
 	rm -f $tmp/*
 	touch $tmp/file1 $tmp/file2
+	unset ENTR_STATUS_SCRIPT
 }
 tmp=$(cd $(mktemp -d ${TMPDIR:-/tmp}/entr-system-test-XXXXXX); pwd -P)
 tsession=$(basename $tmp)
@@ -56,6 +57,13 @@ for util in $utils; do
 		exit 1
 	}
 done
+
+if [ $(uname) == 'Linux' ]; then
+	date | awk -S '{}' 2> /dev/null || {
+		echo "ERROR: gawk required on Linux"
+		exit 1
+	}
+fi
 
 # fast tests
 
@@ -80,6 +88,83 @@ try "no regular files provided as input"
 	ls $tmp | ./entr echo 2> /dev/null || code=$?
 	rmdir $tmp/dir1
 	assert $code 1
+
+# status message tests
+
+try "install default status script"
+	setup
+	export ENTR_STATUS_SCRIPT="$tmp/status.awk"
+	ls $tmp/* | ./entr -zx true >$tmp/exec.out 2>$tmp/exec.err &
+	bgpid=$! ; zz
+	wait $bgpid
+	sed -i -e "s,'.*.awk',$1 /.../status.awk," $tmp/exec.out
+	assert "$(cat $tmp/exec.err)" ""
+	assert "$(cat $tmp/exec.out)" "$(printf 'entr: created  /.../status.awk\ntrue returned exit code 0\n')"
+
+try "status script not compatible with restart option"
+	setup
+	ls $tmp/* | ./entr -zrx true >$tmp/exec.out 2>$tmp/exec.err &
+	bgpid=$! ; zz
+	wait $bgpid; assert "$?" "1"
+
+try "block unsafe status script"
+	setup
+	export ENTR_STATUS_SCRIPT="$tmp/status.awk"
+	cat > $ENTR_STATUS_SCRIPT <<-EOF
+	{ system("date") }
+	EOF
+	ls $tmp/* | ./entr -zx true >$tmp/exec.out 2>$tmp/exec.err &
+	bgpid=$! ; zz
+	sed -i -e "s,.*awk: .*,awk: system is unsafe ... status.awk," $tmp/exec.err
+	assert "$(head -n1 $tmp/exec.err)" "awk: system is unsafe ... status.awk"
+	assert "$(head -n1 $tmp/exec.out)" ""
+
+try "allow unsafe status script"
+	setup
+	export ENTR_STATUS_SCRIPT="$tmp/status.awk"
+	cat > $ENTR_STATUS_SCRIPT <<-EOF
+	{ system("date") }
+	EOF
+	ls $tmp/* | ./entr -zxx true >$tmp/exec.out 2>$tmp/exec.err &
+	bgpid=$! ; zz
+	assert "$(head -n1 $tmp/exec.err)" ""
+
+try "use custom status script"
+	setup
+	export ENTR_STATUS_SCRIPT="$tmp/status.awk"
+	cat > $ENTR_STATUS_SCRIPT <<-'EOF'
+	{
+	  print "=", $1, $2, "="
+	}
+	EOF
+	ls $tmp/* | ./entr -zx false >$tmp/exec.out 2>$tmp/exec.err &
+	bgpid=$! ; zz
+	assert "$(cat $tmp/exec.err)" ""
+	assert "$(cat $tmp/exec.out)" "$(printf '= exit 1 =')"
+
+try "use custom status script with shell option and kill"
+	setup
+	export ENTR_STATUS_SCRIPT="$tmp/status.awk"
+	cat > $ENTR_STATUS_SCRIPT <<-'EOF'
+	{
+	  print "=", $1, $2, "="
+	}
+	EOF
+	ls $tmp/* | ./entr -zx -s 'kill -9 $$' >$tmp/exec.out 2>$tmp/exec.err &
+	bgpid=$! ; zz
+	assert "$(cat $tmp/exec.err)" ""
+	assert "$(cat $tmp/exec.out)" "$(printf '= signal 9 =')"
+
+try "abort if status script terminates"
+	setup
+	export ENTR_STATUS_SCRIPT="$tmp/status.awk"
+	cat > $ENTR_STATUS_SCRIPT <<-'EOF'
+	{ exit; }
+	EOF
+	ls $tmp/* | ./entr -x true >$tmp/exec.out 2>$tmp/exec.err &
+	bgpid=$! ; zz
+	assert "$(cat $tmp/exec.err)" "entr: status process terminated"
+	assert "$(cat $tmp/exec.out)" ""
 
 # terminal tests
 
@@ -122,7 +207,7 @@ try "exec a command using one-shot and shell options and return signal"
 	setup
 	ls $tmp/file2 | ./entr -z -s 'kill -9 $$' >$tmp/exec.out 2>$tmp/exec.err
 	assert "$?" "137"
-	assert "$(tail -c23  $tmp/exec.out)" "$(printf "terminated by signal 9\n")"
+	assert "$(tail -c23  $tmp/exec.out)" ""
 
 try "fail to exec a command using one-shot option"
 	setup
