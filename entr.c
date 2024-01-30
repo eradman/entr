@@ -256,20 +256,21 @@ proc_exit(int sig) {
 	int status;
 	int saved_errno = errno;
 
-	if ((!noninteractive_opt) && (termios_set))
-		tcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
-
-	if (wait(&status) != -1)
+	if (waitpid(child_pid, &status, 0) != -1) {
 		child_status = status;
 
-	if ((oneshot_opt == 1) && (terminating == 0)) {
-		if ((shell_opt == 1) && (restart_opt == 0))
-			print_child_status(child_status);
+		if ((!noninteractive_opt) && (termios_set))
+			tcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
 
-		if WIFSIGNALED(child_status)
-			_exit(128 + WTERMSIG(child_status));
-		else
-			_exit(WEXITSTATUS(child_status));
+		if ((oneshot_opt == 1) && (terminating == 0)) {
+			if ((shell_opt == 1) && (restart_opt == 0))
+				print_child_status(child_status);
+
+			if WIFSIGNALED(child_status)
+				_exit(128 + WTERMSIG(child_status));
+			else
+				_exit(WEXITSTATUS(child_status));
+		}
 	}
 	/* restore errno so that the resuming code is unimpacted. */
 	errno = saved_errno;
@@ -489,7 +490,7 @@ run_utility(char *argv[]) {
 	child_pid = pid;
 
 	if (restart_opt == 0 && oneshot_opt == 0) {
-		if (wait(&status) != -1)
+		if (waitpid(child_pid, &status, 0) != -1)
 			child_status = status;
 
 		if (shell_opt == 1)
