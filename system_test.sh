@@ -27,7 +27,10 @@ function assert {
 function skip { printf "s"; }
 
 function zz { sleep 0.25; }
-function setup { rm -f $tmp/*; touch $tmp/file{1,2}; zz; }
+function setup {
+	rm -f $tmp/*
+	touch $tmp/file1 $tmp/file2
+}
 tmp=$(cd $(mktemp -d ${TMPDIR:-/tmp}/entr-system-test-XXXXXX); pwd -P)
 tsession=$(basename $tmp)
 
