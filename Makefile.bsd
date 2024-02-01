@@ -15,7 +15,7 @@ entr: ${COMPONENTS}
 	${CC} ${CFLAGS} ${CPPFLAGS} -o $@ ${COMPONENTS} ${LDFLAGS}
 
 test: entr
-	ls entr.1 | ./entr -zns 'wc $$0'
+	ls entr.1 | EV_TRACE=1 ./entr -zn wc -l entr.1
 
 check: entr
 	./system_test.sh

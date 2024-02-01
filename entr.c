@@ -104,7 +104,7 @@ main(int argc, char *argv[]) {
 	int n_files;
 	int i;
 	struct kevent evSet;
-	unsigned open_max;
+	int32_t open_max; /* type specified by by sysctlbyname(3) */
 
 	if (pledge("stdio rpath tty proc exec", NULL) == -1)
 		err(1, "pledge");
