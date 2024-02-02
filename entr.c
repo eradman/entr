@@ -20,10 +20,6 @@
 #include <sys/stat.h>
 #include <sys/event.h>
 
-#if defined(_MACOS_PORT)
-#include <sys/sysctl.h>
-#endif
-
 #include <dirent.h>
 #include <err.h>
 #include <errno.h>
@@ -104,7 +100,7 @@ main(int argc, char *argv[]) {
 	int n_files;
 	int i;
 	struct kevent evSet;
-	int32_t open_max; /* type specified by by sysctlbyname(3) */
+	int open_max;
 
 	if (pledge("stdio rpath tty proc exec", NULL) == -1)
 		err(1, "pledge");
@@ -139,9 +135,8 @@ main(int argc, char *argv[]) {
 #elif defined(_MACOS_PORT)
 	if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
 		err(1, "getrlimit");
-	size_t len = sizeof(open_max);
-	sysctlbyname("kern.maxfilesperproc", &open_max, &len, NULL, 0);
-	rl.rlim_cur = (rlim_t)open_max;
+	open_max = min(OPEN_MAX, rl.rlim_max);
+	rl.rlim_cur = open_max;
 	if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
 		err(1, "setrlimit cannot set rlim_cur to %u", open_max);
 #else /* BSD */
