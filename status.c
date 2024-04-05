@@ -34,7 +34,7 @@ int status_stdin_pipe[2];
 
 void
 start_log_filter(int safe) {
-	char *argv[5];
+	char *argv[8];
 	char *awk_script;
 	struct passwd *pw;
 
@@ -51,16 +51,18 @@ start_log_filter(int safe) {
 	    "/^exit/ { print $3, \"returned exit code\", $2; }\n");
 
 	argv[0] = "/usr/bin/awk";
-	argv[1] = "-f";
-	argv[2] = awk_script;
+	argv[1] = "-F";
+	argv[2] = "|";
+	argv[3] = "-f";
+	argv[4] = awk_script;
 #if defined(_LINUX_PORT)
-	argv[3] = "-S";
+	argv[5] = "-S";
 #else
-	argv[3] = "-safe";
+	argv[5] = "-safe";
 #endif
-	argv[4] = NULL;
+	argv[6] = NULL;
 	if (safe == 2)
-		argv[3] = NULL;
+		argv[5] = NULL;
 
 	pipe(status_stdin_pipe);
 	status_pid = fork();

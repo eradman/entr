@@ -312,10 +312,10 @@ print_child_status(int status) {
 
 	if (status_filter_opt) {
 		if WIFSIGNALED(status)
-			len = snprintf(buf, sizeof(buf), "signal %d %s\n",
+			len = snprintf(buf, sizeof(buf), "signal|%d|%s\n",
 				WTERMSIG(status), argv0_base);
 		else
-			len = snprintf(buf, sizeof(buf), "exit %d %s\n",
+			len = snprintf(buf, sizeof(buf), "exit|%d|%s\n",
 				WEXITSTATUS(status), argv0_base);
 		write_log_filter(buf, len);
 	}
