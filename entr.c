@@ -16,8 +16,8 @@
 
 #include <sys/param.h>
 #include <sys/resource.h>
-#include <sys/wait.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <sys/event.h>
 
 #include <dirent.h>
@@ -295,7 +295,7 @@ proc_exit(int sig) {
 			if (restart_opt == 0)
 				print_child_status(child_status);
 
-			if WIFSIGNALED(child_status)
+			if (WIFSIGNALED(child_status))
 				_exit(128 + WTERMSIG(child_status));
 			else
 				_exit(WEXITSTATUS(child_status));
@@ -311,7 +311,7 @@ print_child_status(int status) {
 	char buf[2048];
 
 	if (status_filter_opt) {
-		if WIFSIGNALED(status)
+		if (WIFSIGNALED(status))
 			len = snprintf(buf, sizeof(buf), "signal|%d|%s\n",
 				WTERMSIG(status), argv0_base);
 		else
@@ -356,9 +356,8 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 		if (dirwatch_opt > 0) {
 			if (S_ISDIR(sb.st_mode) != 0)
 				path = &buf[0];
-			else
-				if ((path = dirname(buf)) == 0)
-					err(1, "dirname '%s' failed", buf);
+			else if ((path = dirname(buf)) == 0)
+				err(1, "dirname '%s' failed", buf);
 			for (matches=0, i=0; i<n_files; i++)
 				if (strcmp(files[i]->fn, path) == 0) matches++;
 			if (matches == 0) {
@@ -378,14 +377,15 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 	return n_files;
 }
 
-int list_dir(char *dir) {
+int
+list_dir(char *dir) {
 	struct dirent *dp;
 	DIR *dfd = opendir(dir);
 	int count = 0;
 
 	if (dfd == NULL)
 		errx(1, "unable to open directory: '%s'", dir);
-	while((dp = readdir(dfd)) != NULL)
+	while ((dp = readdir(dfd)) != NULL)
 		if ((dirwatch_opt == 2) || (dp->d_name[0] != '.'))
 			count++;
 	closedir(dfd);
