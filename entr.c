@@ -403,7 +403,7 @@ set_options(char *argv[]) {
 
 	/* read arguments until we reach a command */
 	for (argc=1; argv[argc] != 0 && argv[argc][0] == '-'; argc++);
-	while ((ch = getopt(argc, argv, "acdnprsXxz")) != -1) {
+	while ((ch = getopt(argc, argv, "acdnprsxz")) != -1) {
 		switch (ch) {
 		case 'a':
 			aggressive_opt = 1;
