@@ -401,6 +401,11 @@ set_options(char *argv[]) {
 	int ch;
 	int argc;
 
+	/* Automatically run non-interactive none of standard in, out or error is a tty */
+	if (!isatty(STDIN_FILENO) && !isatty(STDOUT_FILENO) && !isatty(STDERR_FILENO)) {
+		noninteractive_opt = 1;
+	}
+
 	/* read arguments until we reach a command */
 	for (argc=1; argv[argc] != 0 && argv[argc][0] == '-'; argc++);
 	while ((ch = getopt(argc, argv, "acdnprsxz")) != -1) {
