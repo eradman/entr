@@ -66,9 +66,11 @@ if [ $(uname) == 'Linux' ]; then
 fi
 
 # local binary, non-interactive by default
-
 alias entr='./entr -n'
 alias entr_tty='./entr'
+
+# alias expansion is not enabled by default in non-interactive Bourne Again Shell (bash) sessions
+command -v shopt > /dev/null && shopt -s expand_aliases
 
 # fast tests
 
