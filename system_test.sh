@@ -26,7 +26,7 @@ function assert {
 
 	echo "*************************************"
 	echo "System test directory contents:"
-	head -n 50 $(find $tmp -type f)
+	: | head -n 50 $(find $tmp -type f)
 	echo "*************************************"
 	exit 1
 }
@@ -65,27 +65,32 @@ if [ $(uname) == 'Linux' ]; then
 	}
 fi
 
+# local binary, non-interactive by default
+
+alias entr='./entr -n'
+alias entr_tty='./entr'
+
 # fast tests
 
 try "no arguments"
-	./entr 2> /dev/null || code=$?
+	entr 2> /dev/null || code=$?
 	assert $code 1
 
 try "no input"
-	./entr echo "vroom" 2> /dev/null || code=$?
+	entr echo "vroom" 2> /dev/null || code=$?
 	assert $code 1
 
 try "reload and clear options with no utility to run"
-	./entr -r -c 2> /dev/null || code=$?
+	entr -r -c 2> /dev/null || code=$?
 	assert $code 1
 
 try "empty input"
-	echo "" | ./entr echo 2> /dev/null || code=$?
+	echo "" | entr echo 2> /dev/null || code=$?
 	assert $code 1
 
 try "no regular files provided as input"
 	mkdir $tmp/dir1
-	ls $tmp | ./entr echo 2> /dev/null || code=$?
+	ls $tmp | entr echo 2> /dev/null || code=$?
 	rmdir $tmp/dir1
 	assert $code 1
 
@@ -94,7 +99,7 @@ try "no regular files provided as input"
 try "install default status script"
 	setup
 	export ENTR_STATUS_SCRIPT="$tmp/status.awk"
-	ls $tmp/* | ./entr -zx true >$tmp/exec.out 2>$tmp/exec.err &
+	ls $tmp/* | entr -zx true >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
 	wait $bgpid
 	sed -i -e "s,'.*.awk',$1 /.../status.awk," $tmp/exec.out
@@ -103,7 +108,7 @@ try "install default status script"
 
 try "status script not compatible with restart option"
 	setup
-	ls $tmp/* | ./entr -zrx true >$tmp/exec.out 2>$tmp/exec.err &
+	ls $tmp/* | entr -zrx true >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
 	wait $bgpid; assert "$?" "1"
 
@@ -113,7 +118,7 @@ try "block unsafe status script"
 	cat > $ENTR_STATUS_SCRIPT <<-EOF
 	{ system("date") }
 	EOF
-	ls $tmp/* | ./entr -zx true >$tmp/exec.out 2>$tmp/exec.err &
+	ls $tmp/* | entr -zx true >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
 	sed -i -e "s,.*awk: .*,awk: system is unsafe ... status.awk," $tmp/exec.err
 	assert "$(head -n1 $tmp/exec.err)" "awk: system is unsafe ... status.awk"
@@ -125,7 +130,7 @@ try "allow unsafe status script"
 	cat > $ENTR_STATUS_SCRIPT <<-EOF
 	{ system("date") }
 	EOF
-	ls $tmp/* | ./entr -zxx true >$tmp/exec.out 2>$tmp/exec.err &
+	ls $tmp/* | entr -zxx true >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
 	assert "$(head -n1 $tmp/exec.err)" ""
 
@@ -137,7 +142,7 @@ try "use custom status script"
 	  print "=", $1, $2, "="
 	}
 	EOF
-	ls $tmp/* | ./entr -zx false >$tmp/exec.out 2>$tmp/exec.err &
+	ls $tmp/* | entr -zx false >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
 	assert "$(cat $tmp/exec.err)" ""
 	assert "$(cat $tmp/exec.out)" "$(printf '= exit 1 =')"
@@ -150,7 +155,7 @@ try "use custom status script with shell option and kill"
 	  print "=", $1, $2, "="
 	}
 	EOF
-	ls $tmp/* | ./entr -zx -s 'kill -9 $$' >$tmp/exec.out 2>$tmp/exec.err &
+	ls $tmp/* | entr -zx -s 'kill -9 $$' >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
 	assert "$(cat $tmp/exec.err)" ""
 	assert "$(cat $tmp/exec.out)" "$(printf '= signal 9 =')"
@@ -161,7 +166,7 @@ try "abort if status script terminates"
 	cat > $ENTR_STATUS_SCRIPT <<-'EOF'
 	{ exit; }
 	EOF
-	ls $tmp/* | ./entr -x true >$tmp/exec.out 2>$tmp/exec.err &
+	ls $tmp/* | entr -x true >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
 	assert "$(cat $tmp/exec.err)" "entr: status process terminated"
 	assert "$(cat $tmp/exec.out)" ""
@@ -189,7 +194,7 @@ try "spacebar triggers utility"
 
 try "exec a command using one-shot option"
 	setup
-	ls $tmp/file2 | ./entr -zp cat $tmp/file2 >$tmp/exec.out 2>$tmp/exec.err &
+	ls $tmp/file2 | entr -zp cat $tmp/file2 >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
 	echo 456 >> $tmp/file2 ; zz
 	wait $bgpid; assert "$?" "0"
@@ -198,25 +203,25 @@ try "exec a command using one-shot option"
 
 try "exec a command using one-shot option and return signal number"
 	setup
-	ls $tmp/file2 | ./entr -z sh -c 'kill -9 $$' >$tmp/exec.out 2>$tmp/exec.err
+	ls $tmp/file2 | entr -z sh -c 'kill -9 $$' >$tmp/exec.out 2>$tmp/exec.err
 	assert "$?" "137"
 	assert "$(cat $tmp/exec.err)" ""
 	assert "$(cat $tmp/exec.out)" ""
 
 try "exec a command using one-shot and shell options and return signal"
 	setup
-	ls $tmp/file2 | ./entr -z -s 'kill -9 $$' >$tmp/exec.out 2>$tmp/exec.err
+	ls $tmp/file2 | entr -z -s 'kill -9 $$' >$tmp/exec.out 2>$tmp/exec.err
 	assert "$?" "137"
 	assert "$(tail -c23  $tmp/exec.out)" ""
 
 try "fail to exec a command using one-shot option"
 	setup
-	ls $tmp/file* | ./entr -z /usr/bin/false_X 2>$tmp/exec.err
+	ls $tmp/file* | entr -z /usr/bin/false_X 2>$tmp/exec.err
 	assert "$?" "1"
 
 try "exec a command using one-shot option exit code from child"
 	setup
-	ls $tmp/file* | ./entr -z sh -c 'exit 4' &
+	ls $tmp/file* | entr -z sh -c 'exit 4' &
 	bgpid=$! ; zz
 	wait $bgpid; assert "$?" "4"
 
@@ -225,7 +230,7 @@ try "restart a server when a file is modified using one-shot option"
 	if [ $(uname) == 'Linux' ]; then
 		skip "GNU nc spins while retrying SELECT(2); busybox does not support domain sockets"
 	else
-		ls $tmp/file2 | ./entr -rz nc -l -U $tmp/nc.s >> $tmp/exec.out &
+		ls $tmp/file2 | entr -rz nc -l -U $tmp/nc.s >> $tmp/exec.out &
 		bgpid=$! ; zz
 		echo "123" | nc -NU $tmp/nc.s 2> /dev/null || {
 			echo "123" | nc -U $tmp/nc.s
@@ -237,7 +242,7 @@ try "restart a server when a file is modified using one-shot option"
 
 try "exec a command in non-intertive mode"
 	setup
-	ls $tmp/file* | ./entr -n tty >$tmp/exec.out &
+	ls $tmp/file* | entr tty >$tmp/exec.out &
 	bgpid=$! ; zz
 	kill -INT $bgpid
 	wait $bgpid; assert "$?" "0"
@@ -245,7 +250,7 @@ try "exec a command in non-intertive mode"
 
 try "exec a command as a background task and ensure stdin is closed"
 	setup
-	ls $tmp/file* | ./entr -r sh -c 'test -t 0; echo $?; kill $$' >$tmp/exec.out &
+	ls $tmp/file* | entr -r sh -c 'test -t 0; echo $?; kill $$' >$tmp/exec.out &
 	bgpid=$! ; zz
 	kill -INT $bgpid
 	wait $bgpid; assert "$?" "0"
@@ -253,7 +258,7 @@ try "exec a command as a background task and ensure stdin is closed"
 
 try "exec a command as a background task, and verify that read from stdin doesn't complain"
 	setup
-	ls $tmp/file* | ./entr -r sh -c 'read X' 2>$tmp/exec.err &
+	ls $tmp/file* | entr -r sh -c 'read X' 2>$tmp/exec.err &
 	bgpid=$! ; zz
 	kill -INT $bgpid
 	wait $bgpid; assert "$?" "0"
@@ -261,7 +266,7 @@ try "exec a command as a background task, and verify that read from stdin doesn'
 
 try "exec single shell utility and exit when a file is added to an implicit watch path"
 	setup
-	ls $tmp/file* | ./entr -dp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
+	ls $tmp/file* | entr -dp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
 	    || true &
 	bgpid=$! ; zz
 	touch $tmp/newfile
@@ -271,7 +276,7 @@ try "exec single shell utility and exit when a file is added to an implicit watc
 
 try "exec single shell utility and exit when a subdirectory is added"
 	setup
-	ls -d $tmp | ./entr -dp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
+	ls -d $tmp | entr -dp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
 	    || true &
 	bgpid=$! ; zz
 	mkdir $tmp/newdir
@@ -282,7 +287,7 @@ try "exec single shell utility and exit when a subdirectory is added"
 
 try "exec single shell utility and exit when a hidden subdirectory is added"
 	setup
-	ls -d $tmp | ./entr -ddp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
+	ls -d $tmp | entr -ddp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
 	    || true &
 	bgpid=$! ; zz
 	mkdir $tmp/.newdir
@@ -293,7 +298,7 @@ try "exec single shell utility and exit when a hidden subdirectory is added"
 
 try "exec single shell utility and exit when a file is added to a specific path"
 	setup
-	ls -d $tmp | ./entr -dp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
+	ls -d $tmp | entr -dp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
 	    || true &
 	bgpid=$! ; zz
 	touch $tmp/newfile
@@ -303,7 +308,7 @@ try "exec single shell utility and exit when a file is added to a specific path"
 
 try "do nothing when a file not monitored is changed in directory watch mode"
 	setup
-	ls $tmp/file2 | ./entr -dp echo "changed" >$tmp/exec.out 2>$tmp/exec.err &
+	ls $tmp/file2 | entr -dp echo "changed" >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
 	echo "123" > $tmp/file1
 	kill -INT $bgpid
@@ -313,7 +318,7 @@ try "do nothing when a file not monitored is changed in directory watch mode"
 
 try "exec utility when a file is written by Vim in directory watch mode"
 	setup
-	ls $tmp/file* | ./entr -dp echo "changed" >$tmp/exec.out 2>$tmp/exec.err &
+	ls $tmp/file* | entr -dp echo "changed" >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
 	vim -e -s -u NONE -N \
 	    -c ":r!date" \
@@ -326,7 +331,7 @@ try "exec utility when a file is written by Vim in directory watch mode"
 try "exec utility when a file is opened for write and then closed"
 	setup
 	echo "---" > $tmp/file1
-	ls $tmp/file* | ./entr -p echo "changed" > $tmp/exec.out &
+	ls $tmp/file* | entr -p echo "changed" > $tmp/exec.out &
 	bgpid=$! ; zz
 	: > $tmp/file1 ; zz
 	kill -INT $bgpid
@@ -353,7 +358,7 @@ try "exec single utility when an entire stash of files is reverted"
 			echo "" >> $f
 		done
 		cd - > /dev/null ; zz
-		ls $tmp/*.h | ./entr -p echo "changed" > $tmp/exec.out &
+		ls $tmp/*.h | entr -p echo "changed" > $tmp/exec.out &
 		bgpid=$! ; zz
 		cd $tmp
 		git checkout *.h -q
@@ -365,7 +370,7 @@ try "exec single utility when an entire stash of files is reverted"
 
 try "exec utility when a file is written by Vim"
 	setup
-	ls $tmp/file* | ./entr -p echo "changed" > $tmp/exec.out &
+	ls $tmp/file* | entr -p echo "changed" > $tmp/exec.out &
 	bgpid=$! ; zz
 	vim -e -s -u NONE -N \
 	    -c ":r!date" \
@@ -376,7 +381,7 @@ try "exec utility when a file is written by Vim"
 
 try "exec shell utility when a file is written by Vim with 'backup'"
 	setup
-	ls $tmp/file* | ./entr -p echo "changed" > $tmp/exec.out &
+	ls $tmp/file* | entr -p echo "changed" > $tmp/exec.out &
 	bgpid=$! ; zz
 	vim -e -s -u NONE -N \
 	    -c ":set backup" \
@@ -388,7 +393,7 @@ try "exec shell utility when a file is written by Vim with 'backup'"
 
 try "exec shell utility when a file is written by Vim with 'nowritebackup'"
 	setup
-	ls $tmp/file* | ./entr -p echo "changed" > $tmp/exec.out &
+	ls $tmp/file* | entr -p echo "changed" > $tmp/exec.out &
 	bgpid=$! ; zz
 	vim -e -s -u NONE -N \
 	    -c ":set nowritebackup" \
@@ -401,7 +406,7 @@ try "exec shell utility when a file is written by Vim with 'nowritebackup'"
 try "restart a server when a file is modified"
 	setup
 	echo "started." > $tmp/file1
-	ls $tmp/file2 | ./entr -r tail -f $tmp/file1 2> /dev/null > $tmp/exec.out &
+	ls $tmp/file2 | entr -r tail -f $tmp/file1 2> /dev/null > $tmp/exec.out &
 	bgpid=$! ; zz
 	assert "$(cat $tmp/exec.out)" "started."
 	echo 456 >> $tmp/file2 ; zz
@@ -417,7 +422,7 @@ try "ensure that all shell subprocesses are terminated in restart mode"
 	echo "running"; sleep 10
 	SCRIPT
 	chmod +x $tmp/go.sh
-	ls $tmp/file2 | ./entr -r sh -c "$tmp/go.sh" 2> /dev/null > $tmp/exec.out &
+	ls $tmp/file2 | entr -r sh -c "$tmp/go.sh" 2> /dev/null > $tmp/exec.out &
 	bgpid=$! ; zz
 	kill -INT $bgpid ; zz
 	assert "$(cat $tmp/exec.out)" "$(printf 'running\ncaught signal')"
@@ -430,7 +435,7 @@ try "ensure that all shell subprocesses are terminated when terminal is closed"
 	echo "running"; sleep 10
 	SCRIPT
 	chmod +x $tmp/go.sh
-	ls $tmp/file2 | ./entr -r sh -c "$tmp/go.sh" 2> /dev/null > $tmp/exec.out &
+	ls $tmp/file2 | entr -r sh -c "$tmp/go.sh" 2> /dev/null > $tmp/exec.out &
 	bgpid=$! ; zz
 	kill -HUP $bgpid ; zz
 	assert "$(cat $tmp/exec.out)" "$(printf 'running\ncaught signal')"
@@ -438,7 +443,7 @@ try "ensure that all shell subprocesses are terminated when terminal is closed"
 try "exit with no action when restart and dirwatch flags are combined"
 	setup
 	echo "started." > $tmp/file1
-	ls $tmp/file* | ./entr -rd tail -f $tmp/file1 2> /dev/null > $tmp/exec.out &
+	ls $tmp/file* | entr -rd tail -f $tmp/file1 2> /dev/null > $tmp/exec.out &
 	bgpid=$! ; zz
 	assert "$(cat $tmp/exec.out)" "started."
 	touch $tmp/newfile
@@ -449,7 +454,7 @@ try "exit with no action when restart and dirwatch flags are combined"
 try "exec single shell utility when two files change simultaneously"
 	setup
 	ln $tmp/file1 $tmp/file3
-	ls $tmp/file* | ./entr -p sh -c 'echo ping' > $tmp/exec.out &
+	ls $tmp/file* | entr -p sh -c 'echo ping' > $tmp/exec.out &
 	bgpid=$! ; zz
 	echo 456 >> $tmp/file1 ; zz
 	kill -INT $bgpid
@@ -458,7 +463,7 @@ try "exec single shell utility when two files change simultaneously"
 
 try "exec single shell utility on startup and when a file is changed"
 	setup
-	ls $tmp/file* | ./entr sh -c 'printf ping' > $tmp/exec.out &
+	ls $tmp/file* | entr sh -c 'printf ping' > $tmp/exec.out &
 	bgpid=$! ; zz
 	echo 456 >> $tmp/file1 ; zz
 	kill -INT $bgpid
@@ -467,7 +472,7 @@ try "exec single shell utility on startup and when a file is changed"
 
 try "exec a command if a file is made executable"
 	setup
-	ls $tmp/file* | ./entr -p echo /_ > $tmp/exec.out &
+	ls $tmp/file* | entr -p echo /_ > $tmp/exec.out &
 	bgpid=$! ; zz
 	chmod +x $tmp/file2 ; zz
 	kill -INT $bgpid
@@ -477,7 +482,7 @@ try "exec a command if a file is made executable"
 try "ensure watches operate on a running executable"
 	setup
 	cp /bin/sleep $tmp/
-	ls $tmp/sleep | ./entr -rs "echo 'vroom'; $tmp/sleep 30" \
+	ls $tmp/sleep | entr -rs "echo 'vroom'; $tmp/sleep 30" \
 	    > $tmp/exec.out 2> /dev/null &
 	bgpid=$! ; zz
 	cp -f /bin/sleep $tmp/ ; zz
@@ -488,7 +493,7 @@ try "ensure watches operate on a running executable"
 
 try "exec a command using the first file to change"
 	setup
-	ls $tmp/file* | ./entr -p cat /_ > $tmp/exec.out &
+	ls $tmp/file* | entr -p cat /_ > $tmp/exec.out &
 	bgpid=$! ; zz
 	echo 456 > $tmp/file1 ; zz
 	kill -INT $bgpid
@@ -497,7 +502,7 @@ try "exec a command using the first file to change"
 
 try "exec single shell utility using utility substitution"
 	setup
-	ls $tmp/file1 $tmp/file2 | ./entr -p file /_ > $tmp/exec.out &
+	ls $tmp/file1 $tmp/file2 | entr -p file /_ > $tmp/exec.out &
 	bgpid=$! ; zz
 	echo 456 >> $tmp/file2; zz
 	kill -INT $bgpid
@@ -507,7 +512,7 @@ try "exec single shell utility using utility substitution"
 try "watch and exec a program that is overwritten"
 	setup
 	touch $tmp/script; chmod 755 $tmp/script
-	echo $tmp/script | ./entr -p $tmp/script $tmp/file1 > $tmp/exec.out &
+	echo $tmp/script | entr -p $tmp/script $tmp/file1 > $tmp/exec.out &
 	bgpid=$! ; zz
 	cat > $tmp/script <<-EOF
 	#!/bin/sh
@@ -519,20 +524,20 @@ try "watch and exec a program that is overwritten"
 
 try "exec an interactive utility when a file changes"
 	setup
-	ls $tmp/file* | ./entr -p sh -c 'tty | cut -c1-8' 2> /dev/null > $tmp/exec.out &
-	bgpid=$! ; zz
-	echo 456 >> $tmp/file2 ; zz
-	kill -INT $bgpid
-	wait $bgpid; assert "$?" "0"
 	if ! test -t 0 ; then
 		skip "A TTY is not available"
 	else
+		ls $tmp/file* | entr_tty -p sh -c 'tty | cut -c1-9' 2> /dev/null > $tmp/exec.out &
+		bgpid=$! ; zz
+		echo 456 >> $tmp/file2 ; zz
+		kill -INT $bgpid
+		wait $bgpid; assert "$?" "0"
 		assert "$(cat $tmp/exec.out | tr '/pts' '/tty')" "/dev/tty"
 	fi
 
 try "exec a command using shell option"
 	setup
-	ls $tmp/file* | ./entr -ps 'file $0; exit 2' >$tmp/exec.out 2>$tmp/exec.err &
+	ls $tmp/file* | entr -ps 'file $0; exit 2' >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
 	echo 456 >> $tmp/file2 ; zz
 	kill -INT $bgpid
@@ -542,7 +547,7 @@ try "exec a command using shell option"
 
 try "exec a command as a background task"
 	setup
-	(ls $tmp/file* | ./entr -ps 'echo terminating; kill $$' >$tmp/exec.out 2>$tmp/exec.err &)
+	(ls $tmp/file* | entr -ps 'echo terminating; kill $$' >$tmp/exec.out 2>$tmp/exec.err &)
 	zz
 	echo 456 >> $tmp/file2 ; zz
 	assert "$(cat $tmp/exec.err)" ""
@@ -552,7 +557,7 @@ try "exec a command as a background task"
 
 try "respond to events that occur while the utility is running"
 	setup
-	ls $tmp/file* | ./entr -a sh -c 'echo "vroom"; sleep 0.5' > $tmp/exec.out &
+	ls $tmp/file* | entr -a sh -c 'echo "vroom"; sleep 0.5' > $tmp/exec.out &
 	bgpid=$! ; zz
 	echo "123" > $tmp/file1
 	sleep 1
@@ -568,7 +573,7 @@ try "ensure that all subprocesses are terminated in restart mode when a file is 
 	echo "running"; sleep 10
 	SCRIPT
 	chmod +x $tmp/go.sh
-	ls $tmp/file2 | ./entr -r sh -c "$tmp/go.sh" 2> /dev/null > $tmp/exec.out &
+	ls $tmp/file2 | entr -r sh -c "$tmp/go.sh" 2> /dev/null > $tmp/exec.out &
 	bgpid=$! ; zz
 	rm $tmp/file2; sleep 2
 	pgrep -P $bgpid > /dev/null || assert "$?" "1"
