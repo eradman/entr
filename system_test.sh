@@ -179,7 +179,7 @@ unset TMUX
 
 try "spacebar triggers utility"
 	setup
-	tmux new-session -s $tsession -d
+	env SHELL=/bin/sh tmux new-session -s $tsession -d
 	echo "waiting" > $tmp/file1
 	echo "finished" > $tmp/file2
 	tmux send-keys -t $tsession:0 \
