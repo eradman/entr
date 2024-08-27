@@ -26,7 +26,7 @@ function assert {
 
 	echo "*************************************"
 	echo "System test directory contents:"
-	: | head -n 50 $(find $tmp -type f)
+	: | head -n 50 $(find $tmp -type f  ! -perm -111)
 	echo "*************************************"
 	exit 1
 }
@@ -367,6 +367,7 @@ try "exec single utility when an entire stash of files is reverted"
 		cd - > /dev/null ; zz
 		kill -INT $bgpid
 		wait $bgpid; assert "$?" "0"
+		rm -rf $tmp/.git
 		assert "$(cat $tmp/exec.out)" "changed"
 	fi
 
@@ -582,4 +583,5 @@ try "ensure that all subprocesses are terminated in restart mode when a file is 
 	assert "$(cat $tmp/exec.out)" "$(printf 'running\ncaught signal')"
 
 this="exit 0"
-echo; echo "$tests tests PASSED"
+echo
+echo "$tests tests PASSED"
