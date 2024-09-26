@@ -18,6 +18,7 @@
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+
 #include <sys/event.h>
 
 #include <dirent.h>
@@ -36,6 +37,7 @@
 #include <unistd.h>
 
 #include "missing/compat.h"
+
 #include "status.h"
 #include "data.h"
 

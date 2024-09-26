@@ -1,14 +1,17 @@
 ---
-BasedOnStyle: LLVM
+UseTab: ForIndentation
 Language: Cpp
 TabWidth: 4
-IndentWidth: 4
 ColumnLimit: 100
+IndentWidth: 4
+BasedOnStyle: LLVM
 AlignOperands: false
-Cpp11BracedListStyle: false
-UseTab: ForIndentation
 IncludeBlocks: Preserve
 SpaceBeforeParens: ControlStatements
+Cpp11BracedListStyle: false
+SpaceAfterCStyleCast: true
+AlignAfterOpenBracket: DontAlign
 BreakBeforeBinaryOperators: NonAssignment
+SpacesBeforeTrailingComments: 2
 AlwaysBreakAfterDefinitionReturnType: TopLevel
 ...
