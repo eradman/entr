@@ -92,7 +92,6 @@ end_log_filter() {
 	kill(status_pid, SIGKILL);
 }
 
-
 /*
  * xdirname - mimic dirname(3) on OpenBSD which does not modify input
  * create_dir - ensure a directory exists
@@ -122,7 +121,7 @@ install_file(const char *dst, const char *content) {
 
 	if (stat(dst, &dst_sb) == -1) {
 		printf("entr: created '%s'\n", dst);
-		fd = open(dst, O_WRONLY|O_CREAT, 0640);
+		fd = open(dst, O_WRONLY | O_CREAT, 0640);
 		if (fd == -1)
 			err(1, "open");
 		if (write(fd, content, strlen(content)) == -1)

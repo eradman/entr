@@ -38,17 +38,17 @@
 
 #include "missing/compat.h"
 
-#include "status.h"
 #include "data.h"
+#include "status.h"
 
 /* events to watch for */
 
-#define NOTE_ALL NOTE_DELETE|NOTE_WRITE|NOTE_RENAME|NOTE_TRUNCATE|NOTE_ATTRIB
+#define NOTE_ALL NOTE_DELETE | NOTE_WRITE | NOTE_RENAME | NOTE_TRUNCATE | NOTE_ATTRIB
 
 /* shortcuts */
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
-#define MEMBER_SIZE(S, M) sizeof(((S *)0)->M)
+#define MEMBER_SIZE(S, M) sizeof(((S *) 0)->M)
 
 /* shared state */
 
@@ -111,7 +111,8 @@ main(int argc, char *argv[]) {
 	int open_max;
 
 	/* call usage() if no command is supplied */
-	if (argc < 2) usage();
+	if (argc < 2)
+		usage();
 	argv_index = set_options(argv);
 
 	sigemptyset(&act.sa_mask);
@@ -134,7 +135,7 @@ main(int argc, char *argv[]) {
 
 #if defined(_LINUX_PORT)
 	/* attempt to read inotify limits */
-	open_max = (unsigned)fs_sysctl(INOTIFY_MAX_USER_WATCHES);
+	open_max = (unsigned) fs_sysctl(INOTIFY_MAX_USER_WATCHES);
 	if (open_max == 0)
 		open_max = 65536;
 #elif defined(_MACOS_PORT)
@@ -147,8 +148,8 @@ main(int argc, char *argv[]) {
 #else /* BSD */
 	if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
 		err(1, "getrlimit");
-	open_max = (unsigned)rl.rlim_max;
-	rl.rlim_cur = (rlim_t)open_max;
+	open_max = (unsigned) rl.rlim_max;
+	rl.rlim_cur = (rlim_t) open_max;
 	if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
 		err(1, "setrlimit cannot set rlim_cur to %u", open_max);
 #endif
@@ -172,7 +173,7 @@ main(int argc, char *argv[]) {
 	if (shell_opt)
 		argv0 = shell;
 	else
-		argv0 = (argv+argv_index)[0];
+		argv0 = (argv + argv_index)[0];
 	argv0_base = basename(argv0);
 	if (status_filter_opt)
 		start_log_filter(status_filter_opt);
@@ -182,7 +183,7 @@ main(int argc, char *argv[]) {
 		err(1, "pledge");
 
 	/* sequential scan may depend on a 0 at the end */
-	files = calloc(open_max+1, sizeof(WatchFile *));
+	files = calloc(open_max + 1, sizeof(WatchFile *));
 
 	if ((kq = kqueue()) == -1)
 		err(1, "cannot create kqueue");
@@ -196,10 +197,12 @@ main(int argc, char *argv[]) {
 	if (n_files == 0)
 		errx(1, "No regular files to watch");
 	if (n_files == -1)
-		errx(1, "Too many files listed; the hard limit for your login"
+		errx(1,
+		    "Too many files listed; the hard limit for your login"
 		    " class is %u. Please consult"
-		    " http://eradman.com/entrproject/limits.html", open_max);
-	for (i=0; i<n_files; i++)
+		    " http://eradman.com/entrproject/limits.html",
+		    open_max);
+	for (i = 0; i < n_files; i++)
 		watch_file(kq, files[i]);
 
 	if (!noninteractive_opt) {
@@ -221,7 +224,7 @@ main(int argc, char *argv[]) {
 			warnx("failed to register stdin");
 	}
 
-	watch_loop(kq, argv+argv_index);
+	watch_loop(kq, argv + argv_index);
 	return 1;
 }
 
@@ -314,11 +317,9 @@ print_child_status(int status) {
 
 	if (status_filter_opt) {
 		if (WIFSIGNALED(status))
-			len = snprintf(buf, sizeof(buf), "signal|%d|%s\n",
-				WTERMSIG(status), argv0_base);
+			len = snprintf(buf, sizeof(buf), "signal|%d|%s\n", WTERMSIG(status), argv0_base);
 		else
-			len = snprintf(buf, sizeof(buf), "exit|%d|%s\n",
-				WEXITSTATUS(status), argv0_base);
+			len = snprintf(buf, sizeof(buf), "exit|%d|%s\n", WEXITSTATUS(status), argv0_base);
 		write_log_filter(buf, len);
 	}
 }
@@ -360,12 +361,12 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 				path = &buf[0];
 			else if ((path = dirname(buf)) == 0)
 				err(1, "dirname '%s' failed", buf);
-			for (matches=0, i=0; i<n_files; i++)
-				if (strcmp(files[i]->fn, path) == 0) matches++;
+			for (matches = 0, i = 0; i < n_files; i++)
+				if (strcmp(files[i]->fn, path) == 0)
+					matches++;
 			if (matches == 0) {
 				files[n_files] = malloc(sizeof(WatchFile));
-				strlcpy(files[n_files]->fn, path,
-				    MEMBER_SIZE(WatchFile, fn));
+				strlcpy(files[n_files]->fn, path, MEMBER_SIZE(WatchFile, fn));
 				files[n_files]->is_dir = 1;
 				files[n_files]->file_count = list_dir(path);
 				files[n_files]->mode = sb.st_mode;
@@ -373,7 +374,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 				n_files++;
 			}
 		}
-		if (n_files+1 > max_files)
+		if (n_files + 1 > max_files)
 			return -1;
 	}
 	return n_files;
@@ -404,7 +405,8 @@ set_options(char *argv[]) {
 	int argc;
 
 	/* read arguments until we reach a command */
-	for (argc=1; argv[argc] != 0 && argv[argc][0] == '-'; argc++);
+	for (argc = 1; argv[argc] != 0 && argv[argc][0] == '-'; argc++)
+		;
 	while ((ch = getopt(argc, argv, "acdnprsxz")) != -1) {
 		switch (ch) {
 		case 'a':
@@ -444,7 +446,7 @@ set_options(char *argv[]) {
 	if (status_filter_opt && restart_opt)
 		errx(1, "-r and -x may not be combined");
 
-	if ((shell_opt == 1) && (argv[optind+1] != 0))
+	if ((shell_opt == 1) && (argv[optind + 1] != 0))
 		errx(1, "-s requires commands to be formatted as a single argument");
 	return optind;
 }
@@ -470,27 +472,26 @@ run_utility(char *argv[]) {
 		/* run argv[1] with a shell using the leading edge as $0 */
 		argc = 4;
 		arg_buf = malloc(ARG_MAX);
-		new_argv = calloc(argc+1, sizeof(char *));
+		new_argv = calloc(argc + 1, sizeof(char *));
 		realpath(leading_edge->fn, arg_buf);
 		new_argv[0] = shell;
 		new_argv[1] = "-c";
 		new_argv[2] = argv[0];
 		new_argv[3] = arg_buf;
-	}
-	else {
+	} else {
 		/* clone argv on each invocation to make the implementation of more
 		 * complex substitution rules possible and easy
 		 */
-		for (argc=0; argv[argc]; argc++);
+		for (argc = 0; argv[argc]; argc++)
+			;
 		arg_buf = malloc(ARG_MAX);
-		new_argv = calloc(argc+1, sizeof(char *));
-		for (m=0, i=0, p=arg_buf; i<argc; i++) {
+		new_argv = calloc(argc + 1, sizeof(char *));
+		for (m = 0, i = 0, p = arg_buf; i < argc; i++) {
 			new_argv[i] = p;
 			if ((m < 1) && (strcmp(argv[i], "/_")) == 0) {
 				p += strlen(realpath(leading_edge->fn, p));
 				m++;
-			}
-			else
+			} else
 				p += strlcpy(p, argv[i], ARG_MAX - (p - arg_buf));
 			p++;
 		}
@@ -518,11 +519,12 @@ run_utility(char *argv[]) {
 			open(_PATH_DEVNULL, O_RDONLY);
 		}
 		/* wait up to 1 seconds for each file to become available */
-		for (i=0; i < 10; i++) {
+		for (i = 0; i < 10; i++) {
 			ret = execvp(new_argv[0], new_argv);
 			if (errno == ETXTBSY)
 				nanosleep(&delay, NULL);
-			else break;
+			else
+				break;
 		}
 		if (ret != 0)
 			err(1, "exec %s", new_argv[0]);
@@ -551,11 +553,11 @@ watch_file(int kq, WatchFile *file) {
 
 	/* wait up to 1 second for file to become available */
 	for (;;) {
-		#ifdef O_EVTONLY
-		file->fd = open(file->fn, O_RDONLY|O_CLOEXEC|O_EVTONLY);
-		#else
-		file->fd = open(file->fn, O_RDONLY|O_CLOEXEC);
-		#endif
+#ifdef O_EVTONLY
+		file->fd = open(file->fn, O_RDONLY | O_CLOEXEC | O_EVTONLY);
+#else
+		file->fd = open(file->fn, O_RDONLY | O_CLOEXEC);
+#endif
 		if (file->fd == -1) {
 			if (i < 10)
 				nanosleep(&delay, NULL);
@@ -564,17 +566,16 @@ watch_file(int kq, WatchFile *file) {
 				terminate_utility();
 				exit(1);
 			}
-		}
-		else
+		} else
 			break;
 		i++;
 	}
 
-	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_ALL, 0,
-	    file);
+	EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_ALL, 0, file);
 	if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1) {
 		if (errno == ENOSPC)
-			errx(1, "Unable to allocate memory for kernel queue."
+			errx(1,
+			    "Unable to allocate memory for kernel queue."
 			    " Please consult"
 			    " http://eradman.com/entrproject/limits.html");
 		else
@@ -591,7 +592,7 @@ compare_dir_contents(WatchFile *file) {
 	struct timespec delay = { 0, 100 * 1000000 };
 
 	/* wait up to 0.5 seconds for file to become available */
-	for (i=0; i < 5; i++) {
+	for (i = 0; i < 5; i++) {
 		if (list_dir(file->fn) == file->file_count)
 			return 0;
 		nanosleep(&delay, NULL);
@@ -636,7 +637,7 @@ watch_loop(int kq, char *argv[]) {
 	if (!noninteractive_opt) {
 		/* disabling/restore line buffering and local echo */
 		character_tty = canonical_tty;
-		character_tty.c_lflag &= ~(ICANON|ECHO);
+		character_tty.c_lflag &= ~(ICANON | ECHO);
 	}
 
 main:
@@ -647,8 +648,7 @@ main:
 
 	if ((reopen_only == 1) || (collate_only == 1)) {
 		nev = kevent(kq, NULL, 0, evList, 32, &evTimeout);
-	}
-	else {
+	} else {
 		nev = kevent(kq, NULL, 0, evList, 32, NULL);
 		dir_modified = 0;
 	}
@@ -660,15 +660,13 @@ main:
 	if ((nev == -2) && (collate_only == 0))
 		return;
 
-	for (i=0; i<nev; i++) {
+	for (i = 0; i < nev; i++) {
 		if (!noninteractive_opt && evList[i].filter == EVFILT_READ) {
 			if (read(STDIN_FILENO, &c, 1) < 1) {
-				EV_SET(&evSet, STDIN_FILENO, EVFILT_READ,
-				    EV_DELETE, NOTE_LOWAT, 0, NULL);
+				EV_SET(&evSet, STDIN_FILENO, EVFILT_READ, EV_DELETE, NOTE_LOWAT, 0, NULL);
 				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 					err(1, "failed to remove READ event");
-			}
-			else {
+			} else {
 				if (c == ' ')
 					do_exec = 1;
 				if (c == 'q')
@@ -678,7 +676,7 @@ main:
 		if (evList[i].filter != EVFILT_VNODE)
 			continue;
 
-		file = (WatchFile *)evList[i].udata;
+		file = (WatchFile *) evList[i].udata;
 		if (file->is_dir == 1)
 			dir_modified += compare_dir_contents(file);
 	}
@@ -686,14 +684,12 @@ main:
 		tcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
 
 	collate_only = 0;
-	for (i=0; i<nev; i++) {
+	for (i = 0; i < nev; i++) {
 		if (evList[i].filter != EVFILT_VNODE)
 			continue;
-		file = (WatchFile *)evList[i].udata;
-		if (evList[i].fflags & NOTE_DELETE ||
-		    evList[i].fflags & NOTE_RENAME) {
-			EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_DELETE,
-			    NOTE_ALL, 0, file);
+		file = (WatchFile *) evList[i].udata;
+		if (evList[i].fflags & NOTE_DELETE || evList[i].fflags & NOTE_RENAME) {
+			EV_SET(&evSet, file->fd, EVFILT_VNODE, EV_DELETE, NOTE_ALL, 0, file);
 			if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 				err(1, "failed to remove VNODE event");
 #if !defined(_LINUX_PORT)
@@ -710,28 +706,26 @@ main:
 		goto main;
 	}
 
-	for (i=0; i<nev && reopen_only == 0; i++) {
+	for (i = 0; i < nev && reopen_only == 0; i++) {
 
 		if (evList[i].filter != EVFILT_VNODE)
 			continue;
-		file = (WatchFile *)evList[i].udata;
+		file = (WatchFile *) evList[i].udata;
 		if ((file->is_dir == 1) && (dir_modified == 0))
 			continue;
 
-		if (evList[i].fflags & NOTE_DELETE ||
-		    evList[i].fflags & NOTE_WRITE  ||
-		    evList[i].fflags & NOTE_RENAME ||
-		    evList[i].fflags & NOTE_TRUNCATE) {
+		if (evList[i].fflags & NOTE_DELETE || evList[i].fflags & NOTE_WRITE
+		    || evList[i].fflags & NOTE_RENAME || evList[i].fflags & NOTE_TRUNCATE) {
 			if ((dir_modified > 0) && (restart_opt == 1))
 				continue;
 			do_exec = 1;
 		}
 
-		if (evList[i].fflags & NOTE_ATTRIB &&
-		    S_ISREG(file->mode) != 0 && stat(file->fn, &sb) == 0) {
+		if (evList[i].fflags & NOTE_ATTRIB && S_ISREG(file->mode) != 0
+		    && stat(file->fn, &sb) == 0) {
 			if (file->mode != sb.st_mode) {
-			    do_exec = 1;
-			    file->mode = sb.st_mode;
+				do_exec = 1;
+				file->mode = sb.st_mode;
 			}
 			if (file->ino != sb.st_ino) {
 #if defined(_LINUX_PORT)
@@ -739,24 +733,17 @@ main:
 #endif
 				file->ino = sb.st_ino;
 			}
-		}
-		else if (evList[i].fflags & NOTE_ATTRIB)
+		} else if (evList[i].fflags & NOTE_ATTRIB)
 			continue;
 
-		if ((leading_edge_set == 0) &&
-			    (file->is_dir == 0) &&
-			    (do_exec == 1)) {
+		if ((leading_edge_set == 0) && (file->is_dir == 0) && (do_exec == 1)) {
 			leading_edge = file;
 			leading_edge_set = 1;
 		}
 
 		if (getenv("EV_TRACE")) {
-			fprintf(stderr, "%d/%d: fflags: 0x%x %s %o %s\n",
-			    i, nev,
-			    evList[i].fflags,
-			    file->is_dir ? "d" : "r",
-			    file->mode,
-			    file->fn);
+			fprintf(stderr, "%d/%d: fflags: 0x%x %s %o %s\n", i, nev, evList[i].fflags,
+			    file->is_dir ? "d" : "r", file->mode, file->fn);
 		}
 	}
 
