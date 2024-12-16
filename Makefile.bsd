@@ -1,3 +1,4 @@
+CLANG_FORMAT ?= clang-format
 PREFIX ?= /usr/local
 MANPREFIX ?= ${PREFIX}/man
 RELEASE = 5.6
@@ -36,4 +37,7 @@ uninstall:
 	rm ${DESTDIR}${PREFIX}/bin/entr
 	rm ${DESTDIR}${MANPREFIX}/man1/entr.1
 
-.PHONY: all test check clean distclean install uninstall
+format:
+	${CLANG_FORMAT} -i *.c *.h
+
+.PHONY: all test check clean format distclean install uninstall
