@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -u
 
 trap '' ERR 2> /dev/null || exec bash $0 "$@"
 
@@ -27,6 +27,7 @@ function setup {
 tmp=$(cd $(mktemp -d ${TMPDIR:-/tmp}/entr-system-test-XXXXXX); pwd -P)
 tsession=$(basename $tmp)
 
+let tests=0
 clear_tty='test -t 0 && stty echo icanon'
 clear_tmux='tmux kill-session -t $tsession 2>/dev/null || true'
 clear_tmp='rm -rf $tmp'
@@ -90,9 +91,8 @@ try "install default status script"
 	ls $tmp/* | entr -zx true >$tmp/exec.out 2>$tmp/exec.err &
 	bgpid=$! ; zz
 	wait $bgpid
-	sed -i -e "s,'.*.awk',$1 /.../status.awk," $tmp/exec.out
 	assert "$(cat $tmp/exec.err)" ""
-	assert "$(cat $tmp/exec.out)" "$(printf 'entr: created  /.../status.awk\ntrue returned exit code 0\n')"
+	assert "$(cat $tmp/exec.out)" "$(printf "entr: created '$tmp/status.awk'\ntrue returned exit code 0\n")"
 
 try "status script not compatible with restart option"
 	setup
