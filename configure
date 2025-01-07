@@ -42,6 +42,9 @@ case "${TARGET_OS:-`uname`}" in
 	Darwin)
 		copy_mk macos
 		;;
+	FreeBSD)
+		copy_mk freebsd
+		;;
 	Linux)
 		test_libc_features && copy_mk linux || copy_mk linux-compat
 		;;
