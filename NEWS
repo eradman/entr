@@ -1,5 +1,12 @@
 = Release History
 
+== 5.7: February 6, 2025
+
+ - Update MANPREFIX for FreeBSD
+ - Format source using clang-format
+ - Reorganize system tests to run without a TTY
+ - Remove unused X option character
+
 == 5.6: July 1, 2024
 
  - Process exit status messages using background awk scripts
