@@ -161,12 +161,9 @@ main(int argc, char *argv[]) {
 	setenv("PAGER", "/bin/cat", 0);
 
 	/* ensure a shell is available to use */
-	setenv("SHELL", "/bin/sh", 0);
-
-	shell = getenv("SHELL");
+	if ((shell = getenv("SHELL")) == NULL)
+		shell = "/bin/sh";
 	shell_base = strdup(shell);
-	if (shell_base == NULL)
-		err(1, "cannot duplicate string");
 	shell_base = basename(shell_base);
 
 	/* initialize status filter */
