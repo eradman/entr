@@ -286,7 +286,7 @@ try "exec single shell utility and exit when a hidden subdirectory is added"
 
 try "exec single shell utility and exit when a file is added to a specific path"
 	setup
-	ls -d $tmp | entr -dp sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
+	ls -d $tmp | entr -p sh -c 'echo ping' >$tmp/exec.out 2>$tmp/exec.err \
 	    || true &
 	bgpid=$! ; zz
 	touch $tmp/newfile

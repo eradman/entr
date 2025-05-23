@@ -52,11 +52,9 @@ Clear the screen before invoking the
 specified on the command line.
 Specify twice to erase the scrollback buffer.
 .It Fl d
-Track the directories of regular files provided as input and exit if a new file
-is added.
-This option also enables directories to be specified explicitly.
-If specified twice, all new entries to a directory are recognized,
-otherwise files with names beginning with
+Track the parent directory of regular files provided as input.
+If specified twice, all new entries to a directory are recognized, otherwise
+files with names beginning with
 .Ql \&.
 are ignored.
 .It Fl n
@@ -178,7 +176,7 @@ Normal termination after receiving
 .It 1
 No regular files were provided as input or an error occurred
 .It 2
-A file was added to a directory and the directory watch option was specified
+Files were added or removed from a directory
 .El
 .Sh EXAMPLES
 Rebuild a project if source files change, limiting output to the first 20 lines:
@@ -195,7 +193,7 @@ Clear the screen and run a query after the SQL script is updated:
 .Pp
 Rebuild project if a source file is modified or added to the src/ directory:
 .Pp
-.Dl $ while sleep 0.1; do ls src/*.rb | entr -d make; done
+.Dl $ while sleep 0.1; do ls -d src src/*.rb | entr make; done
 .Pp
 Auto-reload a web server, or terminate if the server exits
 .Pp

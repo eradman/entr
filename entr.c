@@ -328,7 +328,7 @@ print_child_status(int status) {
 int
 process_input(FILE *file, WatchFile *files[], int max_files) {
 	char buf[PATH_MAX];
-	char *p, *path;
+	char *p, *path, *parent_path;
 	int n_files = 0;
 	struct stat sb;
 	int i, matches;
@@ -338,38 +338,45 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 			*p = '\0';
 		if (buf[0] == '\0')
 			continue;
+		path = &buf[0];
 
-		if (stat(buf, &sb) == -1) {
-			warnx("unable to stat '%s'", buf);
+		if (stat(path, &sb) == -1) {
+			warnx("unable to stat '%s'", path);
 			continue;
 		}
+
 		if (S_ISREG(sb.st_mode) != 0) {
 			files[n_files] = malloc(sizeof(WatchFile));
-			strlcpy(files[n_files]->fn, buf, MEMBER_SIZE(WatchFile, fn));
+			strlcpy(files[n_files]->fn, path, MEMBER_SIZE(WatchFile, fn));
 			files[n_files]->is_dir = 0;
 			files[n_files]->file_count = 0;
 			files[n_files]->mode = sb.st_mode;
 			files[n_files]->ino = sb.st_ino;
 			n_files++;
-		}
-		/* also watch the directory if it's not already in the list */
-		if (dirwatch_opt > 0) {
-			if (S_ISDIR(sb.st_mode) != 0)
-				path = &buf[0];
-			else if ((path = dirname(buf)) == 0)
-				err(1, "dirname '%s' failed", buf);
-			for (matches = 0, i = 0; i < n_files; i++)
-				if (strcmp(files[i]->fn, path) == 0)
-					matches++;
-			if (matches == 0) {
-				files[n_files] = malloc(sizeof(WatchFile));
-				strlcpy(files[n_files]->fn, path, MEMBER_SIZE(WatchFile, fn));
-				files[n_files]->is_dir = 1;
-				files[n_files]->file_count = list_dir(path);
-				files[n_files]->mode = sb.st_mode;
-				files[n_files]->ino = sb.st_ino;
-				n_files++;
+
+			/* also watch the directory if it's not already in the list */
+			if (dirwatch_opt > 0) {
+				if ((parent_path = dirname(path)) == 0)
+					err(1, "dirname '%s' failed", path);
+				for (matches = 0, i = 0; i < n_files; i++) {
+					if ((files[i]->is_dir == 1) && (strcmp(files[i]->fn, parent_path) == 0))
+						matches++;
+				}
+				if (matches == 0) {
+					if (stat(parent_path, &sb) == -1)
+						warnx("unable to stat '%s'", parent_path);
+					path = parent_path;
+				}
 			}
+		}
+		if (S_ISDIR(sb.st_mode) != 0) {
+			files[n_files] = malloc(sizeof(WatchFile));
+			strlcpy(files[n_files]->fn, path, MEMBER_SIZE(WatchFile, fn));
+			files[n_files]->is_dir = 1;
+			files[n_files]->file_count = list_dir(path);
+			files[n_files]->mode = sb.st_mode;
+			files[n_files]->ino = sb.st_ino;
+			n_files++;
 		}
 		if (n_files + 1 > max_files)
 			return -1;
