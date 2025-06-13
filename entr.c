@@ -660,10 +660,6 @@ main:
 	if ((nev == -1) && (errno != EINTR))
 		warn("kevent failed");
 
-	/* escape for test runner */
-	if ((nev == -2) && (collate_only == 0))
-		return;
-
 	for (i = 0; i < nev; i++) {
 		if (!noninteractive_opt && evList[i].filter == EVFILT_READ) {
 			if (read(STDIN_FILENO, &c, 1) < 1) {
