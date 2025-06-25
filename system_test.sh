@@ -186,6 +186,18 @@ try "spacebar triggers utility"
 	tmux send-keys -t $tsession:0 "q" ; zz
 	tmux kill-session -t $tsession
 
+# signal tests
+
+try "exec utility when the terminal is resized"
+	setup
+	ls $tmp/file* | entr -pws 'printf ping' > $tmp/exec.out &
+	bgpid=$! ; zz
+	kill -WINCH $bgpid ; zz
+	echo "123" > $tmp/file1 ; zz
+	kill -INT $bgpid
+	wait $bgpid; assert "$?" "0"
+	assert "$(cat $tmp/exec.out)" "pingping"
+
 # file system tests
 
 try "exec a command using one-shot option"

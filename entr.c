@@ -72,6 +72,7 @@ int oneshot_opt;
 int postpone_opt;
 int restart_opt;
 int shell_opt;
+int winch_opt;
 int status_filter_opt;
 
 int termios_set;
@@ -90,6 +91,7 @@ static void usage();
 static void terminate_utility();
 static void set_restart_signal();
 static void handle_exit(int sig);
+static void handle_winch(int sig);
 static void proc_exit(int sig);
 static void print_child_status(int status);
 static int process_input(FILE *, WatchFile *[], int);
@@ -245,7 +247,7 @@ main(int argc, char *argv[]) {
 void
 usage() {
 	fprintf(stderr, "release: %s\n", RELEASE);
-	fprintf(stderr, "usage: entr [-acdnprsxz] utility [argument [/_] ...] < filenames\n");
+	fprintf(stderr, "usage: entr [-acdnprswxz] utility [argument [/_] ...] < filenames\n");
 	exit(1);
 }
 
@@ -304,6 +306,11 @@ handle_exit(int sig) {
 		_exit(0);
 	else
 		raise(sig);
+}
+
+void
+handle_winch(int sig) {
+	return;
 }
 
 void
@@ -452,7 +459,7 @@ set_options(char *argv[]) {
 	/* read arguments until we reach a command */
 	for (argc = 1; argv[argc] != 0 && argv[argc][0] == '-'; argc++)
 		;
-	while ((ch = getopt(argc, argv, "acdnprsxz")) != -1) {
+	while ((ch = getopt(argc, argv, "acdnprswxz")) != -1) {
 		switch (ch) {
 		case 'a':
 			aggressive_opt = 1;
@@ -475,6 +482,9 @@ set_options(char *argv[]) {
 		case 's':
 			shell_opt = 1;
 			break;
+		case 'w':
+			winch_opt = 1;
+			break;
 		case 'x':
 			status_filter_opt = status_filter_opt ? 2 : 1;
 			break;
@@ -490,6 +500,9 @@ set_options(char *argv[]) {
 
 	if (status_filter_opt && restart_opt)
 		errx(1, "-r and -x may not be combined");
+
+	if (winch_opt && restart_opt)
+		errx(1, "-r and -w may not be combined");
 
 	if ((shell_opt == 1) && (argv[optind + 1] != 0))
 		errx(1, "-s requires commands to be formatted as a single argument");
@@ -668,6 +681,7 @@ watch_loop(int kq, char *argv[]) {
 	int nev;
 	WatchFile *file;
 	int i;
+	struct sigaction act;
 	struct timespec evTimeout = { 0, 1000000 };
 	int reopen_only = !aggressive_opt;
 	int collate_only = 0;
@@ -678,7 +692,9 @@ watch_loop(int kq, char *argv[]) {
 	char c;
 	struct termios character_tty;
 
+	sigemptyset(&act.sa_mask);
 	leading_edge = files[0]; /* default */
+
 	if (postpone_opt == 0)
 		run_utility(argv);
 
@@ -697,12 +713,26 @@ main:
 	if ((reopen_only == 1) || (collate_only == 1)) {
 		nev = kevent(kq, NULL, 0, evList, 32, &evTimeout);
 	} else {
+		/* interrupt kevent if terminal resized */
+		if (winch_opt == 1) {
+			act.sa_flags = SA_RESETHAND;
+			act.sa_handler = handle_winch;
+			if (sigaction(SIGWINCH, &act, NULL) != 0)
+				err(1, "Failed to set SIGWINCH handler");
+		}
+
+		/* wait for events */
 		nev = kevent(kq, NULL, 0, evList, 32, NULL);
 		dir_modified = 0;
 	}
 
-	if ((nev == -1) && (errno != EINTR))
-		warn("kevent failed");
+	if (nev == -1) {
+		if (errno == EINTR) {
+			if (winch_opt == 1)
+				do_exec = 1;
+		} else
+			warn("kevent");
+	}
 
 	for (i = 0; i < nev; i++) {
 		if (!noninteractive_opt && evList[i].filter == EVFILT_READ) {

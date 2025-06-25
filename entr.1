@@ -21,7 +21,7 @@
 .Nd run arbitrary commands when files change
 .Sh SYNOPSIS
 .Nm
-.Op Fl acdnprsxz
+.Op Fl acdnprswxz
 .Ar utility
 .Op Ar argument /_ ...
 .Sh DESCRIPTION
@@ -82,6 +82,10 @@ Control of the TTY is not transferred to the child process.
 Evaluate the first argument using the interpreter specified by the
 .Ev SHELL
 environment variable.
+.It Fl w
+Execute the
+.Ar utility
+if the terminal is resized.
 .It Fl x
 Format custom exit status messages using a persistent
 .Xr awk 1
