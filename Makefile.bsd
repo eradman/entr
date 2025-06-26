@@ -38,6 +38,6 @@ uninstall:
 	rm ${DESTDIR}${MANPREFIX}/man1/entr.1
 
 format:
-	${CLANG_FORMAT} -i *.c *.h
+	${CLANG_FORMAT} -i *.c *.h missing/*.c missing/*.h
 
 .PHONY: all test check clean format distclean install uninstall

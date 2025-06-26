@@ -13,8 +13,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sys/inotify.h>
 #include <sys/event.h>
+#include <sys/inotify.h>
 #include <sys/types.h>
 
 #include <err.h>
@@ -38,7 +38,7 @@ int read_stdin;
 
 /* forwards */
 
-static WatchFile * file_by_descriptor(int fd);
+static WatchFile *file_by_descriptor(int fd);
 
 /* utility functions */
 
@@ -46,7 +46,7 @@ static WatchFile *
 file_by_descriptor(int wd) {
 	int i;
 
-	for (i=0; files[i] != NULL; i++) {
+	for (i = 0; files[i] != NULL; i++) {
 		if (files[i]->fd == wd)
 			return files[i];
 	}
@@ -59,15 +59,14 @@ fs_sysctl(const int name) {
 	char line[8];
 	int value = 0;
 
-	switch(name) {
+	switch (name) {
 	case INOTIFY_MAX_USER_WATCHES:
 		file = fopen("/proc/sys/fs/inotify/max_user_watches", "r");
 
 		if (file == NULL || fgets(line, sizeof(line), file) == NULL) {
 			/* failed to read max_user_watches; sometimes inaccessible on Android */
 			value = 0;
-		}
-		else
+		} else
 			value = atoi(line);
 
 		if (file)
@@ -79,9 +78,10 @@ fs_sysctl(const int name) {
 
 /* interface */
 
-#define EVENT_SIZE (sizeof (struct inotify_event))
+#define EVENT_SIZE (sizeof(struct inotify_event))
 #define EVENT_BUF_LEN (32 * (EVENT_SIZE + 16))
-#define IN_ALL IN_CLOSE_WRITE|IN_DELETE_SELF|IN_MOVE_SELF|IN_MOVE|IN_ATTRIB|IN_CREATE|IN_DELETE
+#define IN_ALL                                                                                     \
+	IN_CLOSE_WRITE | IN_DELETE_SELF | IN_MOVE_SELF | IN_MOVE | IN_ATTRIB | IN_CREATE | IN_DELETE
 
 /*
  * inotify and kqueue ids both have the type `int`
@@ -105,8 +105,8 @@ kqueue(void) {
  * eventlist structs filled by this call
  */
 int
-kevent(int kq, const struct kevent *changelist, int nchanges, struct
-	kevent *eventlist, int nevents, const struct timespec *timeout) {
+kevent(int kq, const struct kevent *changelist, int nchanges, struct kevent *eventlist, int nevents,
+    const struct timespec *timeout) {
 	int n;
 	int wd;
 	WatchFile *file;
@@ -127,9 +127,9 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	pfd[1].events = POLLIN;
 
 	if (nchanges > 0) {
-		for (n=0; n<nchanges; n++) {
-			kev = changelist + (sizeof(struct kevent)*n);
-			file = (WatchFile *)kev->udata;
+		for (n = 0; n < nchanges; n++) {
+			kev = changelist + (sizeof(struct kevent) * n);
+			file = (WatchFile *) kev->udata;
 
 			if (kev->filter == EVFILT_READ) {
 				if (kev->flags & EV_ADD)
@@ -144,20 +144,18 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			if (kev->flags & EV_DELETE) {
 				inotify_rm_watch(kq /* ifd */, kev->ident);
 				file->fd = -1; /* invalidate */
-			}
-			else if (kev->flags & EV_ADD) {
+			} else if (kev->flags & EV_ADD) {
 				if (getenv("ENTR_INOTIFY_WORKAROUND"))
-					wd = inotify_add_watch(kq, file->fn, IN_ALL|IN_MODIFY);
+					wd = inotify_add_watch(kq, file->fn, IN_ALL | IN_MODIFY);
 				else if (getenv("ENTR_INOTIFY_SYMLINK"))
-					wd = inotify_add_watch(kq, file->fn, IN_ALL|IN_DONT_FOLLOW);
+					wd = inotify_add_watch(kq, file->fn, IN_ALL | IN_DONT_FOLLOW);
 				else
 					wd = inotify_add_watch(kq, file->fn, IN_ALL);
 				if (wd < 0)
 					return -1;
 				close(file->fd);
 				file->fd = wd; /* replace with watch descriptor */
-			}
-			else
+			} else
 				ignored++;
 		}
 		return nchanges - ignored;
@@ -170,11 +168,11 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 	if (timeout == NULL)
 		poll(pfd, nfds, -1);
 	else
-		poll(pfd, nfds, timeout->tv_nsec/1000000);
+		poll(pfd, nfds, timeout->tv_nsec / 1000000);
 
 	n = 0;
 	do {
-		if (pfd[0].revents & (POLLERR|POLLNVAL))
+		if (pfd[0].revents & (POLLERR | POLLNVAL))
 			errx(1, "bad fd %d", pfd[0].fd);
 		if (pfd[0].revents & POLLIN) {
 			pos = 0;
@@ -192,20 +190,30 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 
 				/* convert iev->mask; to comparable kqueue flags */
 				fflags = 0;
-				if (iev->mask & IN_DELETE_SELF) fflags |= NOTE_DELETE;
-				if (iev->mask & IN_CLOSE_WRITE) fflags |= NOTE_WRITE;
-				if (iev->mask & IN_CREATE)      fflags |= NOTE_WRITE;
-				if (iev->mask & IN_DELETE)      fflags |= NOTE_WRITE;
-				if (iev->mask & IN_MOVE_SELF)   fflags |= NOTE_RENAME;
-				if (iev->mask & IN_MOVED_TO)    fflags |= NOTE_RENAME;
-				if (iev->mask & IN_MOVED_FROM)  fflags |= NOTE_RENAME;
-				if (iev->mask & IN_ATTRIB)      fflags |= NOTE_ATTRIB;
+				if (iev->mask & IN_DELETE_SELF)
+					fflags |= NOTE_DELETE;
+				if (iev->mask & IN_CLOSE_WRITE)
+					fflags |= NOTE_WRITE;
+				if (iev->mask & IN_CREATE)
+					fflags |= NOTE_WRITE;
+				if (iev->mask & IN_DELETE)
+					fflags |= NOTE_WRITE;
+				if (iev->mask & IN_MOVE_SELF)
+					fflags |= NOTE_RENAME;
+				if (iev->mask & IN_MOVED_TO)
+					fflags |= NOTE_RENAME;
+				if (iev->mask & IN_MOVED_FROM)
+					fflags |= NOTE_RENAME;
+				if (iev->mask & IN_ATTRIB)
+					fflags |= NOTE_ATTRIB;
 				if (getenv("ENTR_INOTIFY_WORKAROUND"))
-					if (iev->mask & IN_MODIFY)  fflags |= NOTE_WRITE;
-				if (fflags == 0) continue;
+					if (iev->mask & IN_MODIFY)
+						fflags |= NOTE_WRITE;
+				if (fflags == 0)
+					continue;
 
 				/* merge events if we're not acting on a new file descriptor */
-				if ((n > 0) && (eventlist[n-1].ident == iev->wd))
+				if ((n > 0) && (eventlist[n - 1].ident == iev->wd))
 					fflags |= eventlist[--n].fflags;
 
 				eventlist[n].ident = iev->wd;
@@ -219,9 +227,9 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 			}
 		}
 		if (read_stdin == 1) {
-			if (pfd[1].revents & (POLLERR|POLLNVAL))
+			if (pfd[1].revents & (POLLERR | POLLNVAL))
 				errx(1, "bad fd %d", pfd[1].fd);
-			else if (pfd[1].revents & (POLLHUP|POLLIN)) {
+			else if (pfd[1].revents & (POLLHUP | POLLIN)) {
 				fflags = 0;
 				eventlist[n].ident = pfd[1].fd;
 				eventlist[n].filter = EVFILT_READ;
@@ -233,8 +241,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct
 				break;
 			}
 		}
-	}
-	while ((poll(pfd, nfds, 50) > 0));
+	} while ((poll(pfd, nfds, 50) > 0));
 
 	return n;
 }
