@@ -118,13 +118,16 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct kevent *eve
 	const struct kevent *kev;
 	int nfds;
 
+	int timeout_ms = -1;
 	int ignored = 0;
 	struct pollfd pfd[2];
 
 	pfd[0].fd = kq;
 	pfd[0].events = POLLIN;
+	pfd[0].revents = 0;
 	pfd[1].fd = STDIN_FILENO;
 	pfd[1].events = POLLIN;
+	pfd[1].revents = 0;
 
 	if (nchanges > 0) {
 		for (n = 0; n < nchanges; n++) {
@@ -165,10 +168,11 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct kevent *eve
 		nfds = 2; /* inotify and stdin */
 	else
 		nfds = 1; /* inotify */
-	if (timeout == NULL)
-		poll(pfd, nfds, -1);
-	else
-		poll(pfd, nfds, timeout->tv_nsec / 1000000);
+
+	if (timeout)
+		timeout_ms = timeout->tv_nsec / 1000000;
+	if (poll(pfd, nfds, timeout_ms) == -1)
+		return -1;
 
 	n = 0;
 	do {
