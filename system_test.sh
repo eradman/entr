@@ -38,7 +38,7 @@ trap 'printf "\nTerminated by SIGINT at line $LINENO\n"; exit 1' INT
 
 utils="file pgrep git vim tmux"
 for util in $utils; do
-	p=$(command -pv $util) || {
+	p=$(command -v $util) || {
 		echo "ERROR: could not locate the '$util' utility" >&2
 		echo "System tests depend on the following: $utils" >&2
 		exit 1
@@ -521,7 +521,7 @@ try "exec an interactive utility when a file changes"
 		echo 456 >> $tmp/file2 ; zz
 		kill -INT $bgpid
 		wait $bgpid; assert "$?" "0"
-		assert "$(cat $tmp/exec.out | tr '/pts' '/tty')" "/dev/tty"
+		assert "$(awk '/dev.(tty|pts)/ { print "/dev/tty" }' $tmp/exec.out)" "/dev/tty"
 	fi
 
 try "exec a command using shell option"
