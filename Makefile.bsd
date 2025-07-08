@@ -19,7 +19,7 @@ test: entr
 	ls entr.1 | EV_TRACE=1 ./entr -zn wc -l entr.1
 
 check: entr
-	./system_test.sh
+	@./system_test.sh
 
 clean:
 	rm -f *.o compat.c entr

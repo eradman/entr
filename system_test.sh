@@ -66,7 +66,7 @@ try "no arguments"
 	assert $code 1
 
 try "no input"
-	entr echo "vroom" 2> /dev/null || code=$?
+	echo | entr echo "vroom" 2> /dev/null || code=$?
 	assert $code 1
 
 try "reload and clear options with no utility to run"
