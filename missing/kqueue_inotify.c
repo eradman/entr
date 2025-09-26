@@ -150,7 +150,7 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct kevent *eve
 			} else if (kev->flags & EV_ADD) {
 				if (getenv("ENTR_INOTIFY_WORKAROUND"))
 					wd = inotify_add_watch(kq, file->fn, IN_ALL | IN_MODIFY);
-				else if (getenv("ENTR_INOTIFY_SYMLINK"))
+				else if (file->is_symlink)
 					wd = inotify_add_watch(kq, file->fn, IN_ALL | IN_DONT_FOLLOW);
 				else
 					wd = inotify_add_watch(kq, file->fn, IN_ALL);

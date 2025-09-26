@@ -294,6 +294,34 @@ try "exec single shell utility and exit when a file is added to a specific path"
 	assert "$(cat $tmp/exec.out)" "ping"
 	assert "$(cat $tmp/exec.err)" "entr: directory altered"
 
+try "exec utility when a symlink is changed"
+	setup
+	ln -sf $tmp/file1 $tmp/link
+	echo $tmp/link | entr -p echo "changed" > $tmp/exec.out &
+	bgpid=$! ; zz
+	ln -sf $tmp/file2 $tmp/link ; zz
+	kill -INT $bgpid
+	wait $bgpid; assert "$?" "0"
+	if [ $(uname | grep -E 'Darwin|Linux') ]; then
+		assert "$(cat $tmp/exec.out)" "changed"
+	else
+		skip "O_SYMLINK not supported"
+	fi
+
+try "exec utility when a broken symlink is changed"
+	if [ $(uname | grep -E 'Darwin|Linux') ]; then
+		setup
+		ln -sf $tmp/file9 $tmp/link
+		echo $tmp/link | entr -p echo "changed" > $tmp/exec.out &
+		bgpid=$! ; zz
+		ln -sf $tmp/file1 $tmp/link ; zz
+		kill -INT $bgpid
+		wait $bgpid; assert "$?" "0"
+		assert "$(cat $tmp/exec.out)" "changed"
+	else
+		skip "O_SYMLINK not supported"
+	fi
+
 try "do nothing when a file not monitored is changed in directory watch mode"
 	setup
 	ls $tmp/file2 | entr -dp echo "changed" >$tmp/exec.out 2>$tmp/exec.err &

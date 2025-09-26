@@ -21,11 +21,11 @@ Incomplete inotify support on _Windows Subsystem for Linux_ and _Docker for Mac_
 may cause `entr` to respond incorrectly. Setting the environment variable
 `ENTR_INOTIFY_WORKAROUND` enables `entr` to operate in these environments.
 
-Linux Features
---------------
+Platform Features
+-----------------
 
-Symlinks can be monitored for changes by setting the environment variable
-`ENTR_INOTIFY_SYMLINK`.
+On Mac OS and Linux, symlinks are not followed unless the environment variable
+`ENTR_FOLLOW_SYMLINK` is set.
 
 Man Page Examples
 -----------------

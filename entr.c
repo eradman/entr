@@ -79,6 +79,10 @@ struct termios canonical_tty;
 static char *shell, *shell_base;
 static char *argv0, *argv0_base;
 
+/* function pointers */
+
+int (*xstat)(const char *path, struct stat *sb);
+
 /* forwards */
 
 static void usage();
@@ -132,6 +136,13 @@ main(int argc, char *argv[]) {
 	act.sa_handler = proc_exit;
 	if (sigaction(SIGCHLD, &act, NULL) != 0)
 		err(1, "Failed to set SIGCHLD handler");
+
+	/* monitor symlinks if possible */
+	xstat = stat;
+#if defined(O_PATH) || defined(O_SYMLINK)
+	if (getenv("ENTR_FOLLOW_SYMLINK") == NULL)
+		xstat = lstat;
+#endif
 
 #if defined(_LINUX_PORT)
 	/* attempt to read inotify limits */
@@ -340,15 +351,16 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 			continue;
 		path = &buf[0];
 
-		if (stat(path, &sb) == -1) {
+		if (xstat(path, &sb) == -1) {
 			warnx("unable to stat '%s'", path);
 			continue;
 		}
 
-		if (S_ISREG(sb.st_mode) != 0) {
+		if ((S_ISREG(sb.st_mode) | S_ISLNK(sb.st_mode)) != 0) {
 			files[n_files] = malloc(sizeof(WatchFile));
 			strlcpy(files[n_files]->fn, path, MEMBER_SIZE(WatchFile, fn));
 			files[n_files]->is_dir = 0;
+			files[n_files]->is_symlink = (S_ISLNK(sb.st_mode) != 0) ? 1 : 0;
 			files[n_files]->file_count = 0;
 			files[n_files]->mode = sb.st_mode;
 			files[n_files]->ino = sb.st_ino;
@@ -373,6 +385,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 			files[n_files] = malloc(sizeof(WatchFile));
 			strlcpy(files[n_files]->fn, path, MEMBER_SIZE(WatchFile, fn));
 			files[n_files]->is_dir = 1;
+			files[n_files]->is_symlink = 0;
 			files[n_files]->file_count = list_dir(path);
 			files[n_files]->mode = sb.st_mode;
 			files[n_files]->ino = sb.st_ino;
@@ -558,8 +571,10 @@ watch_file(int kq, WatchFile *file) {
 
 	/* wait up to 1 second for file to become available */
 	for (;;) {
-#ifdef O_EVTONLY
-		file->fd = open(file->fn, O_RDONLY | O_CLOEXEC | O_EVTONLY);
+#if defined(O_EVTONLY)
+		file->fd = open(file->fn, O_RDONLY | O_CLOEXEC | O_EVTONLY | O_SYMLINK);
+#elif defined(O_PATH)
+		file->fd = open(file->fn, O_RDONLY | O_CLOEXEC | O_PATH | O_NOFOLLOW);
 #else
 		file->fd = open(file->fn, O_RDONLY | O_CLOEXEC);
 #endif
@@ -723,7 +738,7 @@ main:
 		}
 
 		if (evList[i].fflags & NOTE_ATTRIB && S_ISREG(file->mode) != 0
-		    && stat(file->fn, &sb) == 0) {
+		    && xstat(file->fn, &sb) == 0) {
 			if (file->mode != sb.st_mode) {
 				do_exec = 1;
 				file->mode = sb.st_mode;
