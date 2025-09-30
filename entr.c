@@ -468,35 +468,36 @@ run_utility(char *argv[]) {
 	char **new_argv;
 	char *p, *arg_buf;
 	int argc;
+	size_t remaining;
 
 	if (restart_opt == 1)
 		terminate_utility();
 
+	arg_buf = malloc(ARG_MAX);
+
 	if (shell_opt == 1) {
 		/* run argv[1] with a shell using the leading edge as $0 */
 		argc = 4;
-		arg_buf = malloc(ARG_MAX);
 		new_argv = calloc(argc + 1, sizeof(char *));
-		realpath(leading_edge->fn, arg_buf);
 		new_argv[0] = shell;
 		new_argv[1] = "-c";
 		new_argv[2] = argv[0];
-		new_argv[3] = arg_buf;
+		new_argv[3] = leading_edge->fn;
 	} else {
 		/* clone argv on each invocation to make the implementation of more
 		 * complex substitution rules possible and easy
 		 */
 		for (argc = 0; argv[argc]; argc++)
 			;
-		arg_buf = malloc(ARG_MAX);
 		new_argv = calloc(argc + 1, sizeof(char *));
 		for (m = 0, i = 0, p = arg_buf; i < argc; i++) {
+			remaining = ARG_MAX - (p - arg_buf);
 			new_argv[i] = p;
 			if ((m < 1) && (strcmp(argv[i], "/_")) == 0) {
-				p += strlen(realpath(leading_edge->fn, p));
+				p += strlcpy(p, leading_edge->fn, remaining);
 				m++;
 			} else
-				p += strlcpy(p, argv[i], ARG_MAX - (p - arg_buf));
+				p += strlcpy(p, argv[i], remaining);
 			p++;
 		}
 	}
