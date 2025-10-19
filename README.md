@@ -50,6 +50,10 @@ Auto-reload a web server, or terminate if the server exits
 
     $ ls * | entr -rz ./httpd
 
+Wait for 5 seconds of inactivity before running tests:
+
+    $ find src/ | entr -q 5 make test
+
 News
 ----
 

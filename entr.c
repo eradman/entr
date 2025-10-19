@@ -69,6 +69,7 @@ int dirwatch_opt;
 int noninteractive_opt;
 int oneshot_opt;
 int postpone_opt;
+int quiet_period_opt;
 int restart_opt;
 int shell_opt;
 int status_filter_opt;
@@ -241,7 +242,7 @@ main(int argc, char *argv[]) {
 void
 usage() {
 	fprintf(stderr, "release: %s\n", RELEASE);
-	fprintf(stderr, "usage: entr [-acdnprsxz] utility [argument [/_] ...] < filenames\n");
+	fprintf(stderr, "usage: entr [-acdnprsxz] [-q seconds] utility [argument [/_] ...] < filenames\n");
 	exit(1);
 }
 
@@ -424,7 +425,7 @@ set_options(char *argv[]) {
 	/* read arguments until we reach a command */
 	for (argc = 1; argv[argc] != 0 && argv[argc][0] == '-'; argc++)
 		;
-	while ((ch = getopt(argc, argv, "acdnprsxz")) != -1) {
+	while ((ch = getopt(argc, argv, "acdnpq:rsxz")) != -1) {
 		switch (ch) {
 		case 'a':
 			aggressive_opt = 1;
@@ -440,6 +441,11 @@ set_options(char *argv[]) {
 			break;
 		case 'p':
 			postpone_opt = 1;
+			break;
+		case 'q':
+			quiet_period_opt = atoi(optarg);
+			if (quiet_period_opt <= 0)
+				errx(1, "invalid quiet period: %s", optarg);
 			break;
 		case 'r':
 			restart_opt = 1;
@@ -649,6 +655,10 @@ watch_loop(int kq, char *argv[]) {
 	struct stat sb;
 	char c;
 	struct termios character_tty;
+	struct timespec last_change_time;
+	struct timespec now;
+	int quiet_elapsed;
+	int changes_pending = 0;
 
 	leading_edge = files[0]; /* default */
 	if (postpone_opt == 0)
@@ -666,7 +676,7 @@ main:
 		termios_set = 1;
 	}
 
-	if ((reopen_only == 1) || (collate_only == 1)) {
+	if ((reopen_only == 1) || (collate_only == 1) || (quiet_period_opt > 0 && changes_pending)) {
 		nev = kevent(kq, NULL, 0, evList, 32, &evTimeout);
 	} else {
 		nev = kevent(kq, NULL, 0, evList, 32, NULL);
@@ -683,8 +693,14 @@ main:
 				if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1)
 					err(1, "failed to remove READ event");
 			} else {
-				if (c == ' ')
-					do_exec = 1;
+				if (c == ' ') {
+					if (quiet_period_opt > 0) {
+						clock_gettime(CLOCK_MONOTONIC, &last_change_time);
+						changes_pending = 1;
+					} else {
+						do_exec = 1;
+					}
+				}
 				if (c == 'q')
 					kill(getpid(), SIGINT);
 			}
@@ -734,25 +750,40 @@ main:
 		    || evList[i].fflags & NOTE_RENAME || evList[i].fflags & NOTE_TRUNCATE) {
 			if ((dir_modified > 0) && (restart_opt == 1))
 				continue;
-			do_exec = 1;
+			if (quiet_period_opt > 0) {
+				clock_gettime(CLOCK_MONOTONIC, &last_change_time);
+				changes_pending = 1;
+			} else {
+				do_exec = 1;
+			}
 		}
 
 		if (evList[i].fflags & NOTE_ATTRIB && S_ISREG(file->mode) != 0
 		    && xstat(file->fn, &sb) == 0) {
 			if (file->mode != sb.st_mode) {
-				do_exec = 1;
+				if (quiet_period_opt > 0) {
+					clock_gettime(CLOCK_MONOTONIC, &last_change_time);
+					changes_pending = 1;
+				} else {
+					do_exec = 1;
+				}
 				file->mode = sb.st_mode;
 			}
 			if (file->ino != sb.st_ino) {
 #if defined(_LINUX_PORT)
-				do_exec = 1;
+				if (quiet_period_opt > 0) {
+					clock_gettime(CLOCK_MONOTONIC, &last_change_time);
+					changes_pending = 1;
+				} else {
+					do_exec = 1;
+				}
 #endif
 				file->ino = sb.st_ino;
 			}
 		} else if (evList[i].fflags & NOTE_ATTRIB)
 			continue;
 
-		if ((leading_edge_set == 0) && (file->is_dir == 0) && (do_exec == 1)) {
+		if ((leading_edge_set == 0) && (file->is_dir == 0) && (do_exec == 1 || changes_pending == 1)) {
 			leading_edge = file;
 			leading_edge_set = 1;
 		}
@@ -765,6 +796,17 @@ main:
 
 	if (collate_only == 1)
 		goto main;
+
+	/* Check if quiet period has elapsed */
+	if (quiet_period_opt > 0 && changes_pending) {
+		clock_gettime(CLOCK_MONOTONIC, &now);
+		quiet_elapsed = (now.tv_sec - last_change_time.tv_sec);
+		if (quiet_elapsed >= quiet_period_opt) {
+			do_exec = 1;
+			changes_pending = 0;
+		}
+	}
+
 	if (do_exec == 1) {
 		do_exec = 0;
 		run_utility(argv);

@@ -22,6 +22,7 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl acdnprsxz
+.Op Fl q Ar seconds
 .Ar utility
 .Op Ar argument /_ ...
 .Sh DESCRIPTION
@@ -66,6 +67,16 @@ does not attempt to read from the TTY or change its properties.
 Postpone the first execution of the
 .Ar utility
 until a file is modified.
+.It Fl q Ar seconds
+Set a quiet period. After a file change is detected,
+.Nm
+will wait for
+.Ar seconds
+to elapse with no additional file changes before executing the
+.Ar utility .
+This is useful when multiple files are modified in rapid succession, such as by
+AI-assisted development tools or code formatters, allowing the activity to
+complete before triggering execution.
 .It Fl r
 Reload a persistent child process.
 As with the standard mode of operation, a
@@ -198,3 +209,8 @@ Rebuild project if a source file is modified or added to the src/ directory:
 Auto-reload a web server, or terminate if the server exits
 .Pp
 .Dl $ ls * | entr -rz ./httpd
+.Pp
+Wait for 5 seconds of inactivity before running tests, useful when an AI tool
+is making multiple file changes:
+.Pp
+.Dl $ find src/ | entr -q 5 make test
