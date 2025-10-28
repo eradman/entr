@@ -62,6 +62,7 @@ WatchFile *leading_edge;
 int child_pid;
 int child_status;
 int terminating;
+int restart_signal;
 
 int aggressive_opt;
 int clear_opt;
@@ -87,6 +88,7 @@ int (*xstat)(const char *path, struct stat *sb);
 
 static void usage();
 static void terminate_utility();
+static void set_restart_signal();
 static void handle_exit(int sig);
 static void proc_exit(int sig);
 static void print_child_status(int status);
@@ -130,6 +132,8 @@ main(int argc, char *argv[]) {
 		err(1, "Failed to set SIGTERM handler");
 	if (sigaction(SIGHUP, &act, NULL) != 0)
 		err(1, "Failed to set SIGHUP handler");
+
+	set_restart_signal();
 
 	/* notification used to combine the one-shot and restart options */
 	act.sa_flags = 0;
@@ -252,12 +256,36 @@ terminate_utility() {
 	terminating = 1;
 
 	if (child_pid > 0) {
-		killpg(child_pid, SIGTERM);
+		killpg(child_pid, restart_signal);
 		waitpid(child_pid, &status, 0);
 		child_pid = 0;
 	}
 
 	terminating = 0;
+}
+
+void
+set_restart_signal() {
+	const char *sig;
+	const int signum[] = { SIGHUP, SIGINT, SIGQUIT, SIGTERM, SIGUSR1, SIGUSR2 };
+	const char *signame[] = { "HUP", "INT", "QUIT", "TERM", "USR1", "USR2" };
+	int i;
+
+	if ((sig = getenv("ENTR_RESTART_SIGNAL")) == NULL) {
+		restart_signal = SIGTERM;
+		return;
+	}
+
+	if (strncmp(sig, "SIG", 3) == 0)
+		sig += 3;
+
+	for (i = 0; signum[i] < 6; i++) {
+		if (strcmp(sig, signame[i]) == 0)
+			restart_signal = signum[i];
+	}
+
+	if (restart_signal == 0)
+		errx(1, "unrecognized signal: %s <> (HUP, INT, QUIT, TERM, USR1, USR2)", sig);
 }
 
 /* Callbacks */

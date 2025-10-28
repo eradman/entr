@@ -72,10 +72,6 @@ As with the standard mode of operation, a
 .Ar utility
 which terminates is not executed again until a file system or keyboard event is
 processed.
-.Dv SIGTERM
-is used to terminate the
-.Ar utility
-before it is restarted.
 A process group is created to prevent shell scripts from masking signals.
 .Nm
 waits for the
@@ -142,6 +138,15 @@ option.
 By default
 .Pa $HOME/.entr/status.awk
 is evaluated.
+.It Ev ENTR_RESTART_SIGNAL
+Signal name used to terminate the
+.Ar utility .
+The default is
+.Dv SIGTERM .
+.Dv HUP ,
+.Dv INT QUIT TERM USR1 USR2
+.It Ev EV_TRACE
+Print file system event messages.
 .It Ev PAGER
 Set to
 .Pa /bin/cat
@@ -154,8 +159,6 @@ Specify the shell to use with the
 flag.
 The default is
 .Pa /bin/sh .
-.It Ev EV_TRACE
-Print file system event messages.
 .El
 .Sh EXIT STATUS
 If the

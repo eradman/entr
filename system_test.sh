@@ -83,6 +83,14 @@ try "no regular files provided as input"
 	rmdir $tmp/dir1
 	assert $code 1
 
+try "invalid signal number set"
+	ls $tmp | ENTR_RESTART_SIGNAL="" entr echo 2> /dev/null || code=$?
+	assert $code 1
+	ls $tmp | ENTR_RESTART_SIGNAL="0" entr echo 2> /dev/null || code=$?
+	assert $code 1
+	ls $tmp | ENTR_RESTART_SIGNAL="KILL" entr echo 2> /dev/null || code=$?
+	assert $code 1
+
 # status message tests
 
 try "install default status script"
@@ -431,15 +439,15 @@ try "restart a server when a file is modified"
 	wait $bgpid; assert "$?" "0"
 	assert "$(cat $tmp/exec.out)" "$(printf 'started.\nstarted.')"
 
-try "ensure that all shell subprocesses are terminated in restart mode"
+try "ensure that all shell subprocesses are terminated with custom signal in restart mode"
 	setup
 	cat <<-SCRIPT > $tmp/go.sh
 	#!/bin/sh
-	trap 'echo "caught signal"; exit' TERM
+	trap 'echo "caught signal"; exit' INT
 	echo "running"; sleep 10
 	SCRIPT
 	chmod +x $tmp/go.sh
-	ls $tmp/file2 | entr -r sh -c "$tmp/go.sh" 2> /dev/null > $tmp/exec.out &
+	ls $tmp/file2 | ENTR_RESTART_SIGNAL=INT entr -r sh -c "$tmp/go.sh" 2> /dev/null > $tmp/exec.out &
 	bgpid=$! ; zz
 	kill -INT $bgpid ; zz
 	assert "$(cat $tmp/exec.out)" "$(printf 'running\ncaught signal')"
