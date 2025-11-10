@@ -13,7 +13,10 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+#include "entr.h"
+#include "project/event.h"
 
+/*
 #include <sys/param.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
@@ -34,31 +37,40 @@
 #include <string.h>
 #include <termios.h>
 #include <time.h>
+*/
 #include <unistd.h>
-
+/*
 #include "missing/compat.h"
 
 #include "data.h"
 #include "status.h"
+*/
 
-/* events to watch for */
+/* events to watch for
 
 #define NOTE_ALL NOTE_DELETE | NOTE_WRITE | NOTE_RENAME | NOTE_TRUNCATE | NOTE_ATTRIB
 
-/* shortcuts */
+*/
+
+/* shortcuts
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #define MEMBER_SIZE(S, M) sizeof(((S *) 0)->M)
 
-/* shared state */
+*/
+
+/* shared state 
 
 extern int optind;
 pid_t status_pid;
 WatchFile **files;
 
+*/
+
 /* globals */
 
 WatchFile *leading_edge;
+WatchFile **files = NULL;
 int child_pid;
 int child_status;
 int terminating;
@@ -73,30 +85,36 @@ int restart_opt;
 int shell_opt;
 int status_filter_opt;
 
+pid_t status_pid = 0;
+
 int termios_set;
 struct termios canonical_tty;
 
 static char *shell, *shell_base;
 static char *argv0, *argv0_base;
 
+
+
 /* function pointers */
 
-int (*xstat)(const char *path, struct stat *sb);
+int (*xstat)(const char *path, struct stat *sb) = stat;
+
 
 /* forwards */
 
-static void usage();
-static void terminate_utility();
-static void handle_exit(int sig);
-static void proc_exit(int sig);
-static void print_child_status(int status);
-static int process_input(FILE *, WatchFile *[], int);
-static int set_options(char *[]);
-static int list_dir(char *);
-static void run_utility(char *[]);
-static void watch_file(int, WatchFile *);
-static int compare_dir_contents(WatchFile *);
-static void watch_loop(int, char *[]);
+//static void usage();
+//static void terminate_utility();
+//static void handle_exit(int sig);
+//static void proc_exit(int sig);
+//static void print_child_status(int status);
+//static int process_input(FILE *, WatchFile *[], int);
+//static int set_options(char *[]);
+//static int list_dir(char *);
+//static void run_utility(char *[]);
+//static void watch_file(int, WatchFile *);
+//static int compare_dir_contents(WatchFile *);
+//static void watch_loop(int, char *[]);
+
 
 /*
  * The Event Notify Test Runner
@@ -186,9 +204,10 @@ main(int argc, char *argv[]) {
 	if (status_filter_opt)
 		start_log_filter(status_filter_opt);
 
-	/* drop privileges */
+	/* drop privileges 
 	if (pledge("stdio rpath tty proc exec", NULL) == -1)
 		err(1, "pledge");
+        */
 
 	/* sequential scan may depend on a 0 at the end */
 	files = calloc(open_max + 1, sizeof(WatchFile *));
