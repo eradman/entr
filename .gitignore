@@ -2,3 +2,4 @@
 Makefile
 compat.c
 entr
+.vscode/
