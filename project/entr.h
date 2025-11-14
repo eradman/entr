@@ -44,7 +44,6 @@
 typedef struct {
     char fn[PATH_MAX];
     int fd;
-    int wd;
     int is_dir; // WatchFile 멤버 누락 해결!
     int is_symlink;
     int file_count;
