@@ -6,7 +6,6 @@
 #ifndef PROJECT_ENTR_H
 #define PROJECT_ENTR_H
 #define RELEASE "1.0.0"
-// 1. 시스템 및 로컬 헤더 (entr.c 원본에서 모두 이동)
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/resource.h>

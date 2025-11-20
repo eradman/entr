@@ -36,9 +36,10 @@
 extern WatchFile **files;
 int read_stdin;
 
+//WD 매핑 로직inotify는 파일 경로 대신 Watch Descriptor(정수ID)를 반환함. 이 WD를 사용하여 어떤 WatchFile구조체가 변경되었는지 찾아야함
 /* forwards */
 
-static WatchFile *file_by_descriptor(int fd);
+static WatchFile *file_by_descriptor(int fd); // WD를 Watchfile 구조체로 변환
 
 /* utility functions */
 
@@ -46,13 +47,15 @@ static WatchFile *
 file_by_descriptor(int wd) {
 	int i;
 
+        //files 배열 전체를 순회하여 해당 WD를 가진 WatchFile을 찾음
 	for (i = 0; files[i] != NULL; i++) {
-		if (files[i]->fd == wd)
+		if (files[i]->fd == wd) //파일 디스크럽터(fd) 필드에 WD를 저장했었음
 			return files[i];
 	}
 	return NULL; /* lookup failed */
 }
-
+//
+// Linux시스템이 허용하는 최대 감시 파일 수를 확인함(inotify)
 int
 fs_sysctl(const int name) {
 	FILE *file;
@@ -61,13 +64,14 @@ fs_sysctl(const int name) {
 
 	switch (name) {
 	case INOTIFY_MAX_USER_WATCHES:
+                //이 파일에서 시스템 설정 값을 읽어옴
 		file = fopen("/proc/sys/fs/inotify/max_user_watches", "r");
 
 		if (file == NULL || fgets(line, sizeof(line), file) == NULL) {
 			/* failed to read max_user_watches; sometimes inaccessible on Android */
-			value = 0;
+			value = 0;//읽기 실패 시 0 반환
 		} else
-			value = atoi(line);
+			value = atoi(line); //값을 정수로 변환
 
 		if (file)
 			fclose(file);
@@ -75,13 +79,17 @@ fs_sysctl(const int name) {
 	}
 	return value;
 }
+//
 
 /* interface */
 
 #define EVENT_SIZE (sizeof(struct inotify_event))
 #define EVENT_BUF_LEN (32 * (EVENT_SIZE + 16))
+
+//inotify_add_watch및 inotify_rm_watch 호출패턴(IN_ALL매크로: entr이 감시해야 할 모든 inotify이벤트 플래그를 정의함)
 #define IN_ALL                                                                                     \
 	IN_CLOSE_WRITE | IN_DELETE_SELF | IN_MOVE_SELF | IN_MOVE | IN_ATTRIB | IN_CREATE | IN_DELETE
+//
 
 /*
  * inotify and kqueue ids both have the type `int`
@@ -145,19 +153,26 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct kevent *eve
 				continue;
 
 			if (kev->flags & EV_DELETE) {
-				inotify_rm_watch(kq /* ifd */, kev->ident);
-				file->fd = -1; /* invalidate */
+				//감시해제(inotify)
+				inotify_rm_watch(kq /* ifd */, kev->ident); //kev->ident가 WD값임.
+				file->fd = -1; /* invalidate */ //WatchFile 구조체의 WD값을 무효화
+				//(inotify)
+
 			} else if (kev->flags & EV_ADD) {
+				//환경 변수나 심볼릭 링크 여부에 따라 마스크를 조정함(inotify)(감시 등록)
 				if (getenv("ENTR_INOTIFY_WORKAROUND"))
 					wd = inotify_add_watch(kq, file->fn, IN_ALL | IN_MODIFY);
 				else if (file->is_symlink)
-					wd = inotify_add_watch(kq, file->fn, IN_ALL | IN_DONT_FOLLOW);
+					wd = inotify_add_watch(kq, file->fn, IN_ALL | IN_DONT_FOLLOW); //심볼릭 링크 자체
 				else
 					wd = inotify_add_watch(kq, file->fn, IN_ALL);
 				if (wd < 0)
 					return -1;
+				//Watch Descriptor를 WatchFile 구조체에 저장(fd 필드 재활용)
 				close(file->fd);
 				file->fd = wd; /* replace with watch descriptor */
+				//(inotify)
+
 			} else
 				ignored++;
 		}
@@ -180,17 +195,21 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct kevent *eve
 			errx(1, "bad fd %d", pfd[0].fd);
 		if (pfd[0].revents & POLLIN) {
 			pos = 0;
-			len = read(kq /* ifd */, &buf, EVENT_BUF_LEN);
+
+			//poll() 호출 후 (데이터가 준비되었음을 확인)(inotify)
+			len = read(kq /* ifd */, &buf, EVENT_BUF_LEN); //inotify FD에서 이벤트 데이터 읽기
 			if (len < 0) {
 				/* SA_RESTART doesn't work for inotify fds */
+				//오류 처리(EINTR 시 continue)
 				if (errno == EINTR)
 					continue;
 				else
 					errx(1, "read of fd %d failed", pfd[0].fd);
 			}
+			//이벤트 버퍼 파싱 루프
 			while ((pos < len) && (n < nevents)) {
-				iev = (struct inotify_event *) &buf[pos];
-				pos += EVENT_SIZE + iev->len;
+				iev = (struct inotify_event *) &buf[pos];//버퍼에서 이벤트 구조체 추출
+				pos += EVENT_SIZE + iev->len; //다음 이벤트 위치로 포인터 이동
 
 				/* convert iev->mask; to comparable kqueue flags */
 				fflags = 0;
@@ -225,10 +244,13 @@ kevent(int kq, const struct kevent *changelist, int nchanges, struct kevent *eve
 				eventlist[n].flags = 0;
 				eventlist[n].fflags = fflags;
 				eventlist[n].data = 0;
+				//파일 변경을 감지한 후 WatchFile 구조체를 찾아서 kqueue 이벤트 목록(eventlist)에 채움)
 				eventlist[n].udata = file_by_descriptor(iev->wd);
 				if (eventlist[n].udata)
 					n++;
 			}
+			//(inotify)
+
 		}
 		if (read_stdin == 1) {
 			if (pfd[1].revents & (POLLERR | POLLNVAL))
