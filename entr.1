@@ -139,12 +139,18 @@ By default
 .Pa $HOME/.entr/status.awk
 is evaluated.
 .It Ev ENTR_RESTART_SIGNAL
-Signal name used to terminate the
+Signal used to terminate the
 .Ar utility .
+Supported signal names are
+.Dv HUP ,
+.Dv INT ,
+.Dv QUIT ,
+.Dv TERM ,
+.Dv USR1
+and
+.Dv USR2 .
 The default is
 .Dv SIGTERM .
-.Dv HUP ,
-.Dv INT QUIT TERM USR1 USR2
 .It Ev EV_TRACE
 Print file system event messages.
 .It Ev PAGER
