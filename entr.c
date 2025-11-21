@@ -237,10 +237,13 @@ handle_exit(int sig) {
 	if (status_filter_opt)
 		end_log_filter();
 
-	if ((sig == SIGINT || sig == SIGHUP))
-		_exit(0);
-	else
-		raise(sig);
+	/* 로그 파일 닫기 */
+    log_close();
+
+    if ((sig == SIGINT || sig == SIGHUP))
+        _exit(0);
+    else
+        raise(sig);
 }
 
 void
