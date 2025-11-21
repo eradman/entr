@@ -27,7 +27,6 @@
 
 #include <sys/stat.h>
 
-#include "missing/compat.h"
 
 #include "status.h"
 
