@@ -5,8 +5,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-
 #include "event.h"  // WatchFile 구조체와 event_init, watch_file 등의 선언 포함
+
+/* compat.h 에 있던 내용(compat.h의 의존성 제거함)*/
+#define INOTIFY_MAX_USER_WATCHES 2 //Linux 커널이 한 사용자에게 허용하는 최대 파일 감시 수를 조회하기 위한 식별자로 사용됨
+size_t strlcpy(char *dst, const char *src, size_t dsize); //문자열 복사 시 버퍼 오버플로우를 방지하기 위해 목적지 크기를 명시적으로 받는 안전한 문자열 복사 함수의 원형
+int fs_sysctl(const int name); //entr이 파일을 감시하기 전에 시스템의 inotify한계를 확인하는 데 사용되는 유틸리티 함수
+
 
 #define EVENT_SIZE (sizeof(struct inotify_event))
 #define BUF_LEN (1024 * (EVENT_SIZE + 16))
