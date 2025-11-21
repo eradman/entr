@@ -16,6 +16,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+ //strlcpy함수를 직접 구현 (c언어에서 문자열을 복사할 떄 버퍼 오버플로우를 방지하여 안정성을 확보하기위해 고안된함수)
+
 #include <string.h>
 #include <sys/types.h>
 
