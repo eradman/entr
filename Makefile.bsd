@@ -2,7 +2,7 @@ CLANG_FORMAT ?= clang-format
 PREFIX ?= /usr/local
 MANPREFIX ?= ${PREFIX}/man
 RELEASE = 5.7
-COMPONENTS = compat.o status.o entr.o
+COMPONENTS = compat.o status.o entr.o log.o
 
 all: entr
 
