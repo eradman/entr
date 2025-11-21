@@ -5,6 +5,7 @@
 #include "entr.h"
 #include "project/event.h"
 #include <unistd.h>
+#include "log.h"   /* 파일 변경 로그 기록용 */
 
 /* globals */
 
@@ -125,6 +126,12 @@ main(int argc, char *argv[]) {
 	argv0_base = basename(argv0);
 	if (status_filter_opt)
 		start_log_filter(status_filter_opt);
+
+	    /* 로그 파일 열기: 현재 디렉터리에 entr.log 생성 */
+    if (log_open("entr.log") != 0) {
+        warnx("unable to open log file 'entr.log'");
+        /* 실패해도 프로그램은 계속 돌아감 (단, 로그는 안 남음) */
+    }
 
 	/* sequential scan may depend on a 0 at the end */
 	files = calloc(open_max + 1, sizeof(WatchFile *));
