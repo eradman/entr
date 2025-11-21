@@ -40,6 +40,7 @@
 
 #include "data.h"
 #include "status.h"
+#include "log.h"  /* 파일 변경 내용을 기록하기 위한 로그 모듈 */
 
 /* events to watch for */
 
@@ -190,6 +191,12 @@ main(int argc, char *argv[]) {
 	if (status_filter_opt)
 		start_log_filter(status_filter_opt);
 
+	/* 로그 파일 열기: 현재 디렉터리에 entr.log 생성 (추후 --log 옵션으로 확장 가능) */
+    if (log_open("entr.log") != 0) {
+        warnx("unable to open log file 'entr.log'");
+        /* 계속 실행은 하지만, 로그는 남지 않는다 */
+    }
+
 	/* drop privileges */
 	if (pledge("stdio rpath tty proc exec", NULL) == -1)
 		err(1, "pledge");
@@ -300,10 +307,13 @@ handle_exit(int sig) {
 	if (status_filter_opt)
 		end_log_filter();
 
-	if ((sig == SIGINT || sig == SIGHUP))
-		_exit(0);
-	else
-		raise(sig);
+	/* 로그 파일 닫기 */
+    log_close();
+
+    if ((sig == SIGINT || sig == SIGHUP))
+        _exit(0);
+    else
+        raise(sig);
 }
 
 void
@@ -794,6 +804,12 @@ main:
 	if (collate_only == 1)
 		goto main;
 	if (do_exec == 1) {
+
+		/* 로그 기록: 이번에 변경을 트리거한 선두 파일(leading_edge)을 남긴다 */
+        if (leading_edge_set && leading_edge && leading_edge->fn[0] != '\0') {
+            log_write(leading_edge->fn);
+        }
+
 		do_exec = 0;
 		run_utility(argv);
 		if (!aggressive_opt)
