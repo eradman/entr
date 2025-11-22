@@ -196,6 +196,8 @@ main(int argc, char *argv[]) {
 
 	/* sequential scan may depend on a 0 at the end */
 	files = calloc(open_max + 1, sizeof(WatchFile *));
+	if (files == NULL)
+		err(1, "unable to allocate memory for file list");
 
 	if ((kq = kqueue()) == -1)
 		err(1, "cannot create kqueue");
@@ -386,6 +388,8 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 
 		if ((S_ISREG(sb.st_mode) | S_ISLNK(sb.st_mode)) != 0) {
 			files[n_files] = malloc(sizeof(WatchFile));
+			if (files[n_files] == NULL)
+				err(1, "unable to allocate memory for the file");
 			strlcpy(files[n_files]->fn, path, MEMBER_SIZE(WatchFile, fn));
 			files[n_files]->is_dir = 0;
 			files[n_files]->is_symlink = (S_ISLNK(sb.st_mode) != 0) ? 1 : 0;
@@ -411,6 +415,8 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 		}
 		if (S_ISDIR(sb.st_mode) != 0) {
 			files[n_files] = malloc(sizeof(WatchFile));
+			if (files[n_files] == NULL)
+				err(1, "unable to allocate memory for the file");
 			strlcpy(files[n_files]->fn, path, MEMBER_SIZE(WatchFile, fn));
 			files[n_files]->is_dir = 1;
 			files[n_files]->is_symlink = 0;
@@ -520,6 +526,8 @@ run_utility(char *argv[]) {
 		/* run argv[1] with a shell using the leading edge as $0 */
 		argc = 4;
 		new_argv = calloc(argc + 1, sizeof(char *));
+		if (new_argv == NULL)
+			err(1, "unable to allocate memory for argument list");
 		new_argv[0] = shell;
 		new_argv[1] = "-c";
 		new_argv[2] = argv[0];
@@ -531,6 +539,8 @@ run_utility(char *argv[]) {
 		for (argc = 0; argv[argc]; argc++)
 			;
 		new_argv = calloc(argc + 1, sizeof(char *));
+		if (new_argv == NULL)
+			err(1, "unable to allocate memory for argument list");
 		for (m = 0, i = 0, p = arg_buf; i < argc; i++) {
 			remaining = ARG_MAX - (p - arg_buf);
 			new_argv[i] = p;
