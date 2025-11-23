@@ -44,7 +44,7 @@ start_log_filter(int safe) {
 	if ((!awk_script) || (strlen(awk_script) == 0)) {
 		pw = getpwuid(getuid());
 		if (pw == NULL)
-			errx(1, "getpwuid failed");
+			errx(1, "getpwuid");
 		asprintf(&awk_script, "%s/.entr/status.awk", pw->pw_dir);
 	}
 
