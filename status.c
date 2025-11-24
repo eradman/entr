@@ -43,6 +43,8 @@ start_log_filter(int safe) {
 	awk_script = getenv("ENTR_STATUS_SCRIPT");
 	if ((!awk_script) || (strlen(awk_script) == 0)) {
 		pw = getpwuid(getuid());
+		if (pw == NULL)
+			errx(1, "getpwuid");
 		asprintf(&awk_script, "%s/.entr/status.awk", pw->pw_dir);
 	}
 
@@ -66,7 +68,10 @@ start_log_filter(int safe) {
 	if (safe == 2)
 		argv[5] = NULL;
 
-	pipe(status_stdin_pipe);
+	int rc = pipe(status_stdin_pipe);
+	if (rc == -1)
+		err(1, "pipe");
+
 	status_pid = fork();
 	if (status_pid == -1)
 		err(1, "fork");
