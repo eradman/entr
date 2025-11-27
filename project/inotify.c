@@ -1,4 +1,3 @@
-#include <sys/inotify.h>
 #include <project/inotify.h>
 #include <limits.h>
 #include <unistd.h>
