@@ -362,6 +362,31 @@ print_child_status(int status) {
 	}
 }
 
+void
+remove_ansi_escapes(char *in) {
+	int entering_escape = 0;
+	int in_escape = 0;
+	char c, *outp = in;
+	while ((c = *in)) {
+		if (entering_escape) {
+			entering_escape = 0;
+			if (c == '[')
+				in_escape = 1;
+		} else if (in_escape && c >= 'A') {
+			in_escape = 0;
+		} else if (c == 0x1b) {
+			entering_escape = 1;
+		} else {
+			if (!c)
+				break;
+			if (!in_escape)
+				*outp++ = c;
+		}
+		in++;
+	}
+	*outp = 0;
+}
+
 /*
  * Read lines from a file stream (normally STDIN).  Returns the number of
  * regular files to be watched or -1 if max_files is exceeded.
@@ -379,6 +404,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 			*p = '\0';
 		if (buf[0] == '\0')
 			continue;
+		remove_ansi_escapes(buf);
 		path = &buf[0];
 
 		if (xstat(path, &sb) == -1) {
