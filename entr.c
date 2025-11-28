@@ -2,7 +2,6 @@
 #include "project/daemon.c"
 /*헤더파일*/
 #include "project/daemon.h"
-#include "entr.h"
 #include "project/event.h"
 #include <unistd.h>
 #include "log.h"   /* 파일 변경 로그 기록용 */
