@@ -2,4 +2,11 @@ CPPFLAGS += -D_GNU_SOURCE -D_LINUX_PORT -Imissing
 MANPREFIX ?= ${PREFIX}/share/man
 EXTRA_SRC = missing/kqueue_inotify.c
 
-include Makefile.bsd
+SRCS = entr.c status.c log.c
+OBJS = $(SRCS:.c=.o)
+
+entr: $(OBJS) $(EXTRA_SRC)
+	$(CC) $(CPPFLAGS) -o entr $(OBJS) $(EXTRA_SRC)
+
+clean:
+	rm -f entr $(OBJS)
