@@ -1,5 +1,5 @@
 #include "log.h"
-
+//chaemin
 /*
  * 로그 기록 기능을 실제로 구현한 파일.
  * log_fp는 내부에서만 사용되는 static 전역 포인터로,
