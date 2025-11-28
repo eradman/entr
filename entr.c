@@ -2,9 +2,25 @@
 #include "project/daemon.c"
 /*헤더파일*/
 #include "project/daemon.h"
+#include "project/entr.h"
 #include "project/event.h"
 #include <unistd.h>
-#include "log.h"   /* 파일 변경 로그 기록용 */
+#include <termios.h>    // TTY 제어
+#include <sys/stat.h>   // stat
+#include <sys/wait.h>   // waitpid
+#include <dirent.h>     // list_dir 사용
+#include <libgen.h>     // basename, dirname 사용
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <err.h>
+#include <fcntl.h>
+#include <limits.h>
+
+/* 파일 변경 로그 기록용 */
+#include "log.h" 
 
 /* globals */
 
@@ -29,11 +45,21 @@ pid_t status_pid = 0;
 
 int termios_set;
 struct termios canonical_tty;
+static struct termios character_tty; // TTY 비표준 설정 추가 (set_tty_cbreak에서 사용)
 
 static char *shell, *shell_base;
 static char *argv0, *argv0_base;
 
+extern int event_init(void);
+extern void event_loop(int event_fd, char *argv[]); 
+extern void watch_file(int event_fd, WatchFile *file);
 
+int compare_dir_contents(WatchFile *);
+void run_utility(char *[]);
+
+void set_tty_cbreak(void);
+void restore_tty(void);
+int process_keyboard_event(int fd);
 
 /* function pointers */
 int (*xstat)(const char *path, struct stat *sb) = stat;
@@ -47,10 +73,6 @@ static void print_child_status(int status);
 static int process_input(FILE *, WatchFile *[], int);
 static int set_options(char *[]);
 static int list_dir(char *);
-static void run_utility(char *[]);
-static void watch_file(int, WatchFile *);
-static int compare_dir_contents(WatchFile *);
-static void watch_loop(int, char *[]);
 
 /*
  * The Event Notify Test Runner
@@ -70,6 +92,13 @@ main(int argc, char *argv[]) {
 	if (argc < 2)
 		usage();
 	argv_index = set_options(argv);
+
+	// TTY 원본 설정 기억 (main 함수 시작 부분에서 먼저 시도)
+    if (tcgetattr(STDIN_FILENO, &canonical_tty) == -1) {
+        if (errno != ENOTTY)
+            warn("tcgetattr failed");
+        noninteractive_opt = 1; // TTY가 아니면 비대화형 모드로 전환
+    }
 
 	sigemptyset(&act.sa_mask);
 
@@ -93,17 +122,17 @@ main(int argc, char *argv[]) {
 
 	/* monitor symlinks if possible */
 	xstat = stat;
-#if defined(O_PATH) || defined(O_SYMLINK)
+    #if defined(O_PATH) || defined(O_SYMLINK)
 	if (getenv("ENTR_FOLLOW_SYMLINK") == NULL)
 		xstat = lstat;
-#endif
+    #endif
 
-#if defined(_LINUX_PORT)
+    #if defined(_LINUX_PORT)
 	/* attempt to read inotify limits */
 	open_max = (unsigned) fs_sysctl(INOTIFY_MAX_USER_WATCHES);
 	if (open_max == 0)
 		open_max = 65536;
-#endif
+    #endif
 
 	if (getenv("EV_TRACE"))
 		fprintf(stderr, "open_max: %d\n", open_max);
@@ -126,10 +155,10 @@ main(int argc, char *argv[]) {
 	if (status_filter_opt)
 		start_log_filter(status_filter_opt);
 
-	    /* 로그 파일 열기: 현재 디렉터리에 entr.log 생성 */
+	/* 로그 파일 열기: 현재 디렉터리에 entr.log 생성 */
     if (log_open("entr.log") != 0) {
         warnx("unable to open log file 'entr.log'");
-        /* 실패해도 프로그램은 계속 돌아감 (단, 로그는 안 남음) */
+    /* 실패해도 프로그램은 계속 돌아감 (단, 로그는 안 남음) */
     }
 
 	/* sequential scan may depend on a 0 at the end */
@@ -163,12 +192,10 @@ main(int argc, char *argv[]) {
 				warnx("can't dup2 to stdin");
 			close(ttyfd);
 		}
-
-		/* remember terminal settings */
-		if (tcgetattr(STDIN_FILENO, &canonical_tty) == -1)
-			errx(1, "unable to get terminal attributes, use '-n' to run non-interactively");
-
-	watch_loop(event_fd, argv + argv_index);
+	}
+	
+	event_loop(event_fd, argv + argv_index);
+		
 	return 1;
 }
 
@@ -268,7 +295,7 @@ proc_exit(int sig) {
 		child_status = status;
 
 		if ((!noninteractive_opt) && (termios_set))
-			tcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
+			restore_tty();
 
 		if ((oneshot_opt == 1) && (terminating == 0)) {
 			if (restart_opt == 0)
@@ -298,10 +325,50 @@ print_child_status(int status) {
 	}
 }
 
-/*
- * Read lines from a file stream (normally STDIN).  Returns the number of
- * regular files to be watched or -1 if max_files is exceeded.
- */
+// tty 제어 함수 구현
+void
+set_tty_cbreak(void) {
+	if (!noninteractive_opt) {
+		character_tty = canonical_tty;
+		character_tty.c_lflag &= ~(ICANON | ECHO);
+
+		tcsetattr(STDIN_FILENO, TCSADRAIN, &character_tty);
+		termios_set = 1;
+	}
+}
+
+void
+restore_tty(void) {
+    if (termios_set) {
+        if (tcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty) == -1)
+            warn("tcsetattr failed");
+        termios_set = 0;
+    }
+}
+
+int
+process_keyboard_event(int fd) {
+    char c;
+    if (read(fd, &c, 1) != 1) {
+        if (errno != EAGAIN)
+            warn("read failed");
+        return 0;
+    }
+    
+    switch (c) {
+    case ' ': 
+    case '\n':
+    case '\r':
+        return 1; // do_exec = 1 (재실행)
+    case 'q': 
+        return 0; // 종료
+    default:
+        return 0;
+    }
+}
+
+// 기타 로직
+
 int
 process_input(FILE *file, WatchFile *files[], int max_files) {
 	char buf[PATH_MAX];
@@ -334,8 +401,11 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 
 			/* also watch the directory if it's not already in the list */
 			if (dirwatch_opt > 0) {
+				char temp_path[PATH_MAX];
+				strlcpy(temp_pah, path, sizeof(temp_path));
 				if ((parent_path = dirname(path)) == 0)
 					err(1, "dirname '%s' failed", path);
+				
 				for (matches = 0, i = 0; i < n_files; i++) {
 					if ((files[i]->is_dir == 1) && (strcmp(files[i]->fn, parent_path) == 0))
 						matches++;
@@ -378,10 +448,6 @@ list_dir(char *dir) {
 	return count;
 }
 
-/*
- * Evaluate command line arguments and return an offset to the command to
- * execute.
- */
 int
 set_options(char *argv[]) {
 	int ch;
@@ -434,10 +500,6 @@ set_options(char *argv[]) {
 	return optind;
 }
 
-/*
- * Execute the program supplied on the command line. If restart was set
- * then send the child process SIGTERM and restart it.
- */
 void
 run_utility(char *argv[]) {
 	int pid;
@@ -463,9 +525,6 @@ run_utility(char *argv[]) {
 		new_argv[2] = argv[0];
 		new_argv[3] = leading_edge->fn;
 	} else {
-		/* clone argv on each invocation to make the implementation of more
-		 * complex substitution rules possible and easy
-		 */
 		for (argc = 0; argv[argc]; argc++)
 			;
 		new_argv = calloc(argc + 1, sizeof(char *));
@@ -525,35 +584,7 @@ run_utility(char *argv[]) {
 	free(arg_buf);
 	free(new_argv);
 }
-
-/*
- * Wait for directory contents to stabilize
- */
-void
-watch_file(int event_fd, WatchFile *file) { // 인자 이름 변경
-    // Kqueue 관련 변수 선언 제거 (struct kevent evSet; 등)
-
-    // ... 파일 열기 로직 (open)이 필요하다면 유지 또는 정리 ...
-
-    // Kqueue 감시 등록 로직 제거 및 Inotify 등록 로직으로 교체:
-    #if defined(_LINUX_PORT)
-        // inotify_add_watch 함수는 inotify.c에 구현되어 있어야 합니다.
-        file->wd = inotify_add_watch(event_fd, file->fn, IN_MODIFY | IN_ATTRIB | IN_CLOSE_WRITE | IN_CLOSE_NOWRITE | IN_CREATE | IN_DELETE | IN_DELETE_SELF | IN_MOVE_SELF | IN_MOVED_FROM | IN_MOVED_TO);
-
-        if (file->wd == -1) {
-            // inotify 에러 처리 (kqueue 에러 메시지 대신 inotify 에러 메시지 사용)
-            if (errno == ENOSPC) {
-                // ... 에러 처리 로직 ...
-            } else {
-                err(1, "failed to register inotify watch");
-            }
-        }
-    #else
-        // Kqueue 로직을 여기에 남겨두거나 완전히 제거합니다.
-        // 현재는 Inotify만 쓰므로 이 블록을 제거하는 것이 안전합니다.
-    #endif
-}
-
+    
 int
 compare_dir_contents(WatchFile *file) {
 	int i;
@@ -566,152 +597,4 @@ compare_dir_contents(WatchFile *file) {
 		nanosleep(&delay, NULL);
 	}
 	return 1;
-}
-
-/*
- * Wait for events to and execute a command. Four major concerns are in play:
- *   leading_edge: Global reference to the first file to have changed
- *   reopen_only : Unlink or rename events which require us to spin while
- *                 waiting for the file to reappear. These must always be
- *                 processed
- *   collate_only: Changes that indicate that more events are likely to occur.
- *                 Watch for more events using a short timeout
- *   do_exec     : Delay execution until all events have been processed. Allow
- *                 the user to edit files while the utility is running without
- *                 any visible side-effects
- *   dir_modified: The number of files changed for a directory under watch
- */
-
-void
-watch_loop(int event_fd, char *argv[]) {
-    // Kqueue related variables removed.
-
-    WatchFile *file;
-    int i;
-
-    // Inotify event buffer and variables
-    char buf[4096] __attribute__ ((aligned(__alignof__(struct inotify_event))));
-    const struct inotify_event *event;
-    int len;
-
-    int reopen_only = !aggressive_opt;
-    int collate_only = 0;
-    int do_exec = 0;
-    int dir_modified = 0;
-    int leading_edge_set = 0;
-    struct stat sb;
-    char c;
-    struct termios character_tty;
-
-    leading_edge = files[0]; /* default */
-    if (postpone_opt == 0)
-        run_utility(argv);
-
-    if (!noninteractive_opt) {
-        /* disabling/restore line buffering and local echo */
-        character_tty = canonical_tty;
-        character_tty.c_lflag &= ~(ICANON | ECHO);
-    }
-
-main:
-    if (!noninteractive_opt) {
-        tcsetattr(STDIN_FILENO, TCSADRAIN, &character_tty);
-        termios_set = 1;
-    }
-
-    // Read events from inotify FD
-    if ((reopen_only == 1) || (collate_only == 1)) {
-        // Non-blocking read needed for timeout, but using simple read for now
-        len = read(event_fd, buf, sizeof(buf));
-    } else {
-        // Blocking read
-        len = read(event_fd, buf, sizeof(buf));
-        dir_modified = 0;
-    }
-
-    if ((len == -1) && (errno != EINTR) && (errno != EAGAIN))
-        warn("inotify read failed");
-
-    // Inotify event processing loop
-    for (char *ptr = buf; ptr < buf + len; ptr += sizeof(struct inotify_event) + event->len) {
-        event = (const struct inotify_event *) ptr;
-
-        file = wd_to_file(event->wd); // Helper from inotify.c
-        if (file == NULL) continue;
-
-        if (file->is_dir == 1)
-            dir_modified += compare_dir_contents(file);
-
-        // IN_DELETE_SELF / IN_MOVE_SELF equivalent (Re-watch logic)
-        if (event->mask & (IN_DELETE_SELF | IN_MOVE_SELF)) {
-            // Re-watch logic (inotify.c must handle rm_watch and map removal)
-            watch_file(event_fd, file);
-            collate_only = 1;
-        }
-
-        // General change events
-        if (event->mask & (IN_MODIFY | IN_ATTRIB | IN_CLOSE_WRITE | IN_DELETE | IN_CREATE | IN_MOVED_FROM | IN_MOVED_TO)) {
-            if (file->is_dir == 1 && dir_modified == 0)
-                continue;
-            if ((dir_modified > 0) && (restart_opt == 1))
-                continue;
-            do_exec = 1;
-        }
-
-        // IN_ATTRIB handling (mode/inode change)
-        if (event->mask & IN_ATTRIB) {
-            struct stat sb;
-            if (S_ISREG(file->mode) != 0 && xstat(file->fn, &sb) == 0) {
-                if (file->mode != sb.st_mode) {
-                    do_exec = 1;
-                    file->mode = sb.st_mode;
-                }
-                if (file->ino != sb.st_ino) {
-                    #if defined(_LINUX_PORT)
-                    do_exec = 1;
-                    #endif
-                    file->ino = sb.st_ino;
-                }
-            } else if (file->is_dir == 0)
-                continue;
-        }
-
-        if ((leading_edge_set == 0) && (file->is_dir == 0) && (do_exec == 1)) {
-            leading_edge = file;
-            leading_edge_set = 1;
-        }
-    }
-
-    if (!noninteractive_opt)
-        tcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
-
-    collate_only = 0;
-
-    if (reopen_only == 1) {
-        reopen_only = 0;
-        goto main;
-    }
-
-    if (collate_only == 1)
-        goto main;
-    if (do_exec == 1) {
-		if (do_exec == 1) {
-        /* 로그 기록: 이번에 변경을 트리거한 선두 파일(leading_edge)을 남긴다 */
-        if (leading_edge_set && leading_edge && leading_edge->fn[0] != '\0') {
-            log_write(leading_edge->fn);
-        }
-		
-        do_exec = 0;
-        run_utility(argv);
-        if (!aggressive_opt)
-            reopen_only = 1;
-        leading_edge_set = 0;
-    }
-    if (dir_modified > 0) {
-        terminate_utility();
-        errx(2, "directory altered");
-    }
-
-    goto main;
-}
 }
