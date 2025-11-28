@@ -696,6 +696,12 @@ main:
     if (collate_only == 1)
         goto main;
     if (do_exec == 1) {
+		if (do_exec == 1) {
+        /* 로그 기록: 이번에 변경을 트리거한 선두 파일(leading_edge)을 남긴다 */
+        if (leading_edge_set && leading_edge && leading_edge->fn[0] != '\0') {
+            log_write(leading_edge->fn);
+        }
+		
         do_exec = 0;
         run_utility(argv);
         if (!aggressive_opt)
