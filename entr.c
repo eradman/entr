@@ -129,8 +129,8 @@ main(int argc, char *argv[]) {
 
 	    /* 로그 파일 열기: 현재 디렉터리에 entr.log 생성 */
     if (log_open("entr.log") != 0) {
-        warnx("unable to open log file 'entr.log'");
-        /* 실패해도 프로그램은 계속 돌아감 (단, 로그는 안 남음) */
+        /* 실패해도 프로그램은 그냥 계속 돌아가게 경고만 */
+        fprintf(stderr, "warning: 로그 파일을 열 수 없습니다 (entr.log)\n");
     }
 
 	/* sequential scan may depend on a 0 at the end */
