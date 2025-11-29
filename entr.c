@@ -700,6 +700,11 @@ main:
 		/* 이번 변경을 트리거한 파일(leading_edge)을 로그에 기록 */
         if (leading_edge_set && leading_edge && leading_edge->fn[0] != '\0') {
             log_write(leading_edge->fn);
+			
+			if (log_enabled()) {
+        log_line("trigger: restarting command because of %s",
+                 leading_edge->fn);
+    		}
         }
 		
         do_exec = 0;

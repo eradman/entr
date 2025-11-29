@@ -1,59 +1,148 @@
 #include "log.h"
 
-/*
- * 로그 기록 기능을 실제로 구현한 파일.
- * log_fp는 내부에서만 사용되는 static 전역 포인터로,
- * 외부 파일에서 직접 접근할 수 없도록 숨겨져 있다.
- */
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <stdarg.h>
 
-static FILE *log_fp = NULL;  // 로그 파일 포인터 (모듈 내부 전용)
+/* 내부 상태 */
+static FILE *g_log = NULL;          /* 로그 파일 포인터 */
+static char *g_log_path = NULL;     /* 마지막으로 연 로그 파일 경로 */
+static volatile sig_atomic_t g_need_reopen = 0; /* SIGHUP 플래그 */
 
-/*
- * 로그 파일을 '추가 모드(a)'로 연다.
- * path: 생성/append할 파일 경로
- * 성공: 0 리턴
- * 실패: -1 리턴 (예: 경로 오류, 권한 부족 등)
- */
-int log_open(const char *path) {
-    log_fp = fopen(path, "a");
-    if (!log_fp) {
-        return -1;  // 파일 열기 실패
+/* SIGHUP 핸들러: 플래그만 세팅 (async-safe) */
+static void hup_handler(int sig) {
+    (void)sig;
+    g_need_reopen = 1;
+}
+
+/* 로컬 함수: 안전하게 append 모드로 열고 FILE* 반환 */
+static FILE *open_file_append(const char *path) {
+    int flags = O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC;
+#ifdef O_NOFOLLOW
+    flags |= O_NOFOLLOW;   /* symlink 따라가지 않도록 */
+#endif
+
+    int fd = open(path, flags, 0644);
+    if (fd < 0) {
+        return NULL;
     }
+
+    FILE *fp = fdopen(fd, "a");
+    if (!fp) {
+        close(fd);
+        return NULL;
+    }
+
+    /* 라인 버퍼링: 줄 단위로 flush */
+    setvbuf(fp, NULL, _IOLBF, 0);
+    return fp;
+}
+
+int log_open(const char *path) {
+    /* 기존 로그가 있으면 정리 */
+    if (g_log) {
+        fclose(g_log);
+        g_log = NULL;
+    }
+    free(g_log_path);
+    g_log_path = NULL;
+
+    FILE *fp = open_file_append(path);
+    if (!fp) {
+        fprintf(stderr, "entr: cannot open log file '%s': %s\n",
+                path, strerror(errno));
+        return -1;
+    }
+
+    g_log = fp;
+    g_log_path = strdup(path);
+
+    /* SIGHUP 핸들러 설치 (여러 번 호출돼도 무방) */
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = hup_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(SIGHUP, &sa, NULL);
+
     return 0;
 }
 
-/*
- * 변경된 파일명을 로그에 남긴다.
- * 기록 형식: 
- *   [2025-11-21 13:22:45] filename.txt
- * log_fp가 NULL이면 log_open()이 호출되지 않은 상태라 기록을 무시한다.
- * fflush()로 즉시 기록하도록 하여 프로그램 도중 종료되어도 데이터 손실을 방지한다.
- */
-void log_write(const char *filename) {
-    if (!log_fp) {
-        return;  // 로그 파일이 열리지 않은 경우 → 아무것도 하지 않음
+int log_enabled(void) {
+    return g_log != NULL;
+}
+
+/* 같은 경로로 로그 파일 다시 열기 (실패하면 기존 g_log 유지) */
+void log_reopen(void) {
+    if (!g_log_path) return;
+
+    FILE *fp = open_file_append(g_log_path);
+    if (!fp) {
+        /* 재오픈 실패: 기존 로그 포인터 유지 */
+        return;
+    }
+
+    if (g_log) {
+        fclose(g_log);
+    }
+    g_log = fp;
+}
+
+/* 내부 공용: 타임스탬프 + vprintf */
+static void vlog_line(const char *fmt, va_list ap) {
+    if (!g_log) return;
+
+    /* SIGHUP 들어왔으면 여기서 재오픈 */
+    if (g_need_reopen) {
+        g_need_reopen = 0;
+        log_reopen();
+        if (!g_log) return; /* 재오픈 실패하면 그냥 포기 */
     }
 
     time_t now = time(NULL);
-    struct tm *tm_info = localtime(&now);
+    struct tm tm_info;
+    localtime_r(&now, &tm_info);
 
-    // 시각을 사람이 읽기 쉬운 문자열로 변환
-    char buf[64];
-    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", tm_info);
+    char ts[32];
+    strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", &tm_info);
 
-    // 최종 로그 한 줄 기록
-    fprintf(log_fp, "[%s] %s\n", buf, filename);
-    fflush(log_fp);  // 즉시 디스크에 반영
+    /* [타임스탬프] prefix */
+    fprintf(g_log, "[%s] ", ts);
+
+    vfprintf(g_log, fmt, ap);
+    fputc('\n', g_log);
+
+    /* 라인 버퍼링이라도, 확실히 쓰고 싶다면 flush */
+    fflush(g_log);
 }
 
-/*
- * 열려 있는 파일 포인터를 닫는다.
- * log_fp가 NULL이면 이미 닫힌 상태라 아무 일도 하지 않는다.
- * 정상적으로 닫으면 log_fp를 NULL로 리셋해 재사용에 대비한다.
- */
+/* public 함수 */
+void log_line(const char *fmt, ...) {
+    if (!g_log) return;
+
+    va_list ap;
+    va_start(ap, fmt);
+    vlog_line(fmt, ap);
+    va_end(ap);
+}
+
+/* 파일 이름만 받으면 "modified: %s" 출력 */
+void log_write(const char *filename) {
+    if (!filename || !filename[0]) return;
+    if (!log_enabled()) return;
+
+    log_line("modified: %s", filename);
+}
+
 void log_close(void) {
-    if (log_fp) {
-        fclose(log_fp);
-        log_fp = NULL;
+    if (g_log) {
+        fclose(g_log);
+        g_log = NULL;
     }
+    free(g_log_path);
+    g_log_path = NULL;
 }
