@@ -127,11 +127,17 @@ main(int argc, char *argv[]) {
 	if (status_filter_opt)
 		start_log_filter(status_filter_opt);
 
-	    /* 로그 파일 열기: 현재 디렉터리에 entr.log 생성 */
-    if (log_open("entr.log") != 0) {
-        /* 실패해도 프로그램은 그냥 계속 돌아가게 경고만 */
-        fprintf(stderr, "warning: 로그 파일을 열 수 없습니다 (entr.log)\n");
-    }
+ /* 로그 옵션 처리 후:
+ *  - 사용자가 -o / --log-file 로 직접 경로를 지정하지 않았다면
+ *    기본값으로 ./entr.log 를 사용한다. */
+
+	if (log_enabled() && !log_has_file()) {
+    	if (log_open("entr.log") != 0) {
+        	fprintf(stderr,
+            	"warning: 로그 파일을 열 수 없습니다 (entr.log)\n");
+    	}
+	}
+
 
 	/* sequential scan may depend on a 0 at the end */
 	files = calloc(open_max + 1, sizeof(WatchFile *));
@@ -174,6 +180,7 @@ main(int argc, char *argv[]) {
 		/* remember terminal settings */
 		if (tcgetattr(STDIN_FILENO, &canonical_tty) == -1)
 			errx(1, "unable to get terminal attributes, use '-n' to run non-interactively");
+	}
 
 	watch_loop(event_fd, argv + argv_index);
 
@@ -182,7 +189,7 @@ main(int argc, char *argv[]) {
         log_line("entr exiting normally");
     }
     log_close();
-	
+
 	return 1;
 }
 
@@ -428,7 +435,7 @@ set_options(char *argv[]) {
 	/* read arguments until we reach a command */
 	for (argc = 1; argv[argc] != 0 && argv[argc][0] == '-'; argc++)
 		;
-	while ((ch = getopt(argc, argv, "acdnprsxz")) != -1) {
+	while ((ch = getopt(argc, argv, "acdnprsxzLo:")) != -1) {
 		switch (ch) {
 		case 'a':
 			aggressive_opt = 1;
@@ -457,10 +464,68 @@ set_options(char *argv[]) {
 		case 'z':
 			oneshot_opt = 1;
 			break;
+			
+			 /* 새로 추가한 로그 활성화 옵션 */
+   		 case 'L':
+        	log_set_enabled(1);
+        	break;
+
+			/* 새로 추가한 로그 파일 경로 옵션: -o <path> */
+		case 'o':
+			log_set_file(optarg);   /* optarg = -o 바로 뒤의 <path> */
+			break;
+
 		default:
 			usage();
 		}
 	}
+	
+	     /* ----- 긴 옵션(--) 처리 ----- */
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--log-enable") == 0) {
+            log_set_enabled(1);
+        }
+        else if (strncmp(argv[i], "--log-file=", 11) == 0) {
+            const char *path = argv[i] + 11;
+            log_set_file(path);
+        }
+        else if (strncmp(argv[i], "--log-format=", 13) == 0) {
+            const char *fmt = argv[i] + 13;
+
+            if (strcmp(fmt, "plain") == 0) {
+                log_set_format(LOG_FORMAT_PLAIN);
+            }
+            else if (strcmp(fmt, "json") == 0) {
+                log_set_format(LOG_FORMAT_JSON);
+            }
+            else {
+                errx(1, "invalid --log-format value (use plain or json)");
+            }
+        }
+        /* 새로 추가: --log-level=event|info|warn|error */
+        else if (strncmp(argv[i], "--log-level=", 12) == 0) {
+            const char *lvl = argv[i] + 12;
+
+            if      (strcmp(lvl, "event") == 0) log_set_level(LOG_LEVEL_EVENT);
+            else if (strcmp(lvl, "info")  == 0) log_set_level(LOG_LEVEL_INFO);
+            else if (strcmp(lvl, "warn")  == 0) log_set_level(LOG_LEVEL_WARN);
+            else if (strcmp(lvl, "error") == 0) log_set_level(LOG_LEVEL_ERROR);
+            else
+                errx(1, "invalid --log-level value (use event|info|warn|error)");
+        }
+        /* 새로 추가: --timestamp-format=default|short|unix */
+        else if (strncmp(argv[i], "--timestamp-format=", 19) == 0) {
+            const char *tf = argv[i] + 19;
+
+            if      (strcmp(tf, "default") == 0) log_set_timestamp_format(LOG_TS_DEFAULT);
+            else if (strcmp(tf, "short")   == 0) log_set_timestamp_format(LOG_TS_SHORT);
+            else if (strcmp(tf, "unix")    == 0) log_set_timestamp_format(LOG_TS_UNIX);
+            else
+                errx(1, "invalid --timestamp-format (use default|short|unix)");
+        }
+    }
+
+
 	if (argv[optind] == 0)
 		usage();
 
@@ -762,4 +827,4 @@ main:
 
     goto main;
 }
-}
+
