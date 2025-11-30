@@ -153,6 +153,12 @@ main(int argc, char *argv[]) {
 		    " class is %u. Please consult"
 		    " http://eradman.com/entrproject/limits.html",
 		    open_max);
+
+			/* 시작 로그 한 줄 */
+	if (log_enabled()) {
+		log_line("entr started; watching %d files", n_files);
+	}
+
 	for (i = 0; i < n_files; i++)
 		watch_file(event_fd, files[i]);
 
@@ -170,6 +176,13 @@ main(int argc, char *argv[]) {
 			errx(1, "unable to get terminal attributes, use '-n' to run non-interactively");
 
 	watch_loop(event_fd, argv + argv_index);
+
+	/* 혹시라도 watch_loop에서 정상 리턴할 경우를 대비한 종료 로그 */
+    if (log_enabled()) {
+        log_line("entr exiting normally");
+    }
+    log_close();
+	
 	return 1;
 }
 
@@ -236,6 +249,16 @@ handle_exit(int sig) {
 	if (status_filter_opt)
 		end_log_filter();
 
+	/*  신호로 종료될 때 로그 남기기 */
+    if (log_enabled()) {
+        if (sig == SIGINT)
+            log_line("entr exiting due to SIGINT");
+        else if (sig == SIGHUP)
+            log_line("entr exiting due to SIGHUP");
+        else
+            log_line("entr exiting due to signal %d", sig);
+    }
+
 	/* 로그 파일 닫기 */
     log_close();
 
@@ -296,6 +319,20 @@ print_child_status(int status) {
 		else
 			len = snprintf(buf, sizeof(buf), "exit|%d|%s\n", WEXITSTATUS(status), argv0_base);
 		write_log_filter(buf, len);
+	}
+
+	/* 로그 파일에도 자식 종료 상태 남기기 */
+	if (log_enabled()) {
+		if (WIFSIGNALED(status)) {
+			log_line("child '%s' terminated by signal %d",
+			    argv0_base, WTERMSIG(status));
+		} else if (WIFEXITED(status)) {
+			log_line("child '%s' exited with status %d",
+			    argv0_base, WEXITSTATUS(status));
+		} else {
+			log_line("child '%s' changed state (status=%d)",
+			    argv0_base, status);
+		}
 	}
 }
 
@@ -714,6 +751,11 @@ main:
         leading_edge_set = 0;
     }
     if (dir_modified > 0) {
+
+		/* 디렉토리가 망가져서 프로그램이 죽을 때 로그 남기기 */
+		if (log_enabled()) {
+            log_line("entr exiting: directory '%s' altered", leading_edge->fn);
+        }
         terminate_utility();
         errx(2, "directory altered");
     }
