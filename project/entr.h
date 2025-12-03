@@ -33,7 +33,6 @@
 #endif
 
 #ifdef __linux__
-#include <sys/inotify.h>
 #endif
 
 #include <limits.h> // data.h에 있던 헤더

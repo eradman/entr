@@ -48,7 +48,6 @@ static int process_input(FILE *, WatchFile *[], int);
 static int set_options(char *[]);
 static int list_dir(char *);
 static void run_utility(char *[]);
-static void watch_file(int, WatchFile *);
 static int compare_dir_contents(WatchFile *);
 static void watch_loop(int, char *[]);
 
@@ -183,6 +182,7 @@ main(int argc, char *argv[]) {
 		/* remember terminal settings */
 		if (tcgetattr(STDIN_FILENO, &canonical_tty) == -1)
 			errx(1, "unable to get terminal attributes, use '-n' to run non-interactively");
+	}
 
 	watch_loop(event_fd, argv + argv_index);
 	return 1;
@@ -546,31 +546,6 @@ run_utility(char *argv[]) {
 /*
  * Wait for directory contents to stabilize
  */
-void
-watch_file(int event_fd, WatchFile *file) { // 인자 이름 변경
-    // Kqueue 관련 변수 선언 제거 (struct kevent evSet; 등)
-
-    // ... 파일 열기 로직 (open)이 필요하다면 유지 또는 정리 ...
-
-    // Kqueue 감시 등록 로직 제거 및 Inotify 등록 로직으로 교체:
-    #if defined(_LINUX_PORT)
-        // inotify_add_watch 함수는 inotify.c에 구현되어 있어야 합니다.
-        file->wd = inotify_add_watch(event_fd, file->fn, IN_MODIFY | IN_ATTRIB | IN_CLOSE_WRITE | IN_CLOSE_NOWRITE | IN_CREATE | IN_DELETE | IN_DELETE_SELF | IN_MOVE_SELF | IN_MOVED_FROM | IN_MOVED_TO);
-
-        if (file->wd == -1) {
-            // inotify 에러 처리 (kqueue 에러 메시지 대신 inotify 에러 메시지 사용)
-            if (errno == ENOSPC) {
-                // ... 에러 처리 로직 ...
-            } else {
-                err(1, "failed to register inotify watch");
-            }
-        }
-    #else
-        // Kqueue 로직을 여기에 남겨두거나 완전히 제거합니다.
-        // 현재는 Inotify만 쓰므로 이 블록을 제거하는 것이 안전합니다.
-    #endif
-}
-
 int
 compare_dir_contents(WatchFile *file) {
 	int i;
@@ -692,10 +667,13 @@ main:
             } else if (file->is_dir == 0)
                 continue;
         }
-
-        if ((leading_edge_set == 0) && (file->is_dir == 0) && (do_exec == 1)) {
-            leading_edge = file;
-            leading_edge_set = 1;
+// 하나의 파일만 로그되게 되어있길래 수정
+        if ((file->is_dir == 0) && (do_exec == 1)) {
+            log_write(file->fn);  // 파일 변경 로그 기록
+            if (leading_edge_set == 0) {
+                leading_edge = file;
+                leading_edge_set = 1;
+            }
         }
     }
 
@@ -724,5 +702,4 @@ main:
     }
 
     goto main;
-}
 }
