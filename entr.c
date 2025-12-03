@@ -109,8 +109,6 @@ main(int argc, char *argv[]) {
 		err(1, "Failed to set SIGINT handler");
 	if (sigaction(SIGTERM, &act, NULL) != 0)
 		err(1, "Failed to set SIGTERM handler");
-	if (sigaction(SIGHUP, &act, NULL) != 0)
-		err(1, "Failed to set SIGHUP handler");
 
 	set_restart_signal();
 
@@ -155,17 +153,16 @@ main(int argc, char *argv[]) {
 	if (status_filter_opt)
 		start_log_filter(status_filter_opt);
 
- /* 로그 옵션 처리 후:
- *  - 사용자가 -o / --log-file 로 직접 경로를 지정하지 않았다면
- *    기본값으로 ./entr.log 를 사용한다. */
+ 	/* 로그 옵션 처리 후:
+	 *  - 로그가 활성화되어 있으면
+	 *    기본값으로 ./entr.log 를 사용한다.
+	 *    (사용자가 -o/--log-file 을 줬다면, set_options() 안에서
+	 *     이미 다른 경로로 열렸을 수 있음)
+	 */
 
-	if (log_enabled() && !log_has_file()) {
-    	if (log_open("entr.log") != 0) {
-        	fprintf(stderr,
-            	"warning: 로그 파일을 열 수 없습니다 (entr.log)\n");
-    	}
+	if (log_enabled()) {
+		log_set_file("entr.log");
 	}
-
 
 	/* sequential scan may depend on a 0 at the end */
 	files = calloc(open_max + 1, sizeof(WatchFile *));
@@ -223,7 +220,7 @@ main(int argc, char *argv[]) {
 
 /* Utility functions */
 
-void daemonize(const char* cmd)
+void daemonize(const char* cmd);
 
 
 void
@@ -286,13 +283,13 @@ handle_exit(int sig) {
 
 	/*  신호로 종료될 때 로그 남기기 */
     if (log_enabled()) {
-        if (sig == SIGINT)
-            log_line("entr exiting due to SIGINT");
-        else if (sig == SIGHUP)
-            log_line("entr exiting due to SIGHUP");
-        else
-            log_line("entr exiting due to signal %d", sig);
-    }
+    	if (sig == SIGINT)
+        log_line("entr exiting due to SIGINT");
+    	else if (sig == SIGTERM)
+        log_line("entr exiting due to SIGTERM");
+    	else
+        log_line("entr exiting due to signal %d", sig);
+	}
 
 	/* 로그 파일 닫기 */
     log_close();
@@ -814,7 +811,15 @@ main:
         if ((leading_edge_set == 0) && (file->is_dir == 0) && (do_exec == 1)) {
             leading_edge = file;
             leading_edge_set = 1;
-        }
+
+			/* 파일 변경 로그 한 줄 */
+    		log_write(leading_edge->fn);
+
+    		/* 옵션으로 켜진 추가 로그 (레벨/포맷 적용) */
+    		if (log_enabled()) {
+        		log_line("trigger: restarting command because of %s",
+                 	leading_edge->fn);
+        		}
     }
 
     if (!noninteractive_opt)
@@ -859,4 +864,3 @@ main:
 
     goto main;
 }
-
