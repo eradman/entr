@@ -2,10 +2,25 @@
 #include "project/daemon.c"
 /*헤더파일*/
 #include "project/daemon.h"
-#include "entr.h"
+#include "project/entr.h"
 #include "project/event.h"
 #include <unistd.h>
-#include "log.h"   /* 파일 변경 로그 기록용 */
+#include <termios.h>    // TTY 제어
+#include <sys/stat.h>   // stat
+#include <sys/wait.h>   // waitpid
+#include <dirent.h>     // list_dir 사용
+#include <libgen.h>     // basename, dirname 사용
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <err.h>
+#include <fcntl.h>
+#include <limits.h>
+
+/* 파일 변경 로그 기록용 */
+#include "log.h" 
 
 /* globals */
 
@@ -30,11 +45,21 @@ pid_t status_pid = 0;
 
 int termios_set;
 struct termios canonical_tty;
+static struct termios character_tty; // TTY 비표준 설정 추가 (set_tty_cbreak에서 사용)
 
 static char *shell, *shell_base;
 static char *argv0, *argv0_base;
 
+extern int event_init(void);
+extern void event_loop(int event_fd, char *argv[]); 
+extern void watch_file(int event_fd, WatchFile *file);
 
+int compare_dir_contents(WatchFile *);
+void run_utility(char *[]);
+
+void set_tty_cbreak(void);
+void restore_tty(void);
+int process_keyboard_event(int fd);
 
 /* function pointers */
 int (*xstat)(const char *path, struct stat *sb) = stat;
@@ -48,10 +73,6 @@ static void print_child_status(int status);
 static int process_input(FILE *, WatchFile *[], int);
 static int set_options(char *[]);
 static int list_dir(char *);
-static void run_utility(char *[]);
-static void watch_file(int, WatchFile *);
-static int compare_dir_contents(WatchFile *);
-static void watch_loop(int, char *[]);
 
 /*
  * The Event Notify Test Runner
@@ -71,6 +92,13 @@ main(int argc, char *argv[]) {
 	if (argc < 2)
 		usage();
 	argv_index = set_options(argv);
+
+	// TTY 원본 설정 기억 (main 함수 시작 부분에서 먼저 시도)
+    if (tcgetattr(STDIN_FILENO, &canonical_tty) == -1) {
+        if (errno != ENOTTY)
+            warn("tcgetattr failed");
+        noninteractive_opt = 1; // TTY가 아니면 비대화형 모드로 전환
+    }
 
 	sigemptyset(&act.sa_mask);
 
@@ -94,17 +122,17 @@ main(int argc, char *argv[]) {
 
 	/* monitor symlinks if possible */
 	xstat = stat;
-#if defined(O_PATH) || defined(O_SYMLINK)
+    #if defined(O_PATH) || defined(O_SYMLINK)
 	if (getenv("ENTR_FOLLOW_SYMLINK") == NULL)
 		xstat = lstat;
-#endif
+    #endif
 
-#if defined(_LINUX_PORT)
+    #if defined(_LINUX_PORT)
 	/* attempt to read inotify limits */
 	open_max = (unsigned) fs_sysctl(INOTIFY_MAX_USER_WATCHES);
 	if (open_max == 0)
 		open_max = 65536;
-#endif
+    #endif
 
 	if (getenv("EV_TRACE"))
 		fprintf(stderr, "open_max: %d\n", open_max);
@@ -299,7 +327,7 @@ proc_exit(int sig) {
 		child_status = status;
 
 		if ((!noninteractive_opt) && (termios_set))
-			tcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
+			restore_tty();
 
 		if ((oneshot_opt == 1) && (terminating == 0)) {
 			if (restart_opt == 0)
@@ -343,10 +371,50 @@ print_child_status(int status) {
 	}
 }
 
-/*
- * Read lines from a file stream (normally STDIN).  Returns the number of
- * regular files to be watched or -1 if max_files is exceeded.
- */
+// tty 제어 함수 구현
+void
+set_tty_cbreak(void) {
+	if (!noninteractive_opt) {
+		character_tty = canonical_tty;
+		character_tty.c_lflag &= ~(ICANON | ECHO);
+
+		tcsetattr(STDIN_FILENO, TCSADRAIN, &character_tty);
+		termios_set = 1;
+	}
+}
+
+void
+restore_tty(void) {
+    if (termios_set) {
+        if (tcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty) == -1)
+            warn("tcsetattr failed");
+        termios_set = 0;
+    }
+}
+
+int
+process_keyboard_event(int fd) {
+    char c;
+    if (read(fd, &c, 1) != 1) {
+        if (errno != EAGAIN)
+            warn("read failed");
+        return 0;
+    }
+    
+    switch (c) {
+    case ' ': 
+    case '\n':
+    case '\r':
+        return 1; // do_exec = 1 (재실행)
+    case 'q': 
+        return 0; // 종료
+    default:
+        return 0;
+    }
+}
+
+// 기타 로직
+
 int
 process_input(FILE *file, WatchFile *files[], int max_files) {
 	char buf[PATH_MAX];
@@ -379,8 +447,11 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 
 			/* also watch the directory if it's not already in the list */
 			if (dirwatch_opt > 0) {
+				char temp_path[PATH_MAX];
+				strlcpy(temp_pah, path, sizeof(temp_path));
 				if ((parent_path = dirname(path)) == 0)
 					err(1, "dirname '%s' failed", path);
+				
 				for (matches = 0, i = 0; i < n_files; i++) {
 					if ((files[i]->is_dir == 1) && (strcmp(files[i]->fn, parent_path) == 0))
 						matches++;
@@ -423,10 +494,6 @@ list_dir(char *dir) {
 	return count;
 }
 
-/*
- * Evaluate command line arguments and return an offset to the command to
- * execute.
- */
 int
 set_options(char *argv[]) {
 	int ch;
@@ -537,10 +604,6 @@ set_options(char *argv[]) {
 	return optind;
 }
 
-/*
- * Execute the program supplied on the command line. If restart was set
- * then send the child process SIGTERM and restart it.
- */
 void
 run_utility(char *argv[]) {
 	int pid;
@@ -566,9 +629,6 @@ run_utility(char *argv[]) {
 		new_argv[2] = argv[0];
 		new_argv[3] = leading_edge->fn;
 	} else {
-		/* clone argv on each invocation to make the implementation of more
-		 * complex substitution rules possible and easy
-		 */
 		for (argc = 0; argv[argc]; argc++)
 			;
 		new_argv = calloc(argc + 1, sizeof(char *));
@@ -628,35 +688,7 @@ run_utility(char *argv[]) {
 	free(arg_buf);
 	free(new_argv);
 }
-
-/*
- * Wait for directory contents to stabilize
- */
-void
-watch_file(int event_fd, WatchFile *file) { // 인자 이름 변경
-    // Kqueue 관련 변수 선언 제거 (struct kevent evSet; 등)
-
-    // ... 파일 열기 로직 (open)이 필요하다면 유지 또는 정리 ...
-
-    // Kqueue 감시 등록 로직 제거 및 Inotify 등록 로직으로 교체:
-    #if defined(_LINUX_PORT)
-        // inotify_add_watch 함수는 inotify.c에 구현되어 있어야 합니다.
-        file->wd = inotify_add_watch(event_fd, file->fn, IN_MODIFY | IN_ATTRIB | IN_CLOSE_WRITE | IN_CLOSE_NOWRITE | IN_CREATE | IN_DELETE | IN_DELETE_SELF | IN_MOVE_SELF | IN_MOVED_FROM | IN_MOVED_TO);
-
-        if (file->wd == -1) {
-            // inotify 에러 처리 (kqueue 에러 메시지 대신 inotify 에러 메시지 사용)
-            if (errno == ENOSPC) {
-                // ... 에러 처리 로직 ...
-            } else {
-                err(1, "failed to register inotify watch");
-            }
-        }
-    #else
-        // Kqueue 로직을 여기에 남겨두거나 완전히 제거합니다.
-        // 현재는 Inotify만 쓰므로 이 블록을 제거하는 것이 안전합니다.
-    #endif
-}
-
+    
 int
 compare_dir_contents(WatchFile *file) {
 	int i;
