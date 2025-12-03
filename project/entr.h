@@ -62,22 +62,19 @@ extern WatchFile **files;
 extern int optind;         //
 extern pid_t status_pid;   //
 
-/* globals */
-extern WatchFile *leading_edge; //
-extern int child_pid;          //
-extern int child_status;       //
-extern int terminating;        //
-extern int aggressive_opt;     //
-extern int clear_opt;          //
-extern int dirwatch_opt;       //
-extern int noninteractive_opt; //
-extern int oneshot_opt;        //
-extern int postpone_opt;       //
-extern int restart_opt;        //
-extern int shell_opt;          //
-extern int status_filter_opt;  //
-extern int termios_set;     //
-extern struct termios canonical_tty; //
+/* option flags */
+extern int aggressive_opt; 
+extern int clear_opt;      
+extern int dirwatch_opt;   
+extern int noninteractive_opt; 
+extern int oneshot_opt;    
+extern int postpone_opt;   
+extern int restart_opt;    
+extern int shell_opt;      
+extern int status_filter_opt;
+extern int daemon_opt;
+extern int termios_set;    
+extern struct termios canonical_tty; 
 
 /* function pointers */
 extern int (*xstat)(const char *path, struct stat *sb);

@@ -1,5 +1,3 @@
-/*데몬모드 C 파일*/
-#include "project/daemon.c"
 /*헤더파일*/
 #include "project/daemon.h"
 #include "entr.h"
@@ -25,6 +23,7 @@ int postpone_opt;
 int restart_opt;
 int shell_opt;
 int status_filter_opt;
+int daemon_opt;
 
 pid_t status_pid = 0;
 
@@ -71,6 +70,22 @@ main(int argc, char *argv[]) {
 	if (argc < 2)
 		usage();
 	argv_index = set_options(argv);
+
+	/* 데몬 모드로 실행 */
+	if (daemon_opt) {
+		if (daemonize("/var/run/entr.pid") != 0) {
+			err(1, "Failed to daemonize");
+		}
+		/* 데몬 모드에서는 비대화형으로 실행 */
+		noninteractive_opt = 1;
+	}
+
+	// TTY 원본 설정 기억 (main 함수 시작 부분에서 먼저 시도)
+    if (tcgetattr(STDIN_FILENO, &canonical_tty) == -1) {
+        if (errno != ENOTTY)
+            warn("tcgetattr failed");
+        noninteractive_opt = 1; // TTY가 아니면 비대화형 모드로 전환
+    }
 
 	sigemptyset(&act.sa_mask);
 
@@ -175,13 +190,11 @@ main(int argc, char *argv[]) {
 
 /* Utility functions */
 
-void daemonize(const char* cmd)
-
-
 void
 usage() {
 	fprintf(stderr, "release: %s\n", RELEASE);
-	fprintf(stderr, "usage: entr [-acdnprsxz] utility [argument [/_] ...] < filenames\n");
+	fprintf(stderr, "usage: entr [-acdDnprsxz] utility [argument [/_] ...] < filenames\n");
+	fprintf(stderr, "  -D  Run as daemon (double fork)\n");
 	exit(1);
 }
 
@@ -391,7 +404,7 @@ set_options(char *argv[]) {
 	/* read arguments until we reach a command */
 	for (argc = 1; argv[argc] != 0 && argv[argc][0] == '-'; argc++)
 		;
-	while ((ch = getopt(argc, argv, "acdnprsxz")) != -1) {
+	while ((ch = getopt(argc, argv, "acdDnprsxzLo:")) != -1) {
 		switch (ch) {
 		case 'a':
 			aggressive_opt = 1;
@@ -401,6 +414,9 @@ set_options(char *argv[]) {
 			break;
 		case 'd':
 			dirwatch_opt = dirwatch_opt ? 2 : 1;
+			break;
+		case 'D':
+			daemon_opt = 1;
 			break;
 		case 'n':
 			noninteractive_opt = 1;
