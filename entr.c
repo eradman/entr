@@ -6,6 +6,10 @@
 #include "log.h"   /* 파일 변경 로그 기록용 */
 #include "status.h" /* start_log_filter 등의 함수 */
 
+#if defined(__linux__) || defined(_LINUX_PORT)
+#include <sys/inotify.h> /* inotify_event 구조체 및 상수들 */
+#endif
+
 /* globals */
 
 WatchFile *leading_edge;

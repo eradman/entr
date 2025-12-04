@@ -36,7 +36,9 @@
 #define NOTE_ALL (NOTE_DELETE | NOTE_WRITE | NOTE_RENAME | NOTE_TRUNCATE | NOTE_ATTRIB)
 #endif
 
-#ifdef __linux__
+#if defined(__linux__) || defined(_LINUX_PORT)
+#define INOTIFY_MAX_USER_WATCHES 2
+int fs_sysctl(const int name);
 #endif
 
 #include <limits.h> // data.h에 있던 헤더
