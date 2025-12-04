@@ -4,6 +4,7 @@
 #include "project/event.h"
 #include <unistd.h>
 #include "log.h"   /* 파일 변경 로그 기록용 */
+#include "status.h" /* start_log_filter 등의 함수 */
 
 /* globals */
 
