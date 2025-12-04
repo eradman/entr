@@ -82,6 +82,9 @@ extern struct termios canonical_tty;
 /* function pointers */
 extern int (*xstat)(const char *path, struct stat *sb);
 
+/* functions used by event backends */
+int compare_dir_contents(WatchFile *file);
+
 #endif // PROJECT_ENTR_H
 
 

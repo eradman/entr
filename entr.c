@@ -48,7 +48,7 @@ static int process_input(FILE *, WatchFile *[], int);
 static int set_options(char *[]);
 static int list_dir(char *);
 static void run_utility(char *[]);
-static int compare_dir_contents(WatchFile *);
+int compare_dir_contents(WatchFile *);
 static void watch_loop(int, char *[]);
 
 /*
