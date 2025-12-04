@@ -67,16 +67,16 @@ extern pid_t status_pid;   //
 
 /* option flags */
 extern int aggressive_opt; 
-extern int clear_opt;      
-extern int dirwatch_opt;   
+extern int clear_opt;   
+extern int dirwatch_opt;  
 extern int noninteractive_opt; 
-extern int oneshot_opt;    
-extern int postpone_opt;   
-extern int restart_opt;    
-extern int shell_opt;      
+extern int oneshot_opt;  
+extern int postpone_opt;  
+extern int restart_opt;  
+extern int shell_opt;   
 extern int status_filter_opt;
 extern int daemon_opt;
-extern int termios_set;    
+extern int termios_set;  
 extern struct termios canonical_tty; 
 
 /* function pointers */
