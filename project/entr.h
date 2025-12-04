@@ -1,4 +1,5 @@
-//project/entr.h
+//chaemin
+
 #ifndef ARG_MAX
 #define ARG_MAX 2097152
 #endif
@@ -13,7 +14,7 @@
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/resource.h>
-#include <sys/stat.h>
+#include <sys/stat.h> // mode_t, ino_t, stat 구조체, S_ISREG 등
 #include <sys/wait.h>
 #include <dirent.h>
 #include <err.h>
@@ -21,12 +22,12 @@
 #include <string.h>
 #include <fcntl.h>
 #include <libgen.h>
-#include <limits.h>
+#include <limits.h> // PATH_MAX, ARG_MAX
 #include <paths.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <termios.h>
+#include <termios.h> // struct termios, tcgetattr 등
 #include <time.h>
 #include <unistd.h>
 
@@ -41,23 +42,22 @@
 int fs_sysctl(const int name);
 #endif
 
-#include <limits.h> // data.h에 있던 헤더
-#include <sys/stat.h> // data.h에 있던 헤더
+// [WatchFile 구조체 정의]
 
 /* data */
 typedef struct {
-    char fn[PATH_MAX];
-    int fd;
-    int wd;
-    int is_dir; // WatchFile 멤버 누락 해결!
-    int is_symlink;
-    int file_count;
-    mode_t mode; // WatchFile 멤버 누락 해결!
-    ino_t ino;   // WatchFile 멤버 누락 해결!
+    char fn[PATH_MAX];
+    int fd;
+    int wd;
+    int is_dir; 
+    int is_symlink;
+    int file_count;
+    mode_t mode; 
+    ino_t ino;   
 } WatchFile;
 
-/* defined in entr.c */
-extern WatchFile **files;
+// [매크로 및 유틸리티]
+
 /* shortcuts */
 #define min(a, b) (((a) < (b)) ? (a) : (b)) //
 #define MEMBER_SIZE(S, M) sizeof(((S *)0)->M) //
@@ -89,6 +89,28 @@ int compare_dir_contents(WatchFile *file);
 
 #endif // PROJECT_ENTR_H
 
+// 시그널/프로세스 콜백
+extern void handle_exit(int sig);
+extern void proc_exit(int sig);
+extern void print_child_status(int status);
 
+// 파일/입력 처리
+extern int process_input(FILE *, WatchFile *[], int);
+extern int set_options(char *[]);
+extern int list_dir(char *);
 
+// 로그 필터링
+extern void start_log_filter(int);
+extern void end_log_filter(void);
+extern void write_log_filter(const char *buf, size_t len);
 
+// [inotify.c (event.h)에 정의된 함수 원형]
+
+extern void watch_file(int event_fd, WatchFile *file); // 감시 대상 등록
+extern void event_loop(int event_fd, char *argv[]);    // 메인 이벤트 루프
+
+// [기타 시스템 호환 함수]
+
+extern int pledge(const char*, const char *[]); // OpenBSD sandbox
+
+#endif // PROJECT_ENTR_H

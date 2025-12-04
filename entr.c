@@ -1,6 +1,6 @@
 /*헤더파일*/
 #include "project/daemon.h"
-#include "entr.h"
+#include "project/entr.h"
 #include "project/event.h"
 #include <unistd.h>
 #include "log.h"   /* 파일 변경 로그 기록용 */
@@ -34,11 +34,21 @@ pid_t status_pid = 0;
 
 int termios_set;
 struct termios canonical_tty;
+static struct termios character_tty; // TTY 비표준 설정 추가 (set_tty_cbreak에서 사용)
 
 static char *shell, *shell_base;
 static char *argv0, *argv0_base;
 
+extern int event_init(void);
+extern void event_loop(int event_fd, char *argv[]); 
+extern void watch_file(int event_fd, WatchFile *file);
 
+int compare_dir_contents(WatchFile *);
+void run_utility(char *[]);
+
+void set_tty_cbreak(void);
+void restore_tty(void);
+int process_keyboard_event(int fd);
 
 /* function pointers */
 int (*xstat)(const char *path, struct stat *sb) = stat;
@@ -100,8 +110,6 @@ main(int argc, char *argv[]) {
 		err(1, "Failed to set SIGINT handler");
 	if (sigaction(SIGTERM, &act, NULL) != 0)
 		err(1, "Failed to set SIGTERM handler");
-	if (sigaction(SIGHUP, &act, NULL) != 0)
-		err(1, "Failed to set SIGHUP handler");
 
 	set_restart_signal();
 
@@ -113,17 +121,17 @@ main(int argc, char *argv[]) {
 
 	/* monitor symlinks if possible */
 	xstat = stat;
-#if defined(O_PATH) || defined(O_SYMLINK)
+    #if defined(O_PATH) || defined(O_SYMLINK)
 	if (getenv("ENTR_FOLLOW_SYMLINK") == NULL)
 		xstat = lstat;
-#endif
+    #endif
 
-#if defined(_LINUX_PORT)
+    #if defined(_LINUX_PORT)
 	/* attempt to read inotify limits */
 	open_max = (unsigned) fs_sysctl(INOTIFY_MAX_USER_WATCHES);
 	if (open_max == 0)
 		open_max = 65536;
-#endif
+    #endif
 
 	if (getenv("EV_TRACE"))
 		fprintf(stderr, "open_max: %d\n", open_max);
@@ -146,11 +154,16 @@ main(int argc, char *argv[]) {
 	if (status_filter_opt)
 		start_log_filter(status_filter_opt);
 
-	    /* 로그 파일 열기: 현재 디렉터리에 entr.log 생성 */
-    if (log_open("entr.log") != 0) {
-        warnx("unable to open log file 'entr.log'");
-        /* 실패해도 프로그램은 계속 돌아감 (단, 로그는 안 남음) */
-    }
+ 	/* 로그 옵션 처리 후:
+	 *  - 로그가 활성화되어 있으면
+	 *    기본값으로 ./entr.log 를 사용한다.
+	 *    (사용자가 -o/--log-file 을 줬다면, set_options() 안에서
+	 *     이미 다른 경로로 열렸을 수 있음)
+	 */
+
+	if (log_enabled()) {
+		log_set_file("entr.log");
+	}
 
 	/* sequential scan may depend on a 0 at the end */
 	files = calloc(open_max + 1, sizeof(WatchFile *));
@@ -172,6 +185,12 @@ main(int argc, char *argv[]) {
 		    " class is %u. Please consult"
 		    " http://eradman.com/entrproject/limits.html",
 		    open_max);
+
+			/* 시작 로그 한 줄 */
+	if (log_enabled()) {
+		log_line("entr started; watching %d files", n_files);
+	}
+
 	for (i = 0; i < n_files; i++)
 		watch_file(event_fd, files[i]);
 
@@ -190,6 +209,13 @@ main(int argc, char *argv[]) {
 	}
 
 	watch_loop(event_fd, argv + argv_index);
+
+	/* 혹시라도 watch_loop에서 정상 리턴할 경우를 대비한 종료 로그 */
+    if (log_enabled()) {
+        log_line("entr exiting normally");
+    }
+    log_close();
+
 	return 1;
 }
 
@@ -254,6 +280,16 @@ handle_exit(int sig) {
 	if (status_filter_opt)
 		end_log_filter();
 
+	/*  신호로 종료될 때 로그 남기기 */
+    if (log_enabled()) {
+    	if (sig == SIGINT)
+        log_line("entr exiting due to SIGINT");
+    	else if (sig == SIGTERM)
+        log_line("entr exiting due to SIGTERM");
+    	else
+        log_line("entr exiting due to signal %d", sig);
+	}
+
 	/* 로그 파일 닫기 */
     log_close();
 
@@ -287,7 +323,7 @@ proc_exit(int sig) {
 		child_status = status;
 
 		if ((!noninteractive_opt) && (termios_set))
-			tcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty);
+			restore_tty();
 
 		if ((oneshot_opt == 1) && (terminating == 0)) {
 			if (restart_opt == 0)
@@ -315,12 +351,66 @@ print_child_status(int status) {
 			len = snprintf(buf, sizeof(buf), "exit|%d|%s\n", WEXITSTATUS(status), argv0_base);
 		write_log_filter(buf, len);
 	}
+
+	/* 로그 파일에도 자식 종료 상태 남기기 */
+	if (log_enabled()) {
+		if (WIFSIGNALED(status)) {
+			log_line("child '%s' terminated by signal %d",
+			    argv0_base, WTERMSIG(status));
+		} else if (WIFEXITED(status)) {
+			log_line("child '%s' exited with status %d",
+			    argv0_base, WEXITSTATUS(status));
+		} else {
+			log_line("child '%s' changed state (status=%d)",
+			    argv0_base, status);
+		}
+	}
 }
 
-/*
- * Read lines from a file stream (normally STDIN).  Returns the number of
- * regular files to be watched or -1 if max_files is exceeded.
- */
+// tty 제어 함수 구현
+void
+set_tty_cbreak(void) {
+	if (!noninteractive_opt) {
+		character_tty = canonical_tty;
+		character_tty.c_lflag &= ~(ICANON | ECHO);
+
+		tcsetattr(STDIN_FILENO, TCSADRAIN, &character_tty);
+		termios_set = 1;
+	}
+}
+
+void
+restore_tty(void) {
+    if (termios_set) {
+        if (tcsetattr(STDIN_FILENO, TCSADRAIN, &canonical_tty) == -1)
+            warn("tcsetattr failed");
+        termios_set = 0;
+    }
+}
+
+int
+process_keyboard_event(int fd) {
+    char c;
+    if (read(fd, &c, 1) != 1) {
+        if (errno != EAGAIN)
+            warn("read failed");
+        return 0;
+    }
+    
+    switch (c) {
+    case ' ': 
+    case '\n':
+    case '\r':
+        return 1; // do_exec = 1 (재실행)
+    case 'q': 
+        return 0; // 종료
+    default:
+        return 0;
+    }
+}
+
+// 기타 로직
+
 int
 process_input(FILE *file, WatchFile *files[], int max_files) {
 	char buf[PATH_MAX];
@@ -353,8 +443,11 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 
 			/* also watch the directory if it's not already in the list */
 			if (dirwatch_opt > 0) {
+				char temp_path[PATH_MAX];
+				strlcpy(temp_pah, path, sizeof(temp_path));
 				if ((parent_path = dirname(path)) == 0)
 					err(1, "dirname '%s' failed", path);
+				
 				for (matches = 0, i = 0; i < n_files; i++) {
 					if ((files[i]->is_dir == 1) && (strcmp(files[i]->fn, parent_path) == 0))
 						matches++;
@@ -397,10 +490,6 @@ list_dir(char *dir) {
 	return count;
 }
 
-/*
- * Evaluate command line arguments and return an offset to the command to
- * execute.
- */
 int
 set_options(char *argv[]) {
 	int ch;
@@ -441,10 +530,68 @@ set_options(char *argv[]) {
 		case 'z':
 			oneshot_opt = 1;
 			break;
+			
+			 /* 새로 추가한 로그 활성화 옵션 */
+   		 case 'L':
+        	log_set_enabled(1);
+        	break;
+
+			/* 새로 추가한 로그 파일 경로 옵션: -o <path> */
+		case 'o':
+			log_set_file(optarg);   /* optarg = -o 바로 뒤의 <path> */
+			break;
+
 		default:
 			usage();
 		}
 	}
+	
+	     /* ----- 긴 옵션(--) 처리 ----- */
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--log-enable") == 0) {
+            log_set_enabled(1);
+        }
+        else if (strncmp(argv[i], "--log-file=", 11) == 0) {
+            const char *path = argv[i] + 11;
+            log_set_file(path);
+        }
+        else if (strncmp(argv[i], "--log-format=", 13) == 0) {
+            const char *fmt = argv[i] + 13;
+
+            if (strcmp(fmt, "plain") == 0) {
+                log_set_format(LOG_FORMAT_PLAIN);
+            }
+            else if (strcmp(fmt, "json") == 0) {
+                log_set_format(LOG_FORMAT_JSON);
+            }
+            else {
+                errx(1, "invalid --log-format value (use plain or json)");
+            }
+        }
+        /* 새로 추가: --log-level=event|info|warn|error */
+        else if (strncmp(argv[i], "--log-level=", 12) == 0) {
+            const char *lvl = argv[i] + 12;
+
+            if      (strcmp(lvl, "event") == 0) log_set_level(LOG_LEVEL_EVENT);
+            else if (strcmp(lvl, "info")  == 0) log_set_level(LOG_LEVEL_INFO);
+            else if (strcmp(lvl, "warn")  == 0) log_set_level(LOG_LEVEL_WARN);
+            else if (strcmp(lvl, "error") == 0) log_set_level(LOG_LEVEL_ERROR);
+            else
+                errx(1, "invalid --log-level value (use event|info|warn|error)");
+        }
+        /* 새로 추가: --timestamp-format=default|short|unix */
+        else if (strncmp(argv[i], "--timestamp-format=", 19) == 0) {
+            const char *tf = argv[i] + 19;
+
+            if      (strcmp(tf, "default") == 0) log_set_timestamp_format(LOG_TS_DEFAULT);
+            else if (strcmp(tf, "short")   == 0) log_set_timestamp_format(LOG_TS_SHORT);
+            else if (strcmp(tf, "unix")    == 0) log_set_timestamp_format(LOG_TS_UNIX);
+            else
+                errx(1, "invalid --timestamp-format (use default|short|unix)");
+        }
+    }
+
+
 	if (argv[optind] == 0)
 		usage();
 
@@ -456,10 +603,6 @@ set_options(char *argv[]) {
 	return optind;
 }
 
-/*
- * Execute the program supplied on the command line. If restart was set
- * then send the child process SIGTERM and restart it.
- */
 void
 run_utility(char *argv[]) {
 	int pid;
@@ -485,9 +628,6 @@ run_utility(char *argv[]) {
 		new_argv[2] = argv[0];
 		new_argv[3] = leading_edge->fn;
 	} else {
-		/* clone argv on each invocation to make the implementation of more
-		 * complex substitution rules possible and easy
-		 */
 		for (argc = 0; argv[argc]; argc++)
 			;
 		new_argv = calloc(argc + 1, sizeof(char *));
@@ -695,6 +835,17 @@ main:
     if (collate_only == 1)
         goto main;
     if (do_exec == 1) {
+
+		/* 이번 변경을 트리거한 파일(leading_edge)을 로그에 기록 */
+        if (leading_edge_set && leading_edge && leading_edge->fn[0] != '\0') {
+            log_write(leading_edge->fn);
+			
+			if (log_enabled()) {
+        log_line("trigger: restarting command because of %s",
+                 leading_edge->fn);
+    		}
+        }
+		
         do_exec = 0;
         run_utility(argv);
         if (!aggressive_opt)
@@ -702,6 +853,11 @@ main:
         leading_edge_set = 0;
     }
     if (dir_modified > 0) {
+
+		/* 디렉토리가 망가져서 프로그램이 죽을 때 로그 남기기 */
+		if (log_enabled()) {
+            log_line("entr exiting: directory '%s' altered", leading_edge->fn);
+        }
         terminate_utility();
         errx(2, "directory altered");
     }
