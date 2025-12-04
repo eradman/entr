@@ -86,23 +86,6 @@ extern void terminate_utility();
 extern int compare_dir_contents(WatchFile *file);
 extern void watch_file(int kq, WatchFile *file);
 
-// [entr.c에서 삭제된 함수 원형들]
-void usage(void);
-void terminate_utility(void);
-void handle_exit(int sig);
-void proc_exit(int sig);
-void print_child_status(int status);
-int process_input(FILE *, WatchFile *[], int);
-int set_options(char *[]);
-int list_dir(char *);
-void run_utility(char *[]);
-void watch_file(int, WatchFile*);
-int compare_dir_contents(WatchFile*);
-void watch_loop(int, char *[]);
-void start_log_filter(int);
-int pledge(const char*, const char *[]);
-void end_log_filter(void);
-void write_log_filter(const char *buf, size_t len);
 #endif // PROJECT_ENTR_H
 
 
