@@ -5,7 +5,11 @@
 
 #ifndef PROJECT_ENTR_H
 #define PROJECT_ENTR_H
+
+#ifndef RELEASE
 #define RELEASE "1.0.0"
+#endif
+
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/resource.h>
@@ -26,7 +30,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#ifndef _linux_
+#ifndef __linux__
 #include <sys/event.h>
 #include <sys/time.h>
 #define NOTE_ALL (NOTE_DELETE | NOTE_WRITE | NOTE_RENAME | NOTE_TRUNCATE | NOTE_ATTRIB)
