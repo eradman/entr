@@ -2,6 +2,7 @@
 # ENTR 데몬 모드 테스트 스크립트
 
 set -e
+set -x  # 디버그 모드: 실행되는 명령 출력
 
 echo "=================================================="
 echo "ENTR 데몬 모드 테스트"
@@ -34,12 +35,12 @@ trap cleanup EXIT INT TERM
 # 테스트 함수
 test_pass() {
     echo -e "${GREEN}✓ PASS${NC}: $1"
-    ((PASS++))
+    PASS=$((PASS + 1))
 }
 
 test_fail() {
     echo -e "${RED}✗ FAIL${NC}: $1"
-    ((FAIL++))
+    FAIL=$((FAIL + 1))
 }
 
 echo -e "\n${YELLOW}[테스트 1] 빌드 확인${NC}"
@@ -53,13 +54,19 @@ echo -e "\n${YELLOW}[테스트 2] 기본 데몬화 테스트${NC}"
 # 테스트 파일 생성
 echo "initial" > /tmp/test_file.txt
 
-# 데몬 모드로 entr 실행
-echo "/tmp/test_file.txt" | ./entr -D sh -c 'echo "triggered at $(date)" >> /tmp/entr_test.log' &
+# 데몬 모드로 entr 실행 (에러 출력 확인)
+echo "/tmp/test_file.txt" | ./entr -D sh -c 'echo "triggered at $(date)" >> /tmp/entr_test.log' 2>&1 | tee /tmp/entr_output.log &
 sleep 2
 
+# 에러 출력 확인
+if [ -s /tmp/entr_output.log ]; then
+    echo -e "${YELLOW}entr 실행 중 메시지:${NC}"
+    cat /tmp/entr_output.log | sed 's/^/  /'
+fi
+
 # PID 파일 확인
-if [ -f /var/run/entr.pid ]; then
-    DAEMON_PID=$(cat /var/run/entr.pid)
+if [ -f /tmp/entr.pid ]; then
+    DAEMON_PID=$(cat /tmp/entr.pid)
     test_pass "PID 파일 생성됨 (PID: $DAEMON_PID)"
 else
     test_fail "PID 파일이 생성되지 않음"
@@ -75,11 +82,11 @@ else
 fi
 
 # 부모 프로세스 확인 (init 또는 systemd, PID 1이어야 함)
-PPID=$(ps -o ppid= -p $DAEMON_PID | tr -d ' ')
-if [ "$PPID" = "1" ]; then
+PARENT_PID=$(ps -o ppid= -p $DAEMON_PID | tr -d ' ')
+if [ "$PARENT_PID" = "1" ]; then
     test_pass "부모 프로세스가 init (PPID: 1)"
 else
-    echo -e "${YELLOW}  경고: 부모 프로세스가 init이 아님 (PPID: $PPID)${NC}"
+    echo -e "${YELLOW}  경고: 부모 프로세스가 init이 아님 (PPID: $PARENT_PID)${NC}"
     echo -e "${YELLOW}  일부 환경(WSL, container 등)에서는 정상일 수 있습니다${NC}"
 fi
 
@@ -114,7 +121,7 @@ else
 fi
 
 # 최종 정리
-rm -f /var/run/entr.pid
+rm -f /tmp/entr.pid
 
 echo -e "\n=================================================="
 echo -e "테스트 완료: ${GREEN}PASS $PASS${NC} / ${RED}FAIL $FAIL${NC}"

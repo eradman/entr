@@ -85,12 +85,8 @@ main(int argc, char *argv[]) {
 		usage();
 	argv_index = set_options(argv);
 
-	/* 데몬 모드로 실행 */
+	/* 데몬 모드 옵션 처리: 실제 데몬화는 파일 목록 읽기 후에 수행 */
 	if (daemon_opt) {
-		if (daemonize("/var/run/entr.pid") != 0) {
-			err(1, "Failed to daemonize");
-		}
-		/* 데몬 모드에서는 비대화형으로 실행 */
 		noninteractive_opt = 1;
 	}
 
@@ -161,9 +157,8 @@ main(int argc, char *argv[]) {
 	 *     이미 다른 경로로 열렸을 수 있음)
 	 */
 
-	if (log_enabled()) {
-		log_set_file("entr.log");
-	}
+	/* 수정: log_enabled() 대신 무조건 호출 (log_set_file 내부에서 처리) */
+	log_set_file("entr.log");
 
 	/* sequential scan may depend on a 0 at the end */
 	files = calloc(open_max + 1, sizeof(WatchFile *));
@@ -189,6 +184,13 @@ main(int argc, char *argv[]) {
 			/* 시작 로그 한 줄 */
 	if (log_enabled()) {
 		log_line("entr started; watching %d files", n_files);
+	}
+
+	/* 데몬화: 파일 목록을 읽은 후에 수행 (stdin이 필요 없어진 후) */
+	if (daemon_opt) {
+		if (daemonize("/tmp/entr.pid") != 0) {
+			err(1, "Failed to daemonize");
+		}
 	}
 
 	for (i = 0; i < n_files; i++)
@@ -776,6 +778,10 @@ main:
         file = wd_to_file(event->wd); // Helper from inotify.c
         if (file == NULL) continue;
 
+        /* 디버그: 무조건 출력 (환경 변수 체크 제거) */
+        fprintf(stderr, "[EVENT] mask=0x%x file=%s do_exec=%d\n",
+                event->mask, file->fn, do_exec);
+
         if (file->is_dir == 1)
             dir_modified += compare_dir_contents(file);
 
@@ -793,6 +799,9 @@ main:
             if ((dir_modified > 0) && (restart_opt == 1))
                 continue;
             do_exec = 1;
+            fprintf(stderr, "[MATCH] do_exec=1\n");
+        } else {
+            fprintf(stderr, "[SKIP] mask=0x%x (no match)\n", event->mask);
         }
 
         // IN_ATTRIB handling (mode/inode change)
@@ -809,16 +818,16 @@ main:
                     #endif
                     file->ino = sb.st_ino;
                 }
-            } else if (file->is_dir == 0)
-                continue;
-        }
-// 하나의 파일만 로그되게 되어있길래 수정
-        if ((file->is_dir == 0) && (do_exec == 1)) {
-            log_write(file->fn);  // 파일 변경 로그 기록
-            if (leading_edge_set == 0) {
-                leading_edge = file;
-                leading_edge_set = 1;
             }
+            /* continue 제거: leading_edge 설정이 건너뛰어지는 문제 해결 */
+        }
+// leading_edge 설정: 항상 최신 파일로 업데이트 (여러 파일이 동시에 변경될 경우 대비)
+        if ((file->is_dir == 0) && (do_exec == 1)) {
+            leading_edge = file;
+            leading_edge_set = 1;
+            fprintf(stderr, "[LEAD] set=%s (always update)\n", file->fn);
+        } else if (file->is_dir == 0) {
+            fprintf(stderr, "[LEAD] NOT set (do_exec=%d)\n", do_exec);
         }
     }
 
@@ -835,17 +844,21 @@ main:
     if (collate_only == 1)
         goto main;
     if (do_exec == 1) {
+        fprintf(stderr, "[EXEC] leading_edge_set=%d\n", leading_edge_set);
 
 		/* 이번 변경을 트리거한 파일(leading_edge)을 로그에 기록 */
         if (leading_edge_set && leading_edge && leading_edge->fn[0] != '\0') {
             log_write(leading_edge->fn);
-			
+            fprintf(stderr, "[LOG] Wrote to log: %s\n", leading_edge->fn);
+
 			if (log_enabled()) {
         log_line("trigger: restarting command because of %s",
                  leading_edge->fn);
     		}
+        } else {
+            fprintf(stderr, "[LOG] SKIP (leading_edge_set=%d)\n", leading_edge_set);
         }
-		
+
         do_exec = 0;
         run_utility(argv);
         if (!aggressive_opt)
