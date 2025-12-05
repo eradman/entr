@@ -416,6 +416,7 @@ process_keyboard_event(int fd) {
 int
 process_input(FILE *file, WatchFile *files[], int max_files) {
 	char buf[PATH_MAX];
+	char absolute_path[PATH_MAX];
 	char *p, *path, *parent_path;
 	int n_files = 0;
 	struct stat sb;
@@ -427,6 +428,15 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 		if (buf[0] == '\0')
 			continue;
 		path = &buf[0];
+
+		/* 데몬 모드에서는 상대 경로를 절대 경로로 변환 */
+		if (daemon_opt && path[0] != '/') {
+			if (realpath(path, absolute_path) == NULL) {
+				warnx("unable to resolve path '%s'", path);
+				continue;
+			}
+			path = absolute_path;
+		}
 
 		if (xstat(path, &sb) == -1) {
 			warnx("unable to stat '%s'", path);
