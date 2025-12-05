@@ -776,6 +776,12 @@ main:
         file = wd_to_file(event->wd); // Helper from inotify.c
         if (file == NULL) continue;
 
+        /* 디버그: 어떤 이벤트가 발생했는지 출력 */
+        if (getenv("ENTR_DEBUG")) {
+            fprintf(stderr, "DEBUG: Event mask=0x%x file=%s do_exec=%d\n",
+                    event->mask, file->fn, do_exec);
+        }
+
         if (file->is_dir == 1)
             dir_modified += compare_dir_contents(file);
 
@@ -793,6 +799,11 @@ main:
             if ((dir_modified > 0) && (restart_opt == 1))
                 continue;
             do_exec = 1;
+            if (getenv("ENTR_DEBUG")) {
+                fprintf(stderr, "DEBUG: do_exec set to 1 (mask matched)\n");
+            }
+        } else if (getenv("ENTR_DEBUG")) {
+            fprintf(stderr, "DEBUG: Event mask 0x%x did NOT match execution mask\n", event->mask);
         }
 
         // IN_ATTRIB handling (mode/inode change)
@@ -817,7 +828,12 @@ main:
             if (leading_edge_set == 0) {
                 leading_edge = file;
                 leading_edge_set = 1;
+                if (getenv("ENTR_DEBUG")) {
+                    fprintf(stderr, "DEBUG: leading_edge set to %s\n", file->fn);
+                }
             }
+        } else if (getenv("ENTR_DEBUG") && file->is_dir == 0) {
+            fprintf(stderr, "DEBUG: leading_edge NOT set (do_exec=%d)\n", do_exec);
         }
     }
 
@@ -834,17 +850,22 @@ main:
     if (collate_only == 1)
         goto main;
     if (do_exec == 1) {
+        if (getenv("ENTR_DEBUG")) {
+            fprintf(stderr, "DEBUG: Executing (leading_edge_set=%d)\n", leading_edge_set);
+        }
 
 		/* 이번 변경을 트리거한 파일(leading_edge)을 로그에 기록 */
         if (leading_edge_set && leading_edge && leading_edge->fn[0] != '\0') {
             log_write(leading_edge->fn);
-			
+
 			if (log_enabled()) {
         log_line("trigger: restarting command because of %s",
                  leading_edge->fn);
     		}
+        } else if (getenv("ENTR_DEBUG")) {
+            fprintf(stderr, "DEBUG: NOT logging (leading_edge_set=%d)\n", leading_edge_set);
         }
-		
+
         do_exec = 0;
         run_utility(argv);
         if (!aggressive_opt)
