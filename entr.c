@@ -819,13 +819,11 @@ main:
             }
             /* continue 제거: leading_edge 설정이 건너뛰어지는 문제 해결 */
         }
-// leading_edge 설정만 하고, 로그는 837줄 이후에 한 번만 기록
+// leading_edge 설정: 항상 최신 파일로 업데이트 (여러 파일이 동시에 변경될 경우 대비)
         if ((file->is_dir == 0) && (do_exec == 1)) {
-            if (leading_edge_set == 0) {
-                leading_edge = file;
-                leading_edge_set = 1;
-                fprintf(stderr, "[LEAD] set=%s\n", file->fn);
-            }
+            leading_edge = file;
+            leading_edge_set = 1;
+            fprintf(stderr, "[LEAD] set=%s (always update)\n", file->fn);
         } else if (file->is_dir == 0) {
             fprintf(stderr, "[LEAD] NOT set (do_exec=%d)\n", do_exec);
         }

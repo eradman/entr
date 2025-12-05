@@ -58,8 +58,8 @@ echo "/tmp/test_file.txt" | ./entr -D sh -c 'echo "triggered at $(date)" >> /tmp
 sleep 2
 
 # PID 파일 확인
-if [ -f /var/run/entr.pid ]; then
-    DAEMON_PID=$(cat /var/run/entr.pid)
+if [ -f /tmp/entr.pid ]; then
+    DAEMON_PID=$(cat /tmp/entr.pid)
     test_pass "PID 파일 생성됨 (PID: $DAEMON_PID)"
 else
     test_fail "PID 파일이 생성되지 않음"
@@ -114,7 +114,7 @@ else
 fi
 
 # 최종 정리
-rm -f /var/run/entr.pid
+rm -f /tmp/entr.pid
 
 echo -e "\n=================================================="
 echo -e "테스트 완료: ${GREEN}PASS $PASS${NC} / ${RED}FAIL $FAIL${NC}"
