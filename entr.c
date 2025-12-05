@@ -444,7 +444,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 			/* also watch the directory if it's not already in the list */
 			if (dirwatch_opt > 0) {
 				char temp_path[PATH_MAX];
-				strlcpy(temp_pah, path, sizeof(temp_path));
+				strlcpy(temp_path, path, sizeof(temp_path));
 				if ((parent_path = dirname(path)) == 0)
 					err(1, "dirname '%s' failed", path);
 				
