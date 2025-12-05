@@ -85,13 +85,8 @@ main(int argc, char *argv[]) {
 		usage();
 	argv_index = set_options(argv);
 
-	/* 데몬 모드로 실행 */
+	/* 데몬 모드 옵션 처리: 실제 데몬화는 파일 목록 읽기 후에 수행 */
 	if (daemon_opt) {
-		/* PID 파일 경로: /tmp는 모든 사용자가 쓰기 가능 */
-		if (daemonize("/tmp/entr.pid") != 0) {
-			err(1, "Failed to daemonize");
-		}
-		/* 데몬 모드에서는 비대화형으로 실행 */
 		noninteractive_opt = 1;
 	}
 
@@ -189,6 +184,13 @@ main(int argc, char *argv[]) {
 			/* 시작 로그 한 줄 */
 	if (log_enabled()) {
 		log_line("entr started; watching %d files", n_files);
+	}
+
+	/* 데몬화: 파일 목록을 읽은 후에 수행 (stdin이 필요 없어진 후) */
+	if (daemon_opt) {
+		if (daemonize("/tmp/entr.pid") != 0) {
+			err(1, "Failed to daemonize");
+		}
 	}
 
 	for (i = 0; i < n_files; i++)
