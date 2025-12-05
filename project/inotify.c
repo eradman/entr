@@ -18,7 +18,7 @@
 #include <sys/stat.h>    // struct stat, S_ISREG 등을 위해 명시적으로 추가
 #include <fcntl.h>       // inotify_init1의 IN_CLOEXEC을 위해 추가
 #include "entr.h"        // WatchFile, 전역 변수, 함수 원형
-#include "project/event.h" // inotify 함수의 인터페이스 선언
+#include "event.h" // inotify 함수의 인터페이스 선언
 
 // =========================================================================
 // [inotify 시스템 호출 선언 (표준 C 라이브러리에서 가져옴)]

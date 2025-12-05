@@ -1,6 +1,6 @@
 CPPFLAGS += -D_GNU_SOURCE -D_LINUX_PORT -Iproject -Imissing
 MANPREFIX ?= ${PREFIX}/share/man
-EXTRA_SRC = project/inotify.c project/strlcpy.c
+EXTRA_SRC = project/inotify.c project/strlcpy.c project/daemon.c
 
 SRCS = entr.c status.c project/log.c
 OBJS = $(SRCS:.c=.o)
