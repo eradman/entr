@@ -35,12 +35,12 @@ trap cleanup EXIT INT TERM
 # 테스트 함수
 test_pass() {
     echo -e "${GREEN}✓ PASS${NC}: $1"
-    ((PASS++))
+    PASS=$((PASS + 1))
 }
 
 test_fail() {
     echo -e "${RED}✗ FAIL${NC}: $1"
-    ((FAIL++))
+    FAIL=$((FAIL + 1))
 }
 
 echo -e "\n${YELLOW}[테스트 1] 빌드 확인${NC}"
