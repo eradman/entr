@@ -87,7 +87,8 @@ main(int argc, char *argv[]) {
 
 	/* 데몬 모드로 실행 */
 	if (daemon_opt) {
-		if (daemonize("/var/run/entr.pid") != 0) {
+		/* PID 파일 경로: /tmp는 모든 사용자가 쓰기 가능 */
+		if (daemonize("/tmp/entr.pid") != 0) {
 			err(1, "Failed to daemonize");
 		}
 		/* 데몬 모드에서는 비대화형으로 실행 */
@@ -161,9 +162,8 @@ main(int argc, char *argv[]) {
 	 *     이미 다른 경로로 열렸을 수 있음)
 	 */
 
-	if (log_enabled()) {
-		log_set_file("entr.log");
-	}
+	/* 수정: log_enabled() 대신 무조건 호출 (log_set_file 내부에서 처리) */
+	log_set_file("entr.log");
 
 	/* sequential scan may depend on a 0 at the end */
 	files = calloc(open_max + 1, sizeof(WatchFile *));

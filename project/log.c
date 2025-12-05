@@ -99,9 +99,11 @@ int log_open(const char *path) {
 /*
  * 옵션에서 파일 경로 설정 후 open()
  * 실패하면 stderr로만 경고 출력, 로그는 비활성 상태 그대로일 수 있음
+ * 수정: 로그가 활성화되지 않았으면 무시
  */
 void log_set_file(const char *path) {
     if (!path) return;
+    if (!g_log_enabled_flag) return;  /* 로그 비활성화 상태면 무시 */
     if (log_open(path) == -1) {
         fprintf(stderr, "entr: log: failed to open %s\n", path);
     }
