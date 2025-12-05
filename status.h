@@ -15,7 +15,7 @@
  */
 
 void start_log_filter(int safe);
-void write_log_filter(char *input, size_t len);
+void write_log_filter(const char *input, size_t len);
 void end_log_filter();
 char *xdirname(const char *path);
 void create_dir(const char *dir);

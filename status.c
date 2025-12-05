@@ -80,7 +80,7 @@ start_log_filter(int safe) {
 }
 
 void
-write_log_filter(char *input, size_t len) {
+write_log_filter(const char *input, size_t len) {
 	if (write(status_stdin_pipe[1], input, len) == -1)
 		err(1, "write to child");
 }

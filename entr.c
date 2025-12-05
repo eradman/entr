@@ -3,7 +3,7 @@
 #include "project/entr.h"
 #include "project/event.h"
 #include <unistd.h>
-#include "log.h"   /* 파일 변경 로그 기록용 */
+#include "project/log.h"   /* 파일 변경 로그 기록용 */
 #include "status.h" /* start_log_filter 등의 함수 */
 
 #if defined(__linux__) || defined(_LINUX_PORT)
@@ -54,15 +54,15 @@ int process_keyboard_event(int fd);
 int (*xstat)(const char *path, struct stat *sb) = stat;
 
 static void usage();
-static void terminate_utility();
+void terminate_utility();
 static void set_restart_signal();
-static void handle_exit(int sig);
-static void proc_exit(int sig);
-static void print_child_status(int status);
-static int process_input(FILE *, WatchFile *[], int);
-static int set_options(char *[]);
-static int list_dir(char *);
-static void run_utility(char *[]);
+void handle_exit(int sig);
+void proc_exit(int sig);
+void print_child_status(int status);
+int process_input(FILE *, WatchFile *[], int);
+int set_options(char *[]);
+int list_dir(char *);
+void run_utility(char *[]);
 int compare_dir_contents(WatchFile *);
 static void watch_loop(int, char *[]);
 
