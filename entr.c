@@ -812,9 +812,8 @@ main:
             } else if (file->is_dir == 0)
                 continue;
         }
-// 하나의 파일만 로그되게 되어있길래 수정
+// leading_edge 설정만 하고, 로그는 837줄 이후에 한 번만 기록
         if ((file->is_dir == 0) && (do_exec == 1)) {
-            log_write(file->fn);  // 파일 변경 로그 기록
             if (leading_edge_set == 0) {
                 leading_edge = file;
                 leading_edge_set = 1;
