@@ -26,7 +26,6 @@
 // <sys/inotify.h>에 선언되어 있지만, 명시적으로 추가하여 안전성을 높임.
 extern int inotify_init1(int flags);
 extern int inotify_add_watch(int fd, const char *pathname, uint32_t mask);
-extern int inotify_rm_watch(int fd, uint32_t wd);
 
 // =========================================================================
 // [상수 및 매핑 로직]
@@ -85,33 +84,6 @@ static void remove_watch_map(int wd) {
     if (wd >= 0 && wd < MAX_WD) {
         wd_map[wd] = NULL;
     }
-}
-
-// =========================================================================
-// [유틸리티 함수 구현]
-// =========================================================================
-
-// /proc/sys/fs/inotify/max_user_watches 에서 값을 읽는 함수
-int
-fs_sysctl(const int name) {
-    FILE *file;
-    char line[8];
-    int value = 0;
-
-    switch (name) {
-    case INOTIFY_MAX_USER_WATCHES:
-        file = fopen("/proc/sys/fs/inotify/max_user_watches", "r");
-
-        if (file == NULL || fgets(line, sizeof(line), file) == NULL) {
-            value = 0;
-        } else
-            value = atoi(line);
-
-        if (file)
-            fclose(file);
-        break;
-    }
-    return value;
 }
 
 // =========================================================================
