@@ -809,8 +809,8 @@ main:
                     #endif
                     file->ino = sb.st_ino;
                 }
-            } else if (file->is_dir == 0)
-                continue;
+            }
+            /* continue 제거: leading_edge 설정이 건너뛰어지는 문제 해결 */
         }
 // leading_edge 설정만 하고, 로그는 837줄 이후에 한 번만 기록
         if ((file->is_dir == 0) && (do_exec == 1)) {
