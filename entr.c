@@ -416,6 +416,7 @@ process_keyboard_event(int fd) {
 int
 process_input(FILE *file, WatchFile *files[], int max_files) {
 	char buf[PATH_MAX];
+	char absolute_path[PATH_MAX];
 	char *p, *path, *parent_path;
 	int n_files = 0;
 	struct stat sb;
@@ -427,6 +428,15 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 		if (buf[0] == '\0')
 			continue;
 		path = &buf[0];
+
+		/* 데몬 모드에서는 상대 경로를 절대 경로로 변환 */
+		if (daemon_opt && path[0] != '/') {
+			if (realpath(path, absolute_path) == NULL) {
+				warnx("unable to resolve path '%s'", path);
+				continue;
+			}
+			path = absolute_path;
+		}
 
 		if (xstat(path, &sb) == -1) {
 			warnx("unable to stat '%s'", path);
@@ -778,9 +788,11 @@ main:
         file = wd_to_file(event->wd); // Helper from inotify.c
         if (file == NULL) continue;
 
-        /* 디버그: 무조건 출력 (환경 변수 체크 제거) */
-        fprintf(stderr, "[EVENT] mask=0x%x file=%s do_exec=%d\n",
-                event->mask, file->fn, do_exec);
+        /* 디버그 출력 (ENTR_DEBUG 환경 변수 설정 시에만) */
+        if (getenv("ENTR_DEBUG")) {
+            fprintf(stderr, "[EVENT] mask=0x%x file=%s do_exec=%d\n",
+                    event->mask, file->fn, do_exec);
+        }
 
         if (file->is_dir == 1)
             dir_modified += compare_dir_contents(file);
@@ -799,8 +811,10 @@ main:
             if ((dir_modified > 0) && (restart_opt == 1))
                 continue;
             do_exec = 1;
-            fprintf(stderr, "[MATCH] do_exec=1\n");
-        } else {
+            if (getenv("ENTR_DEBUG")) {
+                fprintf(stderr, "[MATCH] do_exec=1\n");
+            }
+        } else if (getenv("ENTR_DEBUG")) {
             fprintf(stderr, "[SKIP] mask=0x%x (no match)\n", event->mask);
         }
 
@@ -825,8 +839,10 @@ main:
         if ((file->is_dir == 0) && (do_exec == 1)) {
             leading_edge = file;
             leading_edge_set = 1;
-            fprintf(stderr, "[LEAD] set=%s (always update)\n", file->fn);
-        } else if (file->is_dir == 0) {
+            if (getenv("ENTR_DEBUG")) {
+                fprintf(stderr, "[LEAD] set=%s (always update)\n", file->fn);
+            }
+        } else if (getenv("ENTR_DEBUG") && file->is_dir == 0) {
             fprintf(stderr, "[LEAD] NOT set (do_exec=%d)\n", do_exec);
         }
     }
@@ -844,18 +860,22 @@ main:
     if (collate_only == 1)
         goto main;
     if (do_exec == 1) {
-        fprintf(stderr, "[EXEC] leading_edge_set=%d\n", leading_edge_set);
+        if (getenv("ENTR_DEBUG")) {
+            fprintf(stderr, "[EXEC] leading_edge_set=%d\n", leading_edge_set);
+        }
 
 		/* 이번 변경을 트리거한 파일(leading_edge)을 로그에 기록 */
         if (leading_edge_set && leading_edge && leading_edge->fn[0] != '\0') {
             log_write(leading_edge->fn);
-            fprintf(stderr, "[LOG] Wrote to log: %s\n", leading_edge->fn);
+            if (getenv("ENTR_DEBUG")) {
+                fprintf(stderr, "[LOG] Wrote to log: %s\n", leading_edge->fn);
+            }
 
 			if (log_enabled()) {
         log_line("trigger: restarting command because of %s",
                  leading_edge->fn);
     		}
-        } else {
+        } else if (getenv("ENTR_DEBUG")) {
             fprintf(stderr, "[LOG] SKIP (leading_edge_set=%d)\n", leading_edge_set);
         }
 
