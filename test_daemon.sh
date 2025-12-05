@@ -82,11 +82,11 @@ else
 fi
 
 # 부모 프로세스 확인 (init 또는 systemd, PID 1이어야 함)
-PPID=$(ps -o ppid= -p $DAEMON_PID | tr -d ' ')
-if [ "$PPID" = "1" ]; then
+PARENT_PID=$(ps -o ppid= -p $DAEMON_PID | tr -d ' ')
+if [ "$PARENT_PID" = "1" ]; then
     test_pass "부모 프로세스가 init (PPID: 1)"
 else
-    echo -e "${YELLOW}  경고: 부모 프로세스가 init이 아님 (PPID: $PPID)${NC}"
+    echo -e "${YELLOW}  경고: 부모 프로세스가 init이 아님 (PPID: $PARENT_PID)${NC}"
     echo -e "${YELLOW}  일부 환경(WSL, container 등)에서는 정상일 수 있습니다${NC}"
 fi
 
