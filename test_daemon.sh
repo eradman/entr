@@ -53,9 +53,15 @@ echo -e "\n${YELLOW}[테스트 2] 기본 데몬화 테스트${NC}"
 # 테스트 파일 생성
 echo "initial" > /tmp/test_file.txt
 
-# 데몬 모드로 entr 실행
-echo "/tmp/test_file.txt" | ./entr -D sh -c 'echo "triggered at $(date)" >> /tmp/entr_test.log' &
+# 데몬 모드로 entr 실행 (에러 출력 확인)
+echo "/tmp/test_file.txt" | ./entr -D sh -c 'echo "triggered at $(date)" >> /tmp/entr_test.log' 2>&1 | tee /tmp/entr_output.log &
 sleep 2
+
+# 에러 출력 확인
+if [ -s /tmp/entr_output.log ]; then
+    echo -e "${YELLOW}entr 실행 중 메시지:${NC}"
+    cat /tmp/entr_output.log | sed 's/^/  /'
+fi
 
 # PID 파일 확인
 if [ -f /tmp/entr.pid ]; then
