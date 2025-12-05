@@ -56,6 +56,31 @@ WatchFile *wd_to_file(int wd) {
     return NULL;
 }
 
+// 시스템 파일에서 inotify 제한 값을 읽어오는 함수
+int
+fs_sysctl(const int name) {
+    FILE *file;
+    char line[8];
+    int value = 0;
+
+    switch (name) {
+    case INOTIFY_MAX_USER_WATCHES:
+        file = fopen("/proc/sys/fs/inotify/max_user_watches", "r");
+
+        if (file == NULL || fgets(line, sizeof(line), file) == NULL) {
+            /* failed to read max_user_watches; sometimes inaccessible on Android */
+            value = 0;
+        } else
+            value = atoi(line);
+
+        if (file)
+            fclose(file);
+        break;
+    }
+    return value;
+}
+
+// inotify_rm_watch 후 맵에서 제거
 static void remove_watch_map(int wd) {
     if (wd >= 0 && wd < MAX_WD) {
         wd_map[wd] = NULL;

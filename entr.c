@@ -1,26 +1,14 @@
-/*데몬모드 C 파일*/
-#include "project/daemon.c"
 /*헤더파일*/
 #include "project/daemon.h"
 #include "project/entr.h"
 #include "project/event.h"
 #include <unistd.h>
-#include <termios.h>    // TTY 제어
-#include <sys/stat.h>   // stat
-#include <sys/wait.h>   // waitpid
-#include <dirent.h>     // list_dir 사용
-#include <libgen.h>     // basename, dirname 사용
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <err.h>
-#include <fcntl.h>
-#include <limits.h>
+#include "log.h"   /* 파일 변경 로그 기록용 */
+#include "status.h" /* start_log_filter 등의 함수 */
 
-/* 파일 변경 로그 기록용 */
-#include "log.h" 
+#if defined(__linux__) || defined(_LINUX_PORT)
+#include <sys/inotify.h> /* inotify_event 구조체 및 상수들 */
+#endif
 
 /* globals */
 
@@ -40,6 +28,7 @@ int postpone_opt;
 int restart_opt;
 int shell_opt;
 int status_filter_opt;
+int daemon_opt;
 
 pid_t status_pid = 0;
 
@@ -73,6 +62,9 @@ static void print_child_status(int status);
 static int process_input(FILE *, WatchFile *[], int);
 static int set_options(char *[]);
 static int list_dir(char *);
+static void run_utility(char *[]);
+int compare_dir_contents(WatchFile *);
+static void watch_loop(int, char *[]);
 
 /*
  * The Event Notify Test Runner
@@ -92,6 +84,15 @@ main(int argc, char *argv[]) {
 	if (argc < 2)
 		usage();
 	argv_index = set_options(argv);
+
+	/* 데몬 모드로 실행 */
+	if (daemon_opt) {
+		if (daemonize("/var/run/entr.pid") != 0) {
+			err(1, "Failed to daemonize");
+		}
+		/* 데몬 모드에서는 비대화형으로 실행 */
+		noninteractive_opt = 1;
+	}
 
 	// TTY 원본 설정 기억 (main 함수 시작 부분에서 먼저 시도)
     if (tcgetattr(STDIN_FILENO, &canonical_tty) == -1) {
@@ -220,13 +221,11 @@ main(int argc, char *argv[]) {
 
 /* Utility functions */
 
-void daemonize(const char* cmd);
-
-
 void
 usage() {
 	fprintf(stderr, "release: %s\n", RELEASE);
-	fprintf(stderr, "usage: entr [-acdnprsxz] utility [argument [/_] ...] < filenames\n");
+	fprintf(stderr, "usage: entr [-acdDnprsxz] utility [argument [/_] ...] < filenames\n");
+	fprintf(stderr, "  -D  Run as daemon (double fork)\n");
 	exit(1);
 }
 
@@ -499,7 +498,7 @@ set_options(char *argv[]) {
 	/* read arguments until we reach a command */
 	for (argc = 1; argv[argc] != 0 && argv[argc][0] == '-'; argc++)
 		;
-	while ((ch = getopt(argc, argv, "acdnprsxzLo:")) != -1) {
+	while ((ch = getopt(argc, argv, "acdDnprsxzLo:")) != -1) {
 		switch (ch) {
 		case 'a':
 			aggressive_opt = 1;
@@ -509,6 +508,9 @@ set_options(char *argv[]) {
 			break;
 		case 'd':
 			dirwatch_opt = dirwatch_opt ? 2 : 1;
+			break;
+		case 'D':
+			daemon_opt = 1;
 			break;
 		case 'n':
 			noninteractive_opt = 1;
@@ -685,7 +687,10 @@ run_utility(char *argv[]) {
 	free(arg_buf);
 	free(new_argv);
 }
-    
+
+/*
+ * Wait for directory contents to stabilize
+ */
 int
 compare_dir_contents(WatchFile *file) {
 	int i;
@@ -807,19 +812,14 @@ main:
             } else if (file->is_dir == 0)
                 continue;
         }
-
-        if ((leading_edge_set == 0) && (file->is_dir == 0) && (do_exec == 1)) {
-            leading_edge = file;
-            leading_edge_set = 1;
-
-			/* 파일 변경 로그 한 줄 */
-    		log_write(leading_edge->fn);
-
-    		/* 옵션으로 켜진 추가 로그 (레벨/포맷 적용) */
-    		if (log_enabled()) {
-        		log_line("trigger: restarting command because of %s",
-                 	leading_edge->fn);
-        		}
+// 하나의 파일만 로그되게 되어있길래 수정
+        if ((file->is_dir == 0) && (do_exec == 1)) {
+            log_write(file->fn);  // 파일 변경 로그 기록
+            if (leading_edge_set == 0) {
+                leading_edge = file;
+                leading_edge_set = 1;
+            }
+        }
     }
 
     if (!noninteractive_opt)

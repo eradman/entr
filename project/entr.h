@@ -6,11 +6,11 @@
 
 #ifndef PROJECT_ENTR_H
 #define PROJECT_ENTR_H
-#define RELEASE "1.0.0"
 
-// [시스템 헤더 파일]
-// entr.c, inotify.c 등 대부분의 소스 파일에서 공통적으로 필요하며,
-// WatchFile 구조체의 정의에 필요한 헤더를 포함합니다.
+#ifndef RELEASE
+#define RELEASE "1.0.0"
+#endif
+
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/resource.h>
@@ -31,16 +31,15 @@
 #include <time.h>
 #include <unistd.h>
 
-// [플랫폼별 파일 감시 시스템 헤더]
-
 #ifndef __linux__
-#include <project/event.h>
+#include <sys/event.h>
 #include <sys/time.h>
 #define NOTE_ALL (NOTE_DELETE | NOTE_WRITE | NOTE_RENAME | NOTE_TRUNCATE | NOTE_ATTRIB)
 #endif
 
-#ifdef __linux__
-#include <project/inotify.h>
+#if defined(__linux__) || defined(_LINUX_PORT)
+#define INOTIFY_MAX_USER_WATCHES 2
+int fs_sysctl(const int name);
 #endif
 
 // [WatchFile 구조체 정의]
@@ -60,50 +59,35 @@ typedef struct {
 // [매크로 및 유틸리티]
 
 /* shortcuts */
-#define min(a, b) (((a) < (b)) ? (a) : (b)) 
-#define MEMBER_SIZE(S, M) sizeof(((S *)0)->M) 
+#define min(a, b) (((a) < (b)) ? (a) : (b)) //
+#define MEMBER_SIZE(S, M) sizeof(((S *)0)->M) //
 
-// [entr.c에서 정의된 전역 변수 extern 선언]
-
-/* shared state (globals) */
-extern WatchFile **files;
-extern WatchFile *leading_edge;
-extern int child_pid;
-extern int child_status;
-extern int terminating;
-extern int restart_signal;
-
-extern int optind;         
-extern pid_t status_pid;   
+// 4. 전역 변수 extern 선언
+/* shared state */
+extern int optind;         //
+extern pid_t status_pid;   //
 
 /* option flags */
 extern int aggressive_opt; 
-extern int clear_opt;      
-extern int dirwatch_opt;   
+extern int clear_opt;   
+extern int dirwatch_opt;  
 extern int noninteractive_opt; 
-extern int oneshot_opt;    
-extern int postpone_opt;   
-extern int restart_opt;    
-extern int shell_opt;      
+extern int oneshot_opt;  
+extern int postpone_opt;  
+extern int restart_opt;  
+extern int shell_opt;   
 extern int status_filter_opt;
-extern int termios_set;    
+extern int daemon_opt;
+extern int termios_set;  
 extern struct termios canonical_tty; 
 
 /* function pointers */
 extern int (*xstat)(const char *path, struct stat *sb);
 
+/* functions used by event backends */
+int compare_dir_contents(WatchFile *file);
 
-// [entr.c에서 구현된 핵심 함수 원형 (다른 모듈에서 호출 가능)]
-// TTY 제어 함수 (inotify.c의 event_loop에서 키보드 처리용으로 호출됨)
-extern void set_tty_cbreak(void);
-extern void restore_tty(void);
-extern int process_keyboard_event(int fd); // 키보드 입력 처리
-
-// 메인 유틸리티 함수
-extern void usage(void);
-extern void terminate_utility(void);
-extern void run_utility(char *argv[]);
-extern int compare_dir_contents(WatchFile *file);
+#endif // PROJECT_ENTR_H
 
 // 시그널/프로세스 콜백
 extern void handle_exit(int sig);
