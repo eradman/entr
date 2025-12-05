@@ -4,7 +4,7 @@
 #ifndef PROJECT_EVENT_H
 #define PROJECT_EVENT_H
 
-#include "project/entr.h"
+#include "entr.h"
 
 // 파일 감시 디스크립터(wd)를 WatchFile 구조체로 변환
 WatchFile *wd_to_file(int wd);
