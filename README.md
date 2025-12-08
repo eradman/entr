@@ -231,12 +231,6 @@ rm /tmp/entr.pid
 
 자세한 내용은 `BUILD_DAEMON.md` 참조.
 
-## 환경 변수
-
-- `ENTR_DEBUG`: 설정 시 디버그 출력 활성화
-- `ENTR_RESTART_SIGNAL`: 재시작 시 사용할 시그널 지정 (기본: SIGTERM)
-- `ENTR_FOLLOW_SYMLINK`: 심볼릭 링크를 따라갈지 여부
-- `ENTR_STATUS_SCRIPT`: 상태 필터 AWK 스크립트 경로
 
 ## 파일 구조
 
