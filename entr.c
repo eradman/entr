@@ -29,6 +29,7 @@ int restart_opt;
 int shell_opt;
 int status_filter_opt;
 int daemon_opt;
+int log_file_opt;
 
 pid_t status_pid = 0;
 
@@ -88,6 +89,7 @@ main(int argc, char *argv[]) {
 	/* 데몬 모드 옵션 처리: 실제 데몬화는 파일 목록 읽기 후에 수행 */
 	if (daemon_opt) {
 		noninteractive_opt = 1;
+		log_set_enabled(1);  /* 데몬 모드에서는 자동으로 로그 활성화 */
 	}
 
 	// TTY 원본 설정 기억 (main 함수 시작 부분에서 먼저 시도)
@@ -157,8 +159,10 @@ main(int argc, char *argv[]) {
 	 *     이미 다른 경로로 열렸을 수 있음)
 	 */
 
-	/* 수정: log_enabled() 대신 무조건 호출 (log_set_file 내부에서 처리) */
-	log_set_file("entr.log");
+	/* -o 옵션이 주어지지 않았을 때만 기본 경로 사용 */
+	if (!log_file_opt) {
+		log_set_file("entr.log");
+	}
 
 	/* sequential scan may depend on a 0 at the end */
 	files = calloc(open_max + 1, sizeof(WatchFile *));
@@ -508,8 +512,13 @@ set_options(char *argv[]) {
 	int argc;
 
 	/* read arguments until we reach a command */
-	for (argc = 1; argv[argc] != 0 && argv[argc][0] == '-'; argc++)
-		;
+	for (argc = 1; argv[argc] != 0 && argv[argc][0] == '-'; argc++) {
+				if (strcmp(argv[argc], "-o") == 0) {
+			argc++;
+			if (argv[argc] == 0) break;
+		}
+	}
+
 	while ((ch = getopt(argc, argv, "acdDnprsxzLo:")) != -1) {
 		switch (ch) {
 		case 'a':
@@ -550,6 +559,8 @@ set_options(char *argv[]) {
 
 			/* 새로 추가한 로그 파일 경로 옵션: -o <path> */
 		case 'o':
+			log_file_opt = 1;       /* -o 옵션이 주어졌음을 기록 */
+			log_set_enabled(1);     /* -o 옵션 사용 시 자동으로 로그 활성화 */
 			log_set_file(optarg);   /* optarg = -o 바로 뒤의 <path> */
 			break;
 
@@ -565,6 +576,8 @@ set_options(char *argv[]) {
         }
         else if (strncmp(argv[i], "--log-file=", 11) == 0) {
             const char *path = argv[i] + 11;
+            log_file_opt = 1;       /* --log-file 옵션이 주어졌음을 기록 */
+            log_set_enabled(1);     /* --log-file 옵션 사용 시 자동으로 로그 활성화 */
             log_set_file(path);
         }
         else if (strncmp(argv[i], "--log-format=", 13) == 0) {
