@@ -8,7 +8,7 @@ Linux inotify 기반 파일 변경 감지 및 자동 실행 도구입니다.
 
 ### 주요 기여자
 
-- **권오준**: inotify 기반 watchloop 구현 (`project/inotify.c`)
+- **권오준**: inotify 기반 watchloop 구현 (`project/inotify.c`) 및 모듈화
 - **이원재**: Daemon mode 구현 (`project/daemon.c`)
 - **정채윤**: 로그 기능 구현 (`project/log.c`)
 
@@ -61,6 +61,9 @@ make -f Makefile.linux
 ```bash
 # 파일 목록을 stdin으로 전달하고, 변경 시 명령 실행
 ls *.c | ./entr echo "File changed"
+
+# 권장 사용방법(-a(미 사용시 echo, touch 사용시 두번씩 입력해야 감지됨), -p(미사용시 "File changed"가 명령어 입력하자마자 출력됨) 사용)
+ls *.c | ./entr -a -p echo "File changed"
 
 # find와 함께 사용
 find . -name "*.txt" | ./entr pytest
