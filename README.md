@@ -24,15 +24,13 @@ Linux inotify 기반 파일 변경 감지 및 자동 실행 도구입니다.
 - **고급 로그 기능**:
   - Plain 및 JSON 포맷 로그
   - 로그 레벨 필터링 (EVENT, INFO, WARN, ERROR)
-  - 타임스탬프 포맷 커스터마이징
+  - 타임스탬프 포맷 커스터마이징 -----------------------대기
   - SIGHUP을 통한 로그 파일 재오픈
 - **다양한 실행 모드**:
-  - 재시작 모드 (`-r`): 프로세스를 종료하고 재실행
   - One-shot 모드 (`-z`): 한 번만 실행하고 종료
   - Aggressive 모드 (`-a`): 모든 이벤트에 즉시 반응
   - 디렉토리 감시 모드 (`-d`)
 - **대화형/비대화형 모드**: TTY를 통한 키보드 입력 지원
-- **상태 필터링**: AWK 스크립트를 통한 커스텀 출력 필터링
 
 ## 빌드
 
@@ -51,7 +49,6 @@ make -f Makefile.linux
 - `project/inotify.c`: inotify 이벤트 처리
 - `project/daemon.c`: 데몬화 기능
 - `project/log.c`: 로그 기능
-- `status.c`: 상태 필터
 - 각종 헤더 파일 (`project/*.h`)
 
 ## 사용법
@@ -62,8 +59,8 @@ make -f Makefile.linux
 # 파일 목록을 stdin으로 전달하고, 변경 시 명령 실행
 ls *.c | ./entr echo "File changed"
 
-# 권장 사용방법(-a(미 사용시 echo, touch 사용시 두번씩 입력해야 감지됨), -p(미사용시 "File changed"가 명령어 입력하자마자 출력됨) 사용)
-ls *.c | ./entr -a -p echo "File changed"
+# 권장 사용방법(-a(미 사용시 echo, touch 사용시 두번씩 입력해야 감지됨), -p(미사용시 "File changed"가 명령어 입력하자마자 출력됨), -L로 로그 기록 사용)
+ls *.c | ./entr -a -L -p echo "File changed"
 
 # find와 함께 사용
 find . -name "*.txt" | ./entr pytest
@@ -84,14 +81,13 @@ usage: entr [-acdDnprsxzL] utility [argument [/_] ...] < filenames
   -D          데몬 모드로 실행 (백그라운드)
   -n          비대화형 모드
   -p          파일 변경 전까지 실행 연기
-  -r          재시작 모드: 프로세스를 종료하고 재실행
   -s          쉘을 통해 명령 실행
   -x          상태 필터 활성화
   -z          One-shot 모드: 한 번만 실행
   -L          로그 활성화
   -o <path>   로그 파일 경로 지정
 
-긴 옵션:
+긴 옵션:  -----------------------------------------------------대기
   --log-enable              로그 활성화 (-L과 동일)
   --log-file=<path>         로그 파일 경로 지정
   --log-format=plain|json   로그 포맷 (기본: plain)
@@ -110,25 +106,18 @@ usage: entr [-acdDnprsxzL] utility [argument [/_] ...] < filenames
 ls *.c | ./entr make
 ```
 
-#### 2. 서버 자동 재시작
-
-```bash
-# Node.js 서버를 파일 변경 시 자동 재시작
-ls *.js | ./entr -r node server.js
-```
-
-#### 3. 테스트 자동 실행
+#### 2. 테스트 자동 실행
 
 ```bash
 # Python 파일 변경 시 테스트 자동 실행
 find . -name "*.py" | ./entr -c pytest
 ```
 
-#### 4. 데몬 모드로 실행
+#### 3. 데몬 모드로 실행
 
 ```bash
 # 백그라운드에서 실행
-ls *.txt | ./entr -D -r ./process.sh
+ls *.txt | ./entr -D -a -p ./process.sh
 
 # PID 확인
 cat /tmp/entr.pid
@@ -137,52 +126,19 @@ cat /tmp/entr.pid
 kill $(cat /tmp/entr.pid)
 ```
 
-#### 5. 로그 기능 사용
+#### 4. 로그 기능 사용
 
 ```bash
-# 기본 로그 활성화 (entr.log 파일에 기록)
-ls *.c | ./entr -L make
+# 기본 로그 활성화 (-o로 특정한 값을 지정해주지 않는 이상 entr.log 파일에 기록)
+ls *.c | ./entr -L echo "변경"
 
-# 커스텀 로그 파일 및 JSON 포맷
-ls *.py | ./entr -L -o /var/log/entr.log \
-  --log-format=json \
-  --log-level=info \
-  python script.py
-
-# 또는 긴 옵션 사용
-ls *.js | ./entr \
-  --log-enable \
-  --log-file=/tmp/entr.log \
-  --log-format=plain \
-  --timestamp-format=short \
-  node server.js
-```
-
-#### 6. 특정 파일이 변경될 때 해당 파일 처리
-
-```bash
-# /_ 플레이스홀더는 변경된 파일 경로로 대체됩니다
-ls *.md | ./entr -c pandoc /_ -o output.pdf
 ```
 
 ## 로그 기능 상세
 
 ### 로그가 기록되는 시점
 
-`-L` 또는 `--log-enable` 옵션을 사용하면 entr는 다음 이벤트들을 모두 로그로 남깁니다:
-
-- **프로그램 시작**
-
-- **파일 변경 감지**
-  - `modified: <파일명>`
-  - `trigger: restarting command because of <파일명>`
-
-- **자식 프로세스 종료**
-  - 정상 종료 / 시그널 종료
-
-- **SIGINT / SIGTERM 종료**
-
-- **감시 중인 디렉터리 구조 변경으로 비정상 종료**
+`-L` 또는 `--log-enable` 옵션을 사용하면 entr는 다음 이벤트들을 모두 로그로 남깁니다
 
 ### 로그 활성화 조건
 
@@ -197,6 +153,7 @@ ls *.md | ./entr -c pandoc /_ -o output.pdf
 #### Plain 포맷 (기본)
 
 ```
+TZ = 'Asia/Seoul'
 [2025-12-06 14:30:15] [INFO] entr started; watching 5 files
 [2025-12-06 14:30:20] [INFO] modified: test.c
 [2025-12-06 14:30:20] [INFO] trigger: restarting command because of test.c
@@ -256,10 +213,10 @@ kill -HUP $(cat /tmp/entr.pid)
 
 ```bash
 # 데몬으로 실행
-find . -name "*.js" | ./entr -D -r -L node server.js
+find . -name "*.js" | ./entr -D -a -L node server.js
 
-# 프로세스 확인 (PPID가 1이어야 함)
-ps -o pid,ppid,cmd -p $(cat /tmp/entr.pid)
+# 프로세스 확인 (데몬의 pid 확인)
+ps aux | grep entr
 
 # 종료
 kill $(cat /tmp/entr.pid)
@@ -306,17 +263,6 @@ entr/
 ├── entr.1                 # man 페이지
 ├── system_test.sh         # 시스템 테스트
 └── test_daemon.sh         # 데몬 테스트
-```
-
-## 테스트
-
-```bash
-# 시스템 테스트 실행
-./system_test.sh
-
-# 데몬 모드 테스트
-chmod +x test_daemon.sh
-./test_daemon.sh
 ```
 
 ## 라이센스
