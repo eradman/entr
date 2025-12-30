@@ -29,6 +29,7 @@
 #include <limits.h>
 #include <paths.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -86,7 +87,7 @@ int (*xstat)(const char *path, struct stat *sb);
 
 /* forwards */
 
-static void usage();
+static void usage(bool);
 static void terminate_utility();
 static void set_restart_signal();
 static void handle_exit(int sig);
@@ -118,7 +119,7 @@ main(int argc, char *argv[]) {
 
 	/* call usage() if no command is supplied */
 	if (argc < 2)
-		usage();
+		usage(false);
 	argv_index = set_options(argv);
 
 	sigemptyset(&act.sa_mask);
@@ -204,7 +205,7 @@ main(int argc, char *argv[]) {
 
 	/* expect file list from a pipe */
 	if (isatty(fileno(stdin)))
-		usage();
+		usage(false);
 
 	/* read input and populate watch list, skipping non-regular files */
 	n_files = process_input(stdin, files, open_max);
@@ -245,9 +246,28 @@ main(int argc, char *argv[]) {
 /* Utility functions */
 
 void
-usage() {
+usage(bool summary) {
 	fprintf(stderr, "release: %s\n", RELEASE);
 	fprintf(stderr, "usage: entr [-acdnprsxz] utility [argument [/_] ...] < filenames\n");
+	if (!summary) {
+		fprintf(stderr, "hint: use -h to display option summary\n");
+		goto end;
+	}
+
+	printf("summary:\n"
+	       "    -a  Do not consolidate events\n"
+	       "    -c  Clear screen before execution\n"
+	       "    -d  Track files added or removed from directories\n"
+	       "    -n  Non-interactive mode\n"
+	       "    -p  Wait for first event\n"
+	       "    -r  Run as a background process, use signal to restart\n"
+	       "    -s  Evaluate using a shell\n"
+	       "    -x  Format exit status\n"
+	       "    -z  Exit after the utility completes\n");
+	printf("docs:\n"
+	       "    man entr\n");
+
+end:
 	exit(1);
 }
 
@@ -455,6 +475,9 @@ set_options(char *argv[]) {
 	int ch;
 	int argc;
 
+	if (argv[1] && strcmp(argv[1], "-h") == 0)
+		usage(true);
+
 	/* read arguments until we reach a command */
 	for (argc = 1; argv[argc] != 0 && argv[argc][0] == '-'; argc++)
 		;
@@ -488,11 +511,11 @@ set_options(char *argv[]) {
 			oneshot_opt = 1;
 			break;
 		default:
-			usage();
+			usage(false);
 		}
 	}
 	if (argv[optind] == 0)
-		usage();
+		usage(false);
 
 	if (status_filter_opt && restart_opt)
 		errx(1, "-r and -x may not be combined");
