@@ -62,8 +62,18 @@ command -v shopt > /dev/null && shopt -s expand_aliases
 # fast tests
 
 try "no arguments"
-	entr 2> /dev/null || code=$?
-	assert $code 1
+	entr >$tmp/exec.out 2>$tmp/exec.err
+	assert $? 1
+	grep -q "usage:" $tmp/exec.err
+	assert $? 0
+
+try "display option summary"
+	entr_tty -h >$tmp/exec.out 2>$tmp/exec.err
+	assert $? 1
+	grep -q "usage:" $tmp/exec.err
+	assert $? 0
+	grep -q "summary:" $tmp/exec.out
+	assert $? 0
 
 try "no input"
 	echo | entr echo "vroom" 2> /dev/null || code=$?
