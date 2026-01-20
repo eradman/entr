@@ -39,6 +39,21 @@
 
 #include "missing/compat.h"
 
+#if defined(_MACOS_PORT)
+#include <sys/sysctl.h>
+
+int
+macos_sysctl_maxfiles(void) {
+	int mib[2] = { CTL_KERN, KERN_MAXFILESPERPROC };
+	int maxfiles;
+	size_t len = sizeof(maxfiles);
+
+	if (sysctl(mib, 2, &maxfiles, &len, NULL, 0) == -1)
+		return 0;
+	return maxfiles;
+}
+#endif
+
 #include "data.h"
 #include "status.h"
 
@@ -157,7 +172,9 @@ main(int argc, char *argv[]) {
 #elif defined(_MACOS_PORT)
 	if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
 		err(1, "getrlimit");
-	open_max = min(OPEN_MAX, rl.rlim_max);
+	open_max = macos_sysctl_maxfiles();
+	if (open_max == 0)
+		open_max = OPEN_MAX; /* fallback to compile-time constant */
 	rl.rlim_cur = open_max;
 	if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
 		err(1, "setrlimit cannot set rlim_cur to %u", open_max);
