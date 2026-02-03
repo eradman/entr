@@ -571,6 +571,7 @@ run_utility(char *argv[]) {
 		new_argv = calloc(argc + 1, sizeof(char *));
 		if (new_argv == NULL)
 			err(1, "calloc");
+		new_argv[0] = "/bin/false";
 		for (m = 0, i = 0, p = arg_buf; i < argc; i++) {
 			remaining = ARG_MAX - (p - arg_buf);
 			new_argv[i] = p;
