@@ -17,6 +17,7 @@
 #include <sys/param.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
+#include <sys/sysctl.h>
 #include <sys/wait.h>
 
 #include <sys/event.h>
@@ -38,21 +39,6 @@
 #include <unistd.h>
 
 #include "missing/compat.h"
-
-#if defined(_MACOS_PORT)
-#include <sys/sysctl.h>
-
-int
-macos_sysctl_maxfiles(void) {
-	int mib[2] = { CTL_KERN, KERN_MAXFILESPERPROC };
-	int maxfiles;
-	size_t len = sizeof(maxfiles);
-
-	if (sysctl(mib, 2, &maxfiles, &len, NULL, 0) == -1)
-		return 0;
-	return maxfiles;
-}
-#endif
 
 #include "data.h"
 #include "status.h"
@@ -122,7 +108,6 @@ static void watch_loop(int, char *[]);
  */
 int
 main(int argc, char *argv[]) {
-	struct rlimit rl;
 	int kq;
 	struct sigaction act;
 	int ttyfd;
@@ -170,15 +155,20 @@ main(int argc, char *argv[]) {
 	if (open_max == 0)
 		open_max = 65536;
 #elif defined(_MACOS_PORT)
+	struct rlimit rl;
+	int mib[2] = { CTL_KERN, KERN_MAXFILESPERPROC };
+	size_t namelen = sizeof(open_max);
+
 	if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
 		err(1, "getrlimit");
-	open_max = macos_sysctl_maxfiles();
-	if (open_max == 0)
-		open_max = OPEN_MAX; /* fallback to compile-time constant */
+	if (sysctl(mib, 2, &open_max, &namelen, NULL, 0) == -1)
+		open_max = OPEN_MAX;
 	rl.rlim_cur = open_max;
 	if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
 		err(1, "setrlimit cannot set rlim_cur to %u", open_max);
 #else /* BSD */
+	struct rlimit rl;
+
 	if (getrlimit(RLIMIT_NOFILE, &rl) == -1)
 		err(1, "getrlimit");
 	open_max = (unsigned) rl.rlim_max;
