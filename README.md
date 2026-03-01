@@ -1,4 +1,5 @@
-Event Notify Test Runner
+Event Notify Test Runner [![kandi X-Ray](https://kandi.openweaver.com/badges/xray.svg)](https://kandi.openweaver.com/c/eradman/entr) 
+[![kandi Featured](https://kandi.openweaver.com/badges/featured.svg)](https://kandi.openweaver.com/collections/automation/c-automation)
 ========================
 
 A utility for running arbitrary commands when files change. Uses kqueue(2) or
