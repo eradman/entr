@@ -1,5 +1,16 @@
 = Release History
 
+== 5.8: March 2, 2026
+
+ - MacOS: set open_max limit using MAXFILESPERPROC
+ - Add usage hint and '-h' flag to display option summary
+ - Add return value checks for malloc(3) and pipe(2)
+ - Make signal number configurable with ENTR_RESTART_SIGNAL
+ - Monitor symlinks on Linux and MacOS
+ - Avoid expanding filenames using realpath(3)
+ - Linux: return correct status if poll(2) is interrupted
+ - Always accept directories as input, making '-d' flag optional
+
 == 5.7: February 6, 2025
 
  - Update MANPREFIX for FreeBSD
