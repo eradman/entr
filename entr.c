@@ -543,7 +543,7 @@ run_utility(char *argv[]) {
 	int ret, status;
 	struct timespec delay = { 0, 1000000 };
 	char **new_argv;
-	char *p, *arg_buf;
+	char *p, *arg_buf, *src;
 	int argc;
 	size_t len, rem;
 
@@ -575,19 +575,18 @@ run_utility(char *argv[]) {
 		for (m = 0, i = 0, p = arg_buf; i < argc; i++) {
 			new_argv[i] = p;
 			if ((m < 1) && (strcmp(argv[i], "/_")) == 0) {
-				len = strlcpy(p, leading_edge->fn, rem);
+				src = leading_edge->fn;
 				m++;
 			} else
-				len = strlcpy(p, argv[i], rem);
+				src = argv[i];
 
-			rem -= len;
-
-			if (len > PATH_MAX)
-				errx(1, "path too long");
-			if (rem <= 1)
+			len = strlen(src);
+			if (len + 1 > rem)
 				errx(1, "argument list too long");
 
+			memcpy(p, src, len + 1);
 			p += len + 1;
+			rem -= len + 1;
 		}
 	}
 
