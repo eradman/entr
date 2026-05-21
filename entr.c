@@ -543,14 +543,16 @@ run_utility(char *argv[]) {
 	int ret, status;
 	struct timespec delay = { 0, 1000000 };
 	char **new_argv;
-	char *p, *arg_buf;
+	char *p, *arg_buf, *src;
 	int argc;
-	size_t remaining;
+	size_t len, rem;
 
 	if (restart_opt == 1)
 		terminate_utility();
 
-	arg_buf = malloc(ARG_MAX);
+	arg_buf = malloc(rem = ARG_MAX);
+	if (arg_buf == NULL)
+		err(1, "malloc");
 
 	if (shell_opt == 1) {
 		/* run argv[1] with a shell using the leading edge as $0 */
@@ -563,9 +565,7 @@ run_utility(char *argv[]) {
 		new_argv[2] = argv[0];
 		new_argv[3] = leading_edge->fn;
 	} else {
-		/* clone argv on each invocation to make the implementation of more
-		 * complex substitution rules possible and easy
-		 */
+		/* clone argv on each invocation to allow for substitution rules */
 		for (argc = 0; argv[argc]; argc++)
 			;
 		new_argv = calloc(argc + 1, sizeof(char *));
@@ -573,14 +573,20 @@ run_utility(char *argv[]) {
 			err(1, "calloc");
 		new_argv[0] = "/bin/false";
 		for (m = 0, i = 0, p = arg_buf; i < argc; i++) {
-			remaining = ARG_MAX - (p - arg_buf);
 			new_argv[i] = p;
 			if ((m < 1) && (strcmp(argv[i], "/_")) == 0) {
-				p += strlcpy(p, leading_edge->fn, remaining);
+				src = leading_edge->fn;
 				m++;
 			} else
-				p += strlcpy(p, argv[i], remaining);
-			p++;
+				src = argv[i];
+
+			len = strlen(src);
+			if (len + 1 > rem)
+				errx(1, "argument list too long");
+
+			memcpy(p, src, len + 1);
+			p += len + 1;
+			rem -= len + 1;
 		}
 	}
 
