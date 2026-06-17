@@ -47,11 +47,6 @@
 
 #define NOTE_ALL NOTE_DELETE | NOTE_WRITE | NOTE_RENAME | NOTE_TRUNCATE | NOTE_ATTRIB
 
-/* shortcuts */
-
-#define min(a, b) (((a) < (b)) ? (a) : (b))
-#define MEMBER_SIZE(S, M) sizeof(((S *) 0)->M)
-
 /* shared state */
 
 extern int optind;
@@ -417,7 +412,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 			files[n_files] = malloc(sizeof(WatchFile));
 			if (files[n_files] == NULL)
 				err(1, "malloc");
-			strlcpy(files[n_files]->fn, path, MEMBER_SIZE(WatchFile, fn));
+			strlcpy(files[n_files]->fn, path, PATH_MAX);
 			files[n_files]->is_dir = 0;
 			files[n_files]->is_symlink = (S_ISLNK(sb.st_mode) != 0) ? 1 : 0;
 			files[n_files]->file_count = 0;
@@ -444,7 +439,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 			files[n_files] = malloc(sizeof(WatchFile));
 			if (files[n_files] == NULL)
 				err(1, "malloc");
-			strlcpy(files[n_files]->fn, path, MEMBER_SIZE(WatchFile, fn));
+			strlcpy(files[n_files]->fn, path, PATH_MAX);
 			files[n_files]->is_dir = 1;
 			files[n_files]->is_symlink = 0;
 			files[n_files]->file_count = list_dir(path);
