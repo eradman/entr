@@ -27,8 +27,6 @@
 
 #include <sys/stat.h>
 
-#include "missing/compat.h"
-
 #include "status.h"
 
 /* globals */
@@ -37,7 +35,7 @@ int status_stdin_pipe[2];
 void
 start_log_filter(int safe) {
 	char *argv[8];
-	char *awk_script;
+	char *awk_script, *awk_script_path;
 	struct passwd *pw;
 
 	awk_script = getenv("ENTR_STATUS_SCRIPT");
@@ -48,7 +46,8 @@ start_log_filter(int safe) {
 		asprintf(&awk_script, "%s/.entr/status.awk", pw->pw_dir);
 	}
 
-	create_dir(xdirname(awk_script));
+	awk_script_path = strdup(awk_script);
+	create_dir(dirname(awk_script_path));
 	install_file(awk_script,
 	    "# http://eradman.com/entrproject/status-filters.html\n"
 	    "/^signal/ { print $3, \"terminated by signal\", $2; }\n"
@@ -83,6 +82,7 @@ start_log_filter(int safe) {
 		err(1, "could not exec %s", argv[0]);
 	}
 	close(status_stdin_pipe[0]);
+	free(awk_script_path);
 }
 
 void
@@ -98,18 +98,9 @@ end_log_filter() {
 }
 
 /*
- * xdirname - mimic dirname(3) on OpenBSD which does not modify input
  * create_dir - ensure a directory exists
  * install_file - create file is it does not exist
  */
-
-char *
-xdirname(const char *path) {
-	static char dname[PATH_MAX];
-
-	strlcpy(dname, path, sizeof(dname));
-	return dirname(dname);
-}
 
 void
 create_dir(const char *dir) {
