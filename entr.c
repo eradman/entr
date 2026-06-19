@@ -390,11 +390,12 @@ print_child_status(int status) {
  */
 int
 process_input(FILE *file, WatchFile *files[], int max_files) {
-	char buf[PATH_MAX];
+	char buf[PATH_MAX + 1];
 	char *p, *path, *parent_path;
 	int n_files = 0;
 	struct stat sb;
 	int i, matches;
+	size_t len;
 
 	while (fgets(buf, sizeof(buf), file) != NULL) {
 		if ((p = strchr(buf, '\n')) != NULL)
@@ -402,6 +403,12 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 		if (buf[0] == '\0')
 			continue;
 		path = &buf[0];
+
+		len = strlen(path);
+		if ((len + 1) > PATH_MAX) {
+			path[100] = '\0';
+			errx(1, "path too long: %s..", path);
+		}
 
 		if (xstat(path, &sb) == -1) {
 			warnx("unable to stat '%s'", path);
@@ -412,7 +419,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 			files[n_files] = malloc(sizeof(WatchFile));
 			if (files[n_files] == NULL)
 				err(1, "malloc");
-			strlcpy(files[n_files]->fn, path, PATH_MAX);
+			memcpy(files[n_files]->fn, path, len + 1);
 			files[n_files]->is_dir = 0;
 			files[n_files]->is_symlink = (S_ISLNK(sb.st_mode) != 0) ? 1 : 0;
 			files[n_files]->file_count = 0;
@@ -439,7 +446,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 			files[n_files] = malloc(sizeof(WatchFile));
 			if (files[n_files] == NULL)
 				err(1, "malloc");
-			strlcpy(files[n_files]->fn, path, PATH_MAX);
+			memcpy(files[n_files]->fn, path, len + 1);
 			files[n_files]->is_dir = 1;
 			files[n_files]->is_symlink = 0;
 			files[n_files]->file_count = list_dir(path);

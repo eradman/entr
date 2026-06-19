@@ -1,18 +1,5 @@
 #!/bin/sh
 
-test_libc_features() {
-	CFLAGS="-D_GNU_SOURCE"
-	: ${CC:=cc}
-	2>/dev/null $CC -xc $CFLAGS -o /dev/null - <<-EOF
-	#include <string.h>
-	int main(void) {
-		char dst[4];
-		strlcpy(dst, "1234", sizeof dst);
-		return 0;
-	}
-	EOF
-}
-
 copy_mk() {
 	cmd="cp Makefile.$1 Makefile"
 	echo "+ $cmd"; $cmd
@@ -46,7 +33,7 @@ case "${TARGET_OS:-`uname`}" in
 		copy_mk freebsd
 		;;
 	Linux)
-		test_libc_features && copy_mk linux || copy_mk linux-compat
+		copy_mk linux
 		;;
 	*)
 		copy_mk bsd
