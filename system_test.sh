@@ -101,6 +101,13 @@ try "invalid signal number set"
 	ls $tmp | ENTR_RESTART_SIGNAL="KILL" entr echo 2> /dev/null || code=$?
 	assert $code 1
 
+try "reject path overflow"
+	path_max=$(getconf PATH_MAX $tmp)
+	printf "%0${path_max}s\n" | entr echo > $tmp/exec.out 2>$tmp/exec.err
+	assert $? 1
+	grep -q "path too long:" $tmp/exec.err
+	assert $? 0
+
 # status message tests
 
 try "install default status script"

@@ -6,7 +6,6 @@
 
 #if defined(_LINUX_PORT)
 #define INOTIFY_MAX_USER_WATCHES 2
-size_t strlcpy(char *dst, const char *src, size_t dsize);
 int fs_sysctl(const int name);
 #endif
 
