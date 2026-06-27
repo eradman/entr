@@ -405,6 +405,8 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 		}
 
 		if ((S_ISREG(sb.st_mode) | S_ISLNK(sb.st_mode)) != 0) {
+			if (n_files >= max_files)
+				return -1;
 			files[n_files] = malloc(sizeof(WatchFile));
 			if (files[n_files] == NULL)
 				err(1, "malloc");
@@ -428,10 +430,13 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 					if (stat(parent_path, &sb) == -1)
 						warnx("unable to stat '%s'", parent_path);
 					path = parent_path;
+					len = strlen(parent_path);
 				}
 			}
 		}
 		if (S_ISDIR(sb.st_mode) != 0) {
+			if (n_files >= max_files)
+				return -1;
 			files[n_files] = malloc(sizeof(WatchFile));
 			if (files[n_files] == NULL)
 				err(1, "malloc");
