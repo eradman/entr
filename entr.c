@@ -428,6 +428,7 @@ process_input(FILE *file, WatchFile *files[], int max_files) {
 					if (stat(parent_path, &sb) == -1)
 						warnx("unable to stat '%s'", parent_path);
 					path = parent_path;
+					len = strlen(path);
 				}
 			}
 		}
