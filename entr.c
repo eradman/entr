@@ -538,8 +538,10 @@ run_utility(char *argv[]) {
 	int argc;
 	size_t len, rem;
 
-	if (restart_opt == 1)
+	if (restart_opt == 1) {
 		terminate_utility();
+		nanosleep(&delay, NULL);
+	}
 
 	arg_buf = malloc(rem = ARG_MAX);
 	if (arg_buf == NULL)
