@@ -1,5 +1,11 @@
 = Release History
 
+== 5.9: October 1, 2026
+
+ - Sleep for 1ms after utility is terminated in restart mode
+ - Abort if path length exceed boundaries, no longer rely on strlcpy(3)
+ - Check argument length before copying
+
 == 5.8: March 2, 2026
 
  - MacOS: set open_max limit using MAXFILESPERPROC
