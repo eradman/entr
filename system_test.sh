@@ -530,7 +530,6 @@ try "ensure watches operate on a running executable"
 	cp -f /bin/sleep $tmp/ ; zz
 	kill -INT $bgpid
 	wait $bgpid; assert "$?" "0"
-	rm -f $tmp/sleep
 	assert "$(cat $tmp/exec.out)" "$(printf 'vroom\nvroom\n')"
 
 try "exec a command using the first file to change"
