@@ -32,7 +32,8 @@ start_log_filter(int safe) {
 		pw = getpwuid(getuid());
 		if (pw == NULL)
 			errx(1, "getpwuid");
-		asprintf(&awk_script, "%s/.entr/status.awk", pw->pw_dir);
+		if (asprintf(&awk_script, "%s/.entr/status.awk", pw->pw_dir) == -1)
+			errx(1, "asprintf");
 	}
 
 	awk_script_path = strdup(awk_script);
