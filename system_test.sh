@@ -391,7 +391,8 @@ try "exec single utility when an entire stash of files is reverted"
 		cp /usr/include/*.h $tmp/
 		cd $tmp
 		git init -q
-		git config --local user.email entr.test@example.com
+		git config --local user.email test1@local
+		git config --local user.name "Test User 1"
 		git add *.h
 		git commit -m "initial checkin" -q
 		for f in `ls *.h | head`; do
